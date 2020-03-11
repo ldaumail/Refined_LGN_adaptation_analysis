@@ -2,7 +2,7 @@
 %channels after purification through get_clean_peaks_and_data.m) to the
 %first peak
 
-newdatadir = 'C:\Users\maier\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_02262020_2\all_units\';
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_02262020_2\all_units\';
 channelfilename = [newdatadir 'clean_SUA_sup_50']; 
 data_file = load(channelfilename);
 locsfilename = [newdatadir 'clean_SUA_locs'];
@@ -65,34 +65,7 @@ for i = channum
    %mean_aligned = mean(fp_locked_trials_out,2);
    %nanmean_aligned = nanmean(fp_locked_trials_out,2);
    %}
-   %{
-   %%%%%%% align mean single units to first peak %%%%
-      %start finding the peaks at the first non NaN location 
-        for len1 =1:800
-            if ~isnan(mean_filtered_dSUA(i).mean_unit(len1))
-                break
-            end
-        end
-        for len2 = len1+30:1550
-            if ~all(isnan(mean_filtered_dSUA(i).mean_unit)) && mean_filtered_dSUA(i).mean_unit(len2) < mean_filtered_dSUA(i).mean_unit(len2+1)
-
-             locsdSUA_filtered = findpeaks(mean_filtered_dSUA(i).mean_unit(len2:end));
-             
-                if mean_filtered_dSUA(i).mean_unit(locsdSUA_filtered.loc(1)+len2) > 0.6*mean_filtered_dSUA(i).mean_unit(locsdSUA_filtered.loc(2)+len2)
-         %store first peak location 
-             all_locsdSUA_filtered(:,i) = locsdSUA_filtered.loc(1)+len2;
-                else
-             all_locsdSUA_filtered(:,i) = locsdSUA_filtered.loc(2)+len2;    
-            
-                end
-             break 
-            end 
-        end
-
-    %compute the distance between the first peak and the last datapoint and store  
-   %in a matrix
-   up_dist(:,i)= length(mean_filtered_dSUA(i).mean_unit)- all_locsdSUA_filtered(i);
-  %}
+  
 end  
 
 
@@ -103,7 +76,7 @@ end
 'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
 '','','M','M','M','P','M','M','M','M','P','P'};
 layer([1,46,55]) = [];
-pvaluesdir = 'C:\Users\maier\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
  pvalfilename = [pvaluesdir 'lmer_results_rawbs.csv'];
  pvalues = dlmread(pvalfilename, ',', 1,1);
  

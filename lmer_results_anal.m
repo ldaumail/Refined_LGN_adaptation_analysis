@@ -2,7 +2,7 @@
 %analyze the lmer results and plot the clean data.
 
 %loading the clean data
-newdatadir = 'C:\Users\maier\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\all_units\';
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\all_units\';
 channelfilename = [newdatadir 'clean_SUA_sup_50']; 
 data_file = load(channelfilename);
 
@@ -17,7 +17,7 @@ layer([1,46,55]) = [];
  f = {'DE0_NDE50','DE50_NDE0','DE50_NDE50'};
  
  
- pvaluesdir = 'C:\Users\maier\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+ pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
  pvalfilename = [pvaluesdir 'lmer_results_03032020.csv'];
  pvalues = dlmread(pvalfilename, ',', 1,1);
  
@@ -94,9 +94,9 @@ end
  %% compute proportion of significant adaptation per peak and proportion of neurons adapting for a certain amount of 
 %peak from peak 2 to 4
 
-channeldir = 'C:\Users\maier\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\all_units\';
-pvaluesdir = 'C:\Users\maier\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
-pvalfilename = [pvaluesdir 'lmer_results_03032020.csv'];
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\orig_peak_values\all_units\';
+pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020.csv'];
 pvalues = dlmread(pvalfilename, ',', 1,1);
 
 peakvals = load([channeldir 'all_data_peaks']);
@@ -110,7 +110,7 @@ peakvals = load([channeldir 'all_data_peaks']);
 '','','M','M','M','P','M','M','M','M','P','P'};
 layer([1,46,55]) = [];
 
- layer_idx = find(strcmp(layer, 'K'));
+ layer_idx = find(strcmp(layer, 'M'));
 
  f = {'DE0_NDE50','DE50_NDE0','DE50_NDE50'};
 
@@ -135,7 +135,8 @@ layer([1,46,55]) = [];
  cntnspk4=0;
  
   for nunit = 1:length(layer_idx)
- mean_data = nanmean(peakvals.data_peaks(layer_idx(nunit)).namelist,2);
+      if ~isempty(peakvals.peak_vals(layer_idx(nunit)).peak)
+ mean_data = nanmean(peakvals.peak_vals(layer_idx(nunit)).peak,2);
    
    all_mean_data(:,nunit) = mean_data;
 
@@ -180,7 +181,8 @@ layer([1,46,55]) = [];
      end
     if pvalues(layer_idx(nunit),4) > .05
          cntnspk4 = cntnspk4 +1;
-     end
+    end
+      end
   end
  all_mean_data = all_mean_data(:, ~all(isnan(all_mean_data)));
  
