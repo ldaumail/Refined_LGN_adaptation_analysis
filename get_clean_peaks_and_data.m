@@ -1,8 +1,9 @@
-%after saving the data with new_data_set.m, we isolate the peaks for the
+%after saving the data with new_data_set.m, we isolate the peaks and trials for the
 %new analysis of the refined data
 %we also save the data we want to plot (only the clean data)
+%this script is the data cleaning and selection pipeline
 
-newdatadir = 'C:\Users\maier\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\';
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\';
 channelfilename = [newdatadir 'refined_dataset']; 
 data_file = load(channelfilename);
 
@@ -215,8 +216,8 @@ clear i
    
  data_peaks(i).namelist = all_pks(:,~all(isnan(all_pks)));
  all_pks = all_pks(:,~all(isnan(all_pks)));
-channelfilename = [newdatadir 'su_peaks_03032020\' filename];
-save(strcat(channelfilename, '.mat'), 'all_pks');
+%channelfilename = [newdatadir 'su_peaks_03032020\' filename];
+%save(strcat(channelfilename, '.mat'), 'all_pks');
  end
  allfilename = [newdatadir 'su_peaks_03032020\all_units\all_data_peaks'];
  save(strcat(allfilename, '.mat'), 'data_peaks');
