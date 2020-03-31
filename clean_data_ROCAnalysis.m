@@ -1,4 +1,4 @@
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\all_units\';
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 channelfilename = [newdatadir 'clean_origin_sup_50']; 
 data_file = load(channelfilename);
 
@@ -60,15 +60,19 @@ layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','
 'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
 '','','M','M','M','P','M','M','M','M','P','P'};
 layer([1,46,55]) = [];
-layer_idx = find(strcmp(layer, 'K'));
+layer_idx = find(strcmp(layer, 'M'));
 figure, 
 normspec = (nanmean(mean_S(:,:,layer_idx),3) - min(nanmean(mean_S(:,:,layer_idx),3)))./(max(nanmean(mean_S(:,:,layer_idx),3)) - min(nanmean(mean_S(:,:,layer_idx),3)));
 %time_adj_data = nan(length(tvec),1);
 %time_adj_data(129:end,1) = normspec(:,1);
 plot(tvec,squeeze(normspec(:,1))')
-title({'DE50_NDE0_su', 'Mean K layer power at 4Hz vs time normalized', sprintf('')}, 'Interpreter', 'none')
+%spec = nanmean(mean_S,3);
+%imagesc(tvec,sort(f),spec')
+%ylim([3.9 60]); 
+%set(gca,'ydir','normal')
+title({'DE50_NDE0_su', 'Mean power at 4 Hz', sprintf('')}, 'Interpreter', 'none')
     xlabel('Time from stimulus onset(ms)')
-    ylabel('Normalized Power at 4Hz(no units)')
+    ylabel('Power (Normalized)')
 filename = strcat('C:\Users\maier\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\power_spectrum_plots\',contrast{2},'normalized_power_freq_time_mean_P_layer_4hz');
 %saveas(gcf, strcat(filename, '.png')); 
 
@@ -89,7 +93,15 @@ part2 = nanmean(squeeze(Ses(i).namelist2(576:1150,1,:)), 1);
     cond1               = part2;
     cond2               = part1;
     end
-
+  %{  
+figure(); boxplot([cond1' cond2'],'notch','on','labels',{'cond1','cond2'}); hold on    
+x=ones(length(cond1),1).*(1+(rand(length(cond1),1)-0.5)/5);
+x1=ones(length(cond1),1).*(1+(rand(length(cond1),1)-0.5)/10);
+f1=scatter(x,cond1,'k','filled');f1.MarkerFaceAlpha = 0.4;hold on
+f2=scatter(x1*2,cond2,'k','filled');f1.MarkerFaceAlpha = 0.4;
+ylim([0 400])
+ylabel('Power (spikes^2/s^2)')
+%}
     [X,Y,T,AUC]           = perfcurve([ones(length(cond1),1); repmat(2,length(cond2),1)],[cond1 cond2],1);
     NP                    = length(cond2);
     PR                    = length(cond1);
@@ -132,7 +144,7 @@ sig90_idx = find(all_sigs90);
 
 %% Analyze ROC analysis results per layer
 
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\all_units\';
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 channelfilename = [newdatadir 'clean_origin_sup_50']; 
 data_file = load(channelfilename);
 
@@ -209,7 +221,7 @@ end
 
 
 %% Proportions of significant units per layer
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\all_units\';
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 channelfilename = [newdatadir 'clean_origin_sup_50']; 
 data_file = load(channelfilename);
 
@@ -219,7 +231,7 @@ layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','
 'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
 '','','M','M','M','P','M','M','M','M','P','P'};
 layer([1,46,55]) = [];
-layer_idx = find(strcmp(layer, 'K'));
+layer_idx = find(strcmp(layer, 'M'));
 log_p_layer = zeros(length(layer),1);
 log_p_layer(layer_idx) = logical(layer_idx);
 
@@ -379,12 +391,12 @@ saveas(gcf, strcat(filename, '.png'));
 %% Plot mean with error bars before stimulation and during stimulation in the same analysis
 %% different way to normalize the data(normalize mean SUA before computing the grand cell class mean
 %% plotting with power significant changes
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\all_units\';
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 channelfilename = [newdatadir 'clean_origin_sup_50']; 
 data_file = load(channelfilename);
 
 
-channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\orig_peak_values\all_units\';
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
  peakvals = load([channeldir 'all_data_peaks']);
  sig95_idx = load( strcat(newdatadir,'roc_results95_stimonset_to1150ms.mat'));
   contrast = {'DE0_NDE50','DE50_NDE0','DE50_NDE50'};
@@ -428,15 +440,23 @@ mean_S_stim(129:end,:,i) = nanmean(S,3);
  
 time_adj = -599:-472;
 x_stim = cat(2, time_adj , t*1000 -600) ;
+cellclass = ['M', 'P', 'K'];
+red = [215/255 25/255 28/255]; 
+orange = [253/255 174/255 97/255];
+blue = [44/255 123/255 182/255];
+colors = [red; orange; blue]; 
 
-layer_idx = find(strcmp(layer, 'P'));
-log_p_layer = zeros(length(layer),1);
-log_p_layer(layer_idx) = logical(layer_idx);
+for nc = 1:3
+clear layer_idx
+layer_idx = find(strcmp(layer, cellclass(nc)));
+%log_p_layer = zeros(length(layer),1);
+%log_p_layer(layer_idx) = logical(layer_idx);
  
 
 %here we compute the individual normalized units necessary for the variance
 %and the data that we are about to plot
 %for both the baseline data and the stimulus data
+clear norm_chan normspec sig_su
 norm_chan = nan(length(mean_S_stim(:,1,1)), length(layer_idx));
 clear i;
 for i = 1:length(layer_idx)
@@ -448,18 +468,16 @@ end
 normspec = nanmean(norm_chan,2);
 
 figure, 
- plot(x_stim,normspec', 'LineWidth',1, 'Color',[253/255 174/255 97/255] )
+ plot(x_stim,normspec', 'LineWidth',1, 'Color',colors(nc,:))
  xlim([-600 1250])
  ylim([-0.1 1.05])
- %red [215/255 25/255 28/255] 
- %orange [253/255 174/255 97/255]
- %blue [44/255 123/255 182/255]
+ 
  hold on
  ci_low = normspec(:,1) - 1.96*std(norm_chan,0,2,'omitnan')./sqrt(length(norm_chan(1,:)));
- plot(x_stim, ci_low,':', 'LineWidth',1,'Color',[253/255 174/255 97/255])
+ plot(x_stim, ci_low,':', 'LineWidth',1,'Color',colors(nc,:))
  hold on
  ci_high = normspec(:,1) + 1.96*std(norm_chan,0,2,'omitnan')./sqrt(length(norm_chan(1,:)));
- plot(x_stim, ci_high,':', 'LineWidth',1,'Color',[253/255 174/255 97/255] )
+ plot(x_stim, ci_high,':', 'LineWidth',1,'Color',colors(nc,:))
  plot([0 0], ylim,'k')
  hold on
  plot([1150 1150], ylim,'k')
@@ -491,16 +509,17 @@ end
       set(gca,'box','off') 
       xlabel('Time from stimulus onset(ms)')
    ylabel('Normalized Power at 4Hz(no units)')
-title({'P class cells mean power at 4Hz vs time normalized', sprintf('')}, 'Interpreter', 'none')
+title({sprintf('%s class cells mean power at 4Hz vs time normalized', cellclass(nc))}, 'Interpreter', 'none')
     legend('Mean', 'Mean-1.96*sem', 'Mean+1.96*sem', 'Mean significant decrease', 'Location', 'bestoutside')
     
-filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\power_plots\',contrast{2},'indiv_normalized_power_freq_time_mean_95ci_P_layer_4hz_gathered_orange_sig_suamean_pow');
+filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\power_plots\',contrast{2},sprintf('indiv_normalized_power_freq_time_mean_95ci_%s_layer_4hz_gathered_orange_sig_suamean_pow',cellclass(nc)));
 saveas(gcf, strcat(filename, '.svg'));
 saveas(gcf, strcat(filename, '.png'));
+end
 %export_fig(gcf, '-jpg', '-transparent');
 
 %% save part1 and part2 for R plotting
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\all_units\';
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 channelfilename = [newdatadir 'clean_origin_sup_50']; 
 data_file = load(channelfilename);
 
@@ -568,6 +587,6 @@ part2(nunit) = nanmean(norm_chan(1176:1750,nunit), 1);
 
   end
  parts = [part1,part2];
-filename = ['C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\orig_peak_values\all_units\part1_part2_norm_power.mat'];
+filename = ['C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\part1_part2_norm_power.mat'];
 save(filename, 'parts');
 

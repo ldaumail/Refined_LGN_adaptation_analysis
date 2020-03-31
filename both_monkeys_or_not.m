@@ -7,15 +7,15 @@ channelfilename = [gendatadir 'refined_dataset'];
 gen_data_file = load(channelfilename);
 
 spikpvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
-spikpvalfilename = [spikpvaluesdir 'lmer_results_orig_03032020.csv'];
+spikpvalfilename = [spikpvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
 spikpvalues = dlmread(spikpvalfilename, ',', 1,1);
 
-channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\orig_peak_values\all_units\';
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
 peakvals = load([channeldir 'all_data_peaks']);
 
-partsdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\orig_peak_values\all_units\part1_part2_norm_power.mat';
+partsdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\part1_part2_norm_power.mat';
 parts = load(partsdir);
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\all_units\';
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 sig95_idx = load( strcat(newdatadir,'roc_results95_stimonset_to1150ms.mat'));
 
 

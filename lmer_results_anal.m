@@ -94,9 +94,9 @@ end
  %% compute proportion of significant adaptation per peak and proportion of neurons adapting for a certain amount of 
 %peak from peak 2 to 4
 
-channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\orig_peak_values\all_units\';
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
 pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
-pvalfilename = [pvaluesdir 'lmer_results_orig_03032020.csv'];
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
 pvalues = dlmread(pvalfilename, ',', 1,1);
 
 peakvals = load([channeldir 'all_data_peaks']);
@@ -110,8 +110,19 @@ peakvals = load([channeldir 'all_data_peaks']);
 '','','M','M','M','P','M','M','M','M','P','P'};
 layer([1,46,55]) = [];
 
- layer_idx = find(strcmp(layer, 'M'));
-
+ layer_idx = find(strcmp(layer, 'K'));
+%{
+ nan_layer_idx = layer_idx(isnan(pvalues(layer_idx,1)));
+ cnt = 0;
+ clear empt
+  for i =1:length(layer_idx)
+       if isempty(peakvals.peak_vals(layer_idx(i)).peak)
+           cnt = cnt+1;
+           empt(cnt) = layer_idx(i);
+       end
+        
+   end
+ %}
  f = {'DE0_NDE50','DE50_NDE0','DE50_NDE50'};
 
  all_locs = nan(4,length(layer_idx));
@@ -203,3 +214,105 @@ layer([1,46,55]) = [];
  percentnspk4 = cntnspk4*100/length(all_mean_data(1,:));
  
  ncells =length(all_mean_data(1,:));
+ 
+  %% compute proportion of significant adaptation per trough and proportion of neurons adapting for a certain amount of 
+%trough from trough 2  to 3
+
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_troughs_03032020\orig_trough_values\all_units\';
+pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_troughs\';
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_troughs.csv'];
+pvalues = dlmread(pvalfilename, ',', 1,1);
+
+troughvals = load([channeldir 'all_data_troughs']);
+
+ 
+%exclude 160517, (first unit, left empty, it is a K neuron)
+%Reject 180806 p1 uclust17, M cell, as doesn't seem well triggered (46)
+%Reject 181207 (B) uclust22, M cell, as doesn't seem well triggered (55)
+ layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
+'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
+'','','M','M','M','P','M','M','M','M','P','P'};
+layer([1,46,55]) = [];
+
+ layer_idx = find(strcmp(layer, 'K'));
+%{
+ nan_layer_idx = layer_idx(isnan(pvalues(layer_idx,1)));
+ cnt = 0;
+ clear empt
+  for i =1:length(layer_idx)
+       if isempty(peakvals.peak_vals(layer_idx(i)).peak)
+           cnt = cnt+1;
+           empt(cnt) = layer_idx(i);
+       end
+        
+   end
+ %}
+ f = {'DE0_NDE50','DE50_NDE0','DE50_NDE50'};
+
+ all_locs = nan(3,length(layer_idx));
+ all_trghs = nan(3,length(layer_idx));
+ all_mean_data = nan(3, length(layer_idx));
+
+  
+ cntt2 = 0;
+ cntt3 = 0;
+ 
+ cntt2t3 = 0;
+ 
+ 
+ cntinct2 =0;
+ cntinct3 =0;
+
+ cntnst2 =0;
+ cntnst3 =0;
+ 
+ 
+  for nunit = 1:length(layer_idx)
+      if ~isempty(troughvals.trough_vals(layer_idx(nunit)).trough)
+ mean_data = nanmean(troughvals.trough_vals(layer_idx(nunit)).trough,2);
+   
+   all_mean_data(:,nunit) = mean_data;
+
+     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05
+         cntt2 = cntt2 +1;
+     end
+     if all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05
+         cntt3 = cntt3 +1;
+     end
+     
+     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05 && ...
+             all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05
+         cntt2t3 = cntt2t3 +1;
+     end
+       
+     if all_mean_data(2,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05
+         cntinct2 = cntinct2 +1;
+     end
+     if all_mean_data(3,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05
+         cntinct3 = cntinct3 +1;
+     end
+     
+     if pvalues(layer_idx(nunit),2) > .05
+         cntnst2 = cntnst2 +1;
+     end
+     if pvalues(layer_idx(nunit),3) > .05
+         cntnst3 = cntnst3 +1;
+     end
+   
+      end
+  end
+ all_mean_data = all_mean_data(:, ~all(isnan(all_mean_data)));
+ 
+ percentt2 = cntt2*100/length(all_mean_data(1,:));
+ percentt3 = cntt3*100/length(all_mean_data(1,:)); 
+ 
+ percentt2t3 = cntt2t3*100/length(all_mean_data(1,:));
+ 
+ percentinct2 = cntinct2*100/length(all_mean_data(1,:));
+ percentinct3 = cntinct3*100/length(all_mean_data(1,:));
+
+ percentnst2 = cntnst2*100/length(all_mean_data(1,:));
+ percentnst3 = cntnst3*100/length(all_mean_data(1,:));
+
+ ncells =length(all_mean_data(1,:));
+ 

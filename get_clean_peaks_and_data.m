@@ -149,9 +149,11 @@ clear i
     all_locsdSUA_trials(:,trial) = all_locsdSUA_trials(:,trial);
     origin_data_high(:,trial) = origin_data_high(:,trial);
         else
+    all_pks(:,trial) = nan(length(all_pks(:,trial)),1);      
     filtered_dSUA_high(:,trial) = nan(length(filtered_dSUA_high(:,trial)),1);
     all_locsdSUA_trials(:,trial) = nan(size(all_locsdSUA_trials(:,trial)));
     origin_data_high(:,trial) =  nan(length(origin_data_high(:,trial)),1);
+   
         end 
     end
     %%% reject outlier peaks and the corresponding trials in
@@ -207,7 +209,8 @@ clear i
    clean_origin_data(i).unit = origin_data_high;
    peaks_locs(i).locs = all_locsdSUA_trials; 
    elseif length(filtered_dSUA_high(1,:)) <10  
-    all_pks(:,:) = nan(length(all_pks(:,1)),length(all_pks(1,:)));
+    %all_pks(:,:) = nan(length(all_pks(:,1)),length(all_pks(1,:)));
+    all_pks(:,:) = [];
     clean_high_SUA(i).namelist =  [];
     clean_origin_data(i).unit = [];
     peaks_locs(i).locs = []; 
@@ -216,16 +219,16 @@ clear i
    
  data_peaks(i).namelist = all_pks(:,~all(isnan(all_pks)));
  all_pks = all_pks(:,~all(isnan(all_pks)));
-%channelfilename = [newdatadir 'su_peaks_03032020\' filename];
-%save(strcat(channelfilename, '.mat'), 'all_pks');
+channelfilename = [newdatadir 'su_peaks_03032020_corrected\' filename];
+save(strcat(channelfilename, '.mat'), 'all_pks');
  end
- allfilename = [newdatadir 'su_peaks_03032020\all_units\all_data_peaks'];
+ allfilename = [newdatadir 'su_peaks_03032020_corrected\all_units\all_data_peaks'];
  save(strcat(allfilename, '.mat'), 'data_peaks');
- allfilename = [newdatadir 'su_peaks_03032020\all_units\clean_SUA_sup_50'];
+ allfilename = [newdatadir 'su_peaks_03032020_corrected\all_units\clean_SUA_sup_50'];
  save(strcat(allfilename, '.mat'), 'clean_high_SUA');
- allfilename = [newdatadir 'su_peaks_03032020\all_units\clean_SUA_locs'];
+ allfilename = [newdatadir 'su_peaks_03032020_corrected\all_units\clean_SUA_locs'];
  save(strcat(allfilename, '.mat'), 'peaks_locs');
- allfilename = [newdatadir 'su_peaks_03032020\all_units\clean_origin_sup_50'];
+ allfilename = [newdatadir 'su_peaks_03032020_corrected\all_units\clean_origin_sup_50'];
  save(strcat(allfilename, '.mat'), 'clean_origin_data');
  
    cnt =0;
