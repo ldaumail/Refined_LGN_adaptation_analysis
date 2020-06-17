@@ -7,10 +7,9 @@ layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','
 '','','M','M','M','P','M','M','M','M','P','P'};
 layer([1,46,55]) = [];
 
-layer_idx = find(strcmp(layer, 'M'));
-
-log_p_layer = zeros(length(layer),1);
-log_p_layer(layer_idx) = logical(layer_idx);
+%layer_idx = find(strcmp(layer, 'M'));
+%log_p_layer = zeros(length(layer),1);
+%log_p_layer(layer_idx) = logical(layer_idx);
 
 
 %% compute the power spectrum (spectrogram) using mtspecgramc function
@@ -70,11 +69,24 @@ plot(tvec,squeeze(normspec(:,1))')
 %imagesc(tvec,sort(f),spec')
 %ylim([3.9 60]); 
 %set(gca,'ydir','normal')
-title({'DE50_NDE0_su', 'Mean power at 4 Hz', sprintf('')}, 'Interpreter', 'none')
+      
+title({'Mean power at 4 Hz', sprintf('')}, 'Interpreter', 'none')
     xlabel('Time from stimulus onset(ms)')
     ylabel('Power (Normalized)')
-filename = strcat('C:\Users\maier\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\power_spectrum_plots\',contrast{2},'normalized_power_freq_time_mean_P_layer_4hz');
-%saveas(gcf, strcat(filename, '.png')); 
+filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\mean_power_4hz');
+saveas(gcf, strcat(filename, '.png')); 
+saveas(gcf, strcat(filename, '.svg')); 
+figure, 
+spec = nanmean(mean_S,3);
+imagesc(tvec,sort(f),mean_S(:,:,1)')
+ylim([2 20]); 
+set(gca,'ydir','normal')
+title({'Mean spectrogram', sprintf('')}, 'Interpreter', 'none')
+    xlabel('Time from stimulus onset(ms)')
+    ylabel('Frequency band (Hz)')
+filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\mean_powersepc_imagesc');
+saveas(gcf, strcat(filename, '.png')); 
+saveas(gcf, strcat(filename, '.svg')); 
 
 %% perform the Receiver Operating Characteristics analysis
 
@@ -101,6 +113,10 @@ f1=scatter(x,cond1,'k','filled');f1.MarkerFaceAlpha = 0.4;hold on
 f2=scatter(x1*2,cond2,'k','filled');f1.MarkerFaceAlpha = 0.4;
 ylim([0 400])
 ylabel('Power (spikes^2/s^2)')
+filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\distributions_cond1_cond2');
+saveas(gcf, strcat(filename, '.png')); 
+saveas(gcf, strcat(filename, '.svg')); 
+  
 %}
     [X,Y,T,AUC]           = perfcurve([ones(length(cond1),1); repmat(2,length(cond2),1)],[cond1 cond2],1);
     NP                    = length(cond2);
@@ -513,8 +529,8 @@ title({sprintf('%s class cells mean power at 4Hz vs time normalized', cellclass(
     legend('Mean', 'Mean-1.96*sem', 'Mean+1.96*sem', 'Mean significant decrease', 'Location', 'bestoutside')
     
 filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\power_plots\',contrast{2},sprintf('indiv_normalized_power_freq_time_mean_95ci_%s_layer_4hz_gathered_orange_sig_suamean_pow',cellclass(nc)));
-saveas(gcf, strcat(filename, '.svg'));
-saveas(gcf, strcat(filename, '.png'));
+%saveas(gcf, strcat(filename, '.svg'));
+%saveas(gcf, strcat(filename, '.png'));
 end
 %export_fig(gcf, '-jpg', '-transparent');
 
@@ -533,6 +549,7 @@ Ses = struct();
 bs_data = struct();
 channum = 1: length(layer);
 mean_S_stim = nan(1646+128,38, length(channum));
+S_stim = struct();
 %compute the power spectrum
 %dim 2 = channel, dim3 = trials
  Fs = 1000;
@@ -556,6 +573,8 @@ clear S namelist;
 [S,t,f]        = mtspecgramc(norm_mean_bs(:,:) ,movingwin, params); 
 
 mean_S_stim(129:end,:,i) = nanmean(S,3);
+S_stim(i).S = nan(1646+128,1, length(S(1,1,:)));
+S_stim(i).S(129:end,:) = squeeze(S(:,1,:));
       end
 
 %we can also store tvec and f in a struct, but they are all identical
@@ -576,7 +595,7 @@ max_chan = max(squeeze(mean_S_stim(:,1,i)),[],1);
 norm_chan(:,i) = (squeeze(mean_S_stim(:,1,i))-min_chan)./(max_chan - min_chan);
 end
 
-
+%{
 part1 = nan(length(channum),1);
 part2 = nan(length(channum),1);
 
@@ -589,4 +608,16 @@ part2(nunit) = nanmean(norm_chan(1176:1750,nunit), 1);
  parts = [part1,part2];
 filename = ['C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\part1_part2_norm_power.mat'];
 save(filename, 'parts');
+%}
+%%save the trials distributions
+parts = struct();
 
+  for nunit = channum
+      if ~isempty(S_stim(nunit).S)
+parts(nunit).part1 = S_stim(nunit).S(601:1175,1,:);
+parts(nunit).part2 = S_stim(nunit).S(1176:1750,1,:);
+      end
+  end
+
+filename = ['C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\part1_part2_power_trials.mat'];
+save(filename, 'parts');

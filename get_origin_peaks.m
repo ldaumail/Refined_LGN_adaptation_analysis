@@ -44,7 +44,7 @@ filenames = cell(length(channum),2);
 for i = channum  
     if ~isempty(data_file.clean_origin_data(i).unit)
     trialidx = 1:length(data_file.clean_origin_data(i).unit(1,:));
-    origin_dSUA = data_file.clean_origin_data(i).unit(401:1900,:)- mean(data_file.clean_origin_data(i).unit(401:600,:),1);
+    origin_dSUA = data_file.clean_origin_data(i).unit(401:1900,:) %- mean(data_file.clean_origin_data(i).unit(401:600,:),1);
     
     %create normalized origin trials data to plot average peaks for each unit with R
     
@@ -84,7 +84,7 @@ norm_unit = nan(size(origin_dSUA));
                   %origin data of the statistical analysis
                   fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = origin_dSUA(:,n);
                   %normalized data for the plotting
-                  fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = norm_unit(:,n);
+                 % fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = norm_unit(:,n);
                   
                   filtered_fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = filtered_dSUA(:,n);
            end
@@ -118,9 +118,9 @@ channelfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\' fi
 %save(strcat(channelfilename, '.mat'), 'peaks');
 end  
  %mean_peak_vals.peak = mean_peaks;
- allfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\all_data_peaks'];
- %save(strcat(allfilename, '.mat'), 'peak_vals');
- allfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\all_norm_mean_data_peaks'];
- save(strcat(allfilename, '.mat'), 'mean_peaks');
+ allfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\all_raw_data_peaks'];
+ save(strcat(allfilename, '.mat'), 'peak_vals');
+ allfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\all_raw_mean_data_peaks'];
+ %save(strcat(allfilename, '.mat'), 'mean_peaks');
  savefilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\filenames_layers'];
  %save(strcat(savefilename, '.csv'), 'filenames');

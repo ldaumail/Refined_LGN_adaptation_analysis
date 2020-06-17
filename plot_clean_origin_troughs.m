@@ -20,7 +20,7 @@ all_locsdSUA_filtered = nan(1,length(channum),3);
 for i = channum  
     if ~isempty(data_file.clean_origin_data(i).unit)
     trialidx = 1:length(data_file.clean_origin_data(i).unit(1,:));
-    origin_dSUA = data_file.clean_origin_data(i).unit(401:1900,:)- mean(data_file.clean_origin_data(i).unit(401:600,:),1);
+    origin_dSUA = data_file.clean_origin_data(i).unit(401:1900,:); %- mean(data_file.clean_origin_data(i).unit(401:600,:),1);
     filtered_dSUA = filt_data_file.clean_high_SUA(i).namelist;
     
     %{
@@ -101,8 +101,17 @@ layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','
 'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
 '','','M','M','M','P','M','M','M','M','P','P'};
 layer([1,46,55]) = [];
+nlines = 4;
+cmaps = struct();
+cmaps(1).map =cbrewer2('Reds', nlines);
+cmaps(2).map =cbrewer2('YlOrBr', nlines);
+cmaps(3).map =cbrewer2('Blues', nlines);
+ylims = [[0 140];[0 95];[0 140]];
 
-layer_idx = find(strcmp(layer, 'K'));
+
+cellclass = [ 'M', 'P', 'K'];
+for nc = 1:3
+layer_idx = find(strcmp(layer, cellclass(nc)));
 %%store all trials of a given peak, in a matrix, across all units
 %aligned_trials = nan(1204, length(layer_idx));
 aligned_trials = nan(1204, length(layer_idx));
@@ -135,40 +144,25 @@ end
  clear sig_su mean_sig_su
   cnt = 0;
  all_mean_data = nan(3, length(layer_idx));
- sig_su = nan(length(norm_aligned_trials(:,1)),length(layer_idx));
+ sig_su = nan(length(aligned_trials(:,1)),length(layer_idx));
   for nunit = 1:length(layer_idx)
       if ~isempty(troughvals.trough_vals(layer_idx(nunit)).trough)
  mean_data = nanmean(troughvals.trough_vals(layer_idx(nunit)).trough,2);
    all_mean_data(:,nunit) = mean_data;
-  if all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05
-      cnt= cnt+1;
-      sig_su(:,cnt) = norm_aligned_trials(:,nunit); 
-     % plot(x_stim,norm_chan(:, nunit)')
-     %hold on
-  end
+  
       end
   end
-  mean_sig_su = nanmean(sig_su,2);
+ 
 
 
 
-     figure();
-     mean_origin =nanmean(norm_aligned_trials,2);
-  %red [215/255 25/255 28/255] 
- %orange [253/255 174/255 97/255] %brown [121/255 96/255 76/255]; 
- %blue [44/255 123/255 182/255]
-
- %brown [165/255 42/255 42/255]
-     col1 = [121/255 96/255 76/255]; 
-     col2 =[44/255 123/255 182/255];
+   h=  figure();
+     mean_origin =nanmean(aligned_trials,2);
+ 
+        cmap = flip(cmaps(nc).map) ;
+  
+       colormap(cmap); 
      
-      R = linspace(col1(1), col2(1),4);
-      G = linspace(col1(2), col2(2),4);
-      B = linspace(col1(3), col2(3),4);
-      cmap = [R' G' B'];
-      colormap(cmap); 
-      
-      h = subplot(1,2,1);
       
       nlines = 3;
       for nl = 1:nlines
@@ -178,23 +172,14 @@ end
       hold on
       end
       set(h,'position',get(h,'position').*[1 1 1.15 1])
-      ylim([-0.01 1])
+      ylim(ylims(nc,:))
       xlim([-125 125])
       set(gca,'box','off')
       ylabel({'\fontsize{14}Spike Rate (spikes/s)'});
       title('Overall Mean')
-      
-      h1 = subplot(1,2,2);
-      for nl = 1:nlines 
-      plot(-125:125, mean_sig_su(250*(nl-1)+1:250*nl+1),  'LineWidth',1, 'Color',cmap(nl,:) )
-      hold on
-      end
-      set(h1,'position',get(h1,'position').*[1 1 1.15 1])
-      ylim([-0.01 1])
-      xlim([-125 125])
-      title('Adapting units mean')
+     
       set(gca,'box','off')
-      legend('peak 1', 'peak 2', 'peak 3', 'peak 4')
+      legend('trough 1', 'trough 2', 'trough 3')
       % P ylim([-20 85])
       % M ylim([-35 135])
       % K ylim([-20 200])
@@ -208,14 +193,14 @@ end
       %set(gca, 'linewidth',2)
       %hold on
       %plot([0 0], ylim,'k')
-     % if pn >1 
-      %ax1 = gca;                   
-      %ax1.YAxis.Visible = 'off';   
-     % end
+  
+      ax1 = gca;                   
+      ax1.YAxis.Visible = 'off';   
+    
 
     currfig = gcf;
     
-    title(currfig.Children(end),{'K mean responses'}, 'Interpreter', 'none', 'FontSize', 20)
+    title(currfig.Children(end),{sprintf('%s mean responses', cellclass(nc))}, 'Interpreter', 'none', 'FontSize', 20)
    
    % xlabel('\fontsize{14}Resolution (ms)')
     
@@ -224,6 +209,7 @@ end
    set(gcf,'position',[1 1 15 11])
    
    
-   filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_troughs_03032020\plots\',strcat('sigadapt_stacked_commonnorm_nanmean_bscorr_origin_data_aligned_Kcells_cmap_corrected'));
-   saveas(gcf, strcat(filename, '.svg')); 
-   saveas(gcf, strcat(filename, '.png')); 
+   filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_troughs_03032020\plots\',strcat(sprintf('sigadapt_stacked_common_origin_data_aligned_%s_cells_cmap_corrected',cellclass(nc))));
+  % saveas(gcf, strcat(filename, '.svg')); 
+  % saveas(gcf, strcat(filename, '.png')); 
+end

@@ -2,6 +2,8 @@
 %new analysis of the refined data
 %we also save the data we want to plot (only the clean data)
 %this script is the data cleaning and selection pipeline
+%written by Loic Daumail 
+%edited on 06-05-2020
 
 newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\';
 channelfilename = [newdatadir 'refined_dataset']; 
@@ -156,6 +158,12 @@ clear i
    
         end 
     end
+    %{
+    figure(); plot(-199:1300, filtered_dSUA_high(1:1500,1))
+    hold on
+    plot(all_locsdSUA_trials(1:4,1)-200, all_pks(:,1))
+    set(gca,'box','off')
+    %}
     %%% reject outlier peaks and the corresponding trials in
     %%% filtered_dSUA_high
    
