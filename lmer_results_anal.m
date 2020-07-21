@@ -1,8 +1,9 @@
 %this script was written after get_clean_peaks_and_data.m in order to
 %analyze the lmer results and plot the clean data.
+%Written by Loic Daumail edited on 6/29/2020
 
 %loading the clean data
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020\all_units\';
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 channelfilename = [newdatadir 'clean_SUA_sup_50']; 
 data_file = load(channelfilename);
 
@@ -18,7 +19,7 @@ layer([1,46,55]) = [];
  
  
  pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
- pvalfilename = [pvaluesdir 'lmer_results_03032020.csv'];
+ pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
  pvalues = dlmread(pvalfilename, ',', 1,1);
  
 %% Rough plots of peaks with pvalues (not very representative, as mean unit activity)
@@ -99,8 +100,15 @@ pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_ch
 pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
 pvalues = dlmread(pvalfilename, ',', 1,1);
 
-peakvals = load([channeldir 'all_data_peaks']);
+peakvals = load([channeldir 'all_raw_data_peaks']);
 
+   cnt =0;
+   for i =1:length(peakvals.peak_vals)
+       if ~isempty(peakvals.peak_vals(i).peak)
+           cnt = cnt+1;
+       end
+        
+   end
  
 %exclude 160517, (first unit, left empty, it is a K neuron)
 %Reject 180806 p1 uclust17, M cell, as doesn't seem well triggered (46)
@@ -110,7 +118,9 @@ peakvals = load([channeldir 'all_data_peaks']);
 '','','M','M','M','P','M','M','M','M','P','P'};
 layer([1,46,55]) = [];
 
- layer_idx = find(strcmp(layer, 'K'));
+ layer_idx = find(strcmp(layer, 'M'));
+ 
+ 
 %{
  nan_layer_idx = layer_idx(isnan(pvalues(layer_idx,1)));
  cnt = 0;

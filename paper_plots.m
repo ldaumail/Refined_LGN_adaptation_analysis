@@ -1,4 +1,5 @@
-%this script gathers most plots used for the paper
+%this script gathers most plots used for the adaptation manuscript
+%Written and edited by Loic Daumail 26/6/2020
 
 %%Figure 1: plot an example of a response (use i=1)
 newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
@@ -90,6 +91,7 @@ for i = channum
     end
 end  
 
+%% Figure 1: Example Unit plot
 
 %%% plot aligned units to peak of interest
 layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
@@ -103,9 +105,9 @@ for i = 1:length(suas_trials)
       stdev = squeeze(std(suas_trials(i).aligned(max_low_dist(i)-1-124:max_low_dist(i)-1+125,:,:),[],2));
       for pn =1:4
       h = subplot(1,4,pn);
-      plot(-125:124, mean_unit(:,pn), 'color', 'k');
+      plot(-125:124, mean_unit(:,pn));
       hold on
-      h1= ciplot( mean_unit(:,pn)+ stdev(:,pn)/sqrt(14), mean_unit(:,pn)-stdev(:,pn)/sqrt(14),[-125:124],[40/255 40/255 40/255],0.1);
+      h1= ciplot( mean_unit(:,pn)+ 1.96*stdev(:,pn)/sqrt(14), mean_unit(:,pn)-1.96*stdev(:,pn)/sqrt(14),[-125:124],[40/255 40/255 40/255],0.1);
       set(h1, 'edgecolor','none') 
      
       set(h,'position',get(h,'position').*[1 1 1.15 1])
@@ -147,12 +149,14 @@ col(3,:) = [141/255 160/255 203/255]; % --
 col(1,:) =[146/255 197/255 222/255] ; %--blue 
 col(2,:) = [251/255 154/255 153/255]; % -- red
 col(3,:) = [166/255 219/255 160/255]; % -- green
-%}
+
 col(1,:) =[194/255 165/255 207/255] ; %--purple
 col(2,:) = [253/255 174/255 97/255]; % -- orange
 col(3,:) = [166/255 219/255 160/255]; % -- green
-
-
+%}
+col(1,:) =[86/255 86/255 86/255] ; %--dark grey 
+col(2,:) = [251/255 154/255 153/255]; % -- red
+col(3,:) = [146/255 197/255 222/255]; % -- blue
 
 figure();
 b=bar(x,y,'FaceColor','flat', 'BarWidth', 0.5);
@@ -166,7 +170,7 @@ text(xtips1,ytips1,labels1,'HorizontalAlignment','center',...
 set(gca,'box','off')
 set(gca, 'linewidth',2)
 
- filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\q_cel1_class_sample_sizes');
+ filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\q_cel1_class_sample_sizes_stimcol');
         saveas(gcf, strcat(filename, '.png'));
         saveas(gcf, strcat(filename, '.svg')); 
 
@@ -378,11 +382,14 @@ col(3,:) = [146/255 197/255 222/255]; % -- blue
 col(1,:) =[194/255 165/255 207/255] ; %--purple
 col(2,:) = [253/255 174/255 97/255]; % -- orange
 col(3,:) = [166/255 219/255 160/255]; % -- green
-%}
+
 col(1,:) =[146/255 197/255 222/255] ; %--blue 
 col(2,:) = [251/255 154/255 153/255]; % -- red
 col(3,:) = [166/255 219/255 160/255]; % -- green
-
+%}
+col(1,:) =[86/255 86/255 86/255] ; %--dark grey 
+col(2,:) = [251/255 154/255 153/255]; % -- red
+col(3,:) = [146/255 197/255 222/255]; % -- blue
 
 % M ylim([0.05 .75])
 % P ylim([.1 .8])
@@ -508,7 +515,411 @@ end
    %saveas(gcf, strcat(filename, '.png')); 
 end
    
-%% figure 2: 
+
+   
+ %% Figure 4: Power plots
+ 
+%% Plots for the method process explaination
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
+channelfilename = [newdatadir 'clean_origin_sup_50']; 
+data_file = load(channelfilename);
+
+layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
+'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
+'','','M','M','M','P','M','M','M','M','P','P'};
+layer([1,46,55]) = [];
+
+%layer_idx = find(strcmp(layer, 'M'));
+%log_p_layer = zeros(length(layer),1);
+%log_p_layer(layer_idx) = logical(layer_idx);
+
+
+%% compute the power spectrum (spectrogram) using mtspecgramc function
+
+Ses = struct();
+bs_data = struct();
+channum = 1: length(data_file.clean_origin_data);
+mean_S = nan(1174,38, length(channum));
+
+xabs = -100:1301;
+
+%filtered_dMUA = nan(length(xabs), length(channum));
+%dim 2 = channel, dim3 = trials
+ Fs = 1000;
+ movingwin       = [.256 .001]; % length of moving window in seconds (should be to the power of 2) + length of sliding window
+ params.tapers   = [2 3];
+ params.Fs       = Fs;
+ params.fpass    = [1 150];
+
+clear i ;
+i=19;
+ %for i = 1:length(channum)
+     if ~isempty(data_file.clean_origin_data(i).unit)
+data = squeeze(data_file.clean_origin_data(i).unit(401:1900,:,:));
+   bsl = mean(data(1:200,:));
+   
+   norm_mean_bs = data(72:end, :) - bsl;
+   namelist1(1,1:length(sprintf('chan_%d',i))) = sprintf('chan_%d',i);
+   bs_data(i).namelist1 = norm_mean_bs;
+clear S namelist;
+[S,t,f]        = mtspecgramc(norm_mean_bs(:,:) ,movingwin, params); 
+ 
+namelist2(1,1:length(sprintf('S_%d',i))) = sprintf('S_%d',i);
+Ses(i).namelist2 = S;
+mean_S(:,:,i) = nanmean(S,3);
+
+tvec = t*1000 -129;
+
+%time_adj = 1:128;
+%tvec = cat(2, time_adj , t*1000) ;
+%we can also store tvec and f in a struct, but they are all identical
+     end
+ %end
+
+
+
+%% Power spectrum plot
+figure, 
+
+imagesc(tvec,sort(f),mean_S(:,:,i)')
+ylim([2 20]); 
+set(gca,'ydir','normal')
+title({'Mean spectrogram', sprintf('')}, 'Interpreter', 'none')
+    xlabel('Time from stimulus onset(ms)')
+    ylabel('Frequency band (Hz)')
+filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\mean_powersepc_imagesc');
+saveas(gcf, strcat(filename, '.png')); 
+saveas(gcf, strcat(filename, '.svg')); 
+%% plot the mean power only in the 5Hz range for 1 unit across trials 
+
+figure, 
+%normspec = (mean_S(:,:,i) - min(mean_S(:,:,i)))./(max(mean_S(:,:,i)) - min(mean_S(:,:,i)));
+%normS = (S(:,1,:)-min(S(:,1,:)))./(max(S(:,1,:)) - min(S(:,1,:)));
+%cihigh = normspec(:,1) + 1.96*std(normS(:,1,:),[],3)/sqrt(length(S(1,1,:)));
+%cilow = normspec(:,1) - 1.96*std(normS(:,1,:),[],3)/sqrt(length(S(1,1,:)));
+cihigh = mean_S(:,1,i) + 1.96*std(S(:,1,:),[],3)/sqrt(length(S(1,1,:)));
+cilow = mean_S(:,1,i) - 1.96*std(S(:,1,:),[],3)/sqrt(length(S(1,1,:)));
+plot(tvec,mean_S(:,1,i))
+hold on
+h1= ciplot( cihigh,cilow,tvec,[40/255 40/255 40/255],0.1);
+set(h1, 'edgecolor','none') 
+set(gca, 'box', 'off')
+      
+title({'Mean power at 4 Hz', sprintf('')}, 'Interpreter', 'none')
+    xlabel('Time from stimulus onset(ms)')
+    ylabel('Power (spikes^2/sec^2)')
+filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\mean_power_4hz_1unit_origin');
+saveas(gcf, strcat(filename, '.png')); 
+saveas(gcf, strcat(filename, '.svg')); 
+
+
+reps   = 10000;
+all_sigs95 = nan(length(Ses),1);
+all_sigs90 = nan(length(Ses),1);
+
+part1 = nanmean(squeeze(Ses(i).namelist2(1:575,1,:)), 1);
+part2 = nanmean(squeeze(Ses(i).namelist2(576:1150,1,:)), 1);
+
+    if nanmean(part1) > nanmean(part2)
+    cond1               = part1;
+    cond2               = part2;
+    else
+    cond1               = part2;
+    cond2               = part1;
+    end
+     %% Plot T1 and T2 power distributions of one unit across trials 
+ figure(); boxplot([cond1' cond2'],'notch','off','labels',{'cond1','cond2'}); hold on    
+x=ones(length(cond1),1).*(1+(rand(length(cond1),1)-0.5)/5);
+x1=ones(length(cond1),1).*(1+(rand(length(cond1),1)-0.5)/10);
+f1=scatter(x,cond1,'k','filled');f1.MarkerFaceAlpha = 0.4;hold on
+f2=scatter(x1*2,cond2,'k','filled');f1.MarkerFaceAlpha = 0.4;
+ylim([0 400])
+ylabel('Power (spikes^2/s^2)')
+filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\distributions_cond1_cond2_notchoff');
+saveas(gcf, strcat(filename, '.png')); 
+saveas(gcf, strcat(filename, '.svg')); 
+
+
+
+  
+%% Plot AUC of our two samples
+
+    [X,Y,T,AUC]           = perfcurve([ones(length(cond1),1); repmat(2,length(cond2),1)],[cond1 cond2],1);
+    NP                    = length(cond2);
+    PR                    = length(cond1);
+    catdat                = [cond1 cond2];
+figure();
+plot(X,Y)
+set(gca, 'box','off')   
+
+%% Plot  Receiver Operating Characteristics curve examples
+
+ shufPR         = catdat(randperm(length(catdat),PR));
+ shufNP         = catdat(randperm(length(catdat),NP));
+[Xshuf,Yshuf,~, shufAUC]    = perfcurve([ones(PR,1); repmat(2,NP,1)],[shufPR shufNP],1);
+
+figure();
+plot(Xshuf,Yshuf)
+set(gca, 'box','off')
+
+ %% Plot randomized distribution
+ 
+
+    for r       = 1:reps
+       clear shufNP shufPR
+       shufPR         = catdat(randperm(length(catdat),PR));
+       shufNP         = catdat(randperm(length(catdat),NP));
+       [~,~,~,...
+       shufAUC(r)]    = perfcurve([ones(PR,1); repmat(2,NP,1)],[shufPR shufNP],1);
+    end
+ critT95         = quantile(shufAUC,.95);
+ 
+    figure();
+    histogram(shufAUC)
+    hold on
+    plot([critT95, critT95], [0, 500])
+    hold on
+    plot([AUC, AUC], [0, 500], 'Color', 'k')
+    set(gca, 'box', 'off')
+filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\shufAUC_distribution');
+saveas(gcf, strcat(filename, '.png')); 
+saveas(gcf, strcat(filename, '.svg'));  %hold on
+  %  histogram(shufPR)
+   %  hold on
+   % histogram(shufNP)
+   
+    critT90         = quantile(shufAUC,.90);
+
+
+
+%% Figure 4 Plot mean power  with error bars before stimulation and during stimulation in the same analysis
+%% normalize mean SUA before computing the grand cell class mean
+%% plotting with power significant changes
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
+channelfilename = [newdatadir 'clean_origin_sup_50']; 
+data_file = load(channelfilename);
+
+
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+ peakvals = load([channeldir 'all_data_peaks']);
+ sig95_idx = load( strcat(newdatadir,'roc_results95_stimonset_to1150ms.mat'));
+  contrast = {'DE0_NDE50','DE50_NDE0','DE50_NDE50'};
+ 
+layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
+'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
+'','','M','M','M','P','M','M','M','M','P','P'};
+layer([1,46,55]) = [];
+
+Ses = struct();
+bs_data = struct();
+channum = 1: length(layer);
+mean_S_stim = nan(1646+128,38, length(channum));
+%compute the power spectrum
+%dim 2 = channel, dim3 = trials
+ Fs = 1000;
+ movingwin       = [.256 .001]; % length of moving window in seconds (should be to the power of 2) + length of sliding window
+ params.tapers   = [2 3];
+ params.Fs       = Fs;
+ params.fpass    = [1 150];
+ 
+
+clear i ;
+ for i = 1:length(layer)
+      if ~isempty(data_file.clean_origin_data(i).unit)
+data = squeeze(data_file.clean_origin_data(i).unit(1:1901,:));
+   bsl = mean(data(400:599,:));
+   %stim and bl data
+   norm_mean_bs = nan(length(data(:,1)),1,length(data(1,:)));
+   norm_mean_bs = data(1:end,:) - bsl;
+  
+
+clear S namelist;
+[S,t,f]        = mtspecgramc(norm_mean_bs(:,:) ,movingwin, params); 
+
+mean_S_stim(129:end,:,i) = nanmean(S,3);
+      end
+
+%we can also store tvec and f in a struct, but they are all identical
+ end
+ 
+time_adj = -599:-472;
+x_stim = cat(2, time_adj , t*1000 -600) ;
+cellclass = ['M', 'P', 'K'];
+
+col(1,:) =[146/255 197/255 222/255] ; %--blue 
+col(2,:) = [251/255 154/255 153/255]; % -- red
+col(3,:) = [166/255 219/255 160/255]; % -- green
+
+
+for nc = 1:3
+clear layer_idx
+layer_idx = find(strcmp(layer, cellclass(nc)));
+%log_p_layer = zeros(length(layer),1);
+%log_p_layer(layer_idx) = logical(layer_idx);
+ 
+
+%here we compute the individual normalized units necessary for the variance
+%and the data that we are about to plot
+%for both the baseline data and the stimulus data
+clear norm_chan normspec sig_su
+norm_chan = nan(length(mean_S_stim(:,1,1)), length(layer_idx));
+clear i;
+for i = 1:length(layer_idx)
+min_chan =min(squeeze(mean_S_stim(:,1,layer_idx(i))),[],1);
+max_chan = max(squeeze(mean_S_stim(:,1,layer_idx(i))),[],1);
+norm_chan(:,i) = (squeeze(mean_S_stim(:,1,layer_idx(i)))-min_chan)./(max_chan - min_chan);
+end
+
+normspec = nanmean(norm_chan,2);
+ci_low = normspec(:,1) - 1.96*std(norm_chan,0,2,'omitnan')./sqrt(length(norm_chan(1,:)));
+ci_high = normspec(:,1) + 1.96*std(norm_chan,0,2,'omitnan')./sqrt(length(norm_chan(1,:)));
+
+figure,
+ h =subplot(1,1,1);
+ plot(x_stim,normspec, 'LineWidth',1, 'Color',[40/255 40/255 40/255])
+
+ hold on
+ %when using ciplot, make sur there is no NAN in the vectors
+ h1= ciplot(ci_low(130:end), ci_high(130:end),[-470:1174],col(nc,:),.5);
+     set(h1, 'edgecolor','none') 
+ hold on
+ 
+ plot([0 0], ylim,'k')
+ hold on
+ plot([1150 1150], ylim,'k')
+ hold on 
+ 
+ 
+ cnt = 0;
+  for nunit = 1:length(layer_idx)
+ 
+   
+part1 = nanmean(norm_chan(601:1175,nunit),1);
+part2 = nanmean(norm_chan(1176:1750,nunit), 1);
+
+
+if part1 > part2 && sig95_idx.all_sigs95(layer_idx(nunit)) ==1
+    cnt = cnt +1;
+     sig_su(:,cnt) = norm_chan(:,nunit); 
+       % plot(x_stim,norm_chan(:, nunit)')
+     %hold on
+end
+     
+   
+  end
+  
+  mean_sig_su = mean(sig_su,2);
+  plot(x_stim, mean_sig_su,  'LineWidth',1, 'Color',[141/255 140/255 140/255] )
+   xlim([-600 1250])
+   ylim([-0.1 1.15])
+   xticks([-500:500:1000])
+ %ylim([-0.8 1.2])
+     set(gca, 'linewidth',2)
+      set(gca,'box','off') 
+      xlabel('Time from stimulus onset(ms)')
+   ylabel('Normalized Power at 4Hz(no units)')
+title({sprintf('%s class cells mean power at 4Hz vs time normalized', cellclass(nc))}, 'Interpreter', 'none')
+
+   % legend('Mean', 'Mean-1.96*sem', 'Mean+1.96*sem', 'Mean significant decrease', 'Location', 'bestoutside')
+    
+filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\power_plots\',contrast{2},sprintf('_%s_layer_4hz_gathered_sig_suamean_pow',cellclass(nc)));
+saveas(gcf, strcat(filename, '.svg'));
+saveas(gcf, strcat(filename, '.png'));
+end
+
+%% figure 6:
+
+%% Making the data ready to plot peaks
+
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
+channelfilename = [newdatadir 'clean_origin_sup_50']; 
+data_file = load(channelfilename);
+channelfilename = [newdatadir 'clean_SUA_sup_50']; 
+filt_data_file = load(channelfilename);
+locsfilename = [newdatadir 'clean_SUA_locs'];
+all_locsdSUA = load(locsfilename);
+xabs = -199:1300;
+nyq = 500;
+
+channum = 1: length(data_file.clean_origin_data);
+mean_origin_dSUA = struct();
+mean_filtered_dSUA = struct();
+suas_trials = struct();
+up_dist = nan(1, length(channum),4);
+max_low_dist = nan(1, length(channum));
+all_locsdSUA_filtered = nan(1,length(channum),4);
+
+for i = channum  
+    if ~isempty(data_file.clean_origin_data(i).unit)
+    trialidx = 1:length(data_file.clean_origin_data(i).unit(1,:));
+    origin_dSUA = data_file.clean_origin_data(i).unit(401:1900,:); % -mean(data_file.clean_origin_data(i).unit(401:600,:),1);
+    filtered_dSUA = filt_data_file.clean_high_SUA(i).namelist;
+    
+    %{
+       for  tr = trialidx
+           lpc       = 4.5; %low pass cutoff
+    lWn       = lpc/nyq;
+    [bwb,bwa] = butter(4,lWn,'low');
+    origin_dSUA(:,tr) = filtfilt(bwb,bwa, origin_dSUA(:,tr));
+       end
+    %}
+    %determine the peak location of interest for each trial of a given single
+    %unit
+    all_locsdSUA_trials = all_locsdSUA.peaks_locs(i).locs;
+    
+    up_dist_trials = nan(4,length(trialidx));
+    clear pn
+    for pn = 1:4
+    locs_peak = all_locsdSUA_trials(pn, :);
+    up_dist_trials(pn,:)= length(xabs)- locs_peak;
+    end
+    %get the max distance between the peakalign and the stimulus onset
+    max_low_dist_unit = max(all_locsdSUA_trials,[],'all');
+    %create new matrix with the length(max(d)+max(xabs - d))
+    new_dist_unit = max_low_dist_unit + max(up_dist_trials,[],'all'); 
+    fp_locked_trials = nan(new_dist_unit,length(origin_dSUA(1,:)),4);
+    filtered_fp_locked_trials = nan(new_dist_unit,length(filtered_dSUA(1,:)),4);
+     clear n pn
+     for pn =1:4
+           for n = 1:length(origin_dSUA(1,:))
+                  lower_unit_bound =max_low_dist_unit-all_locsdSUA_trials(pn,n)+1;
+                  upper_unit_bound =max_low_dist_unit-all_locsdSUA_trials(pn,n)+length(xabs);
+                  fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = origin_dSUA(:,n); 
+                  filtered_fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = filtered_dSUA(:,n);
+           end
+    %{
+        %compute the mean single unit activity if more than 10 trials
+    filtered_mean = nanmean(filtered_fp_locked_trials(:,:,pn),2);
+    lpc       = 4.5; %low pass cutoff
+    lWn       = lpc/nyq;
+    [bwb,bwa] = butter(4,lWn,'low');
+    lpdSUA      = filtfilt(bwb,bwa, filtered_mean(~isnan(filtered_mean)));
+           %}
+     eval(['mean_origin_dSUA(i).mean_peakaligned' num2str(pn) '=  nanmean(fp_locked_trials(:,:,pn),2);']) 
+     eval(['mean_filtered_dSUA(i).mean_peakaligned' num2str(pn) '= nanmean(filtered_fp_locked_trials(:,:,pn),2);']) % for nan - cols
+    
+     end
+    %get the aligned data if it exists for the unit 
+    suas_trials(i).aligned= fp_locked_trials;
+    max_low_dist(i) = max_low_dist_unit;
+     
+    %{
+    
+   
+   figure();
+   x = 1:length(fp_locked_trials(:,1,4));
+   plot(x,fp_locked_trials(:,:,4))
+   hold on
+   plot(x, mean(fp_locked_trials(:,:,4),2),'LineWidth',1, 'Color', 'black')
+   
+   %mean_aligned = mean(fp_locked_trials_out,2);
+   %nanmean_aligned = nanmean(fp_locked_trials_out,2);
+   %}
+   
+ 
+    end
+end 
+
    %% Plot three subplots: nonsig|overall mean | sig adapt
 
 pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
@@ -529,15 +940,16 @@ cellclass = [ 'M', 'P', 'K'];
 nlines = 5;
 cmaps = struct();
 
-%{
-cmaps(1).map =cbrewer2('Blues', nlines);
+
+cmaps(1).map =cbrewer2('Greys', nlines);
 cmaps(2).map =cbrewer2('Reds', nlines);
-cmaps(3).map =cbrewer2('Greens', nlines);
-%}
+cmaps(3).map =cbrewer2('Blues', nlines)
+
+%{
 cmaps(1).map =cbrewer2('Purples', nlines);
 cmaps(2).map =cbrewer2('Oranges', nlines);
 cmaps(3).map =cbrewer2('Greens', nlines);
-
+%}
 % M ylim([0.05 .75])
 % P ylim([.1 .8])
 % K ylim([-0.01 1])
@@ -672,10 +1084,10 @@ end
       %set(gca, 'linewidth',2)
       %hold on
       %plot([0 0], ylim,'k')
-     % if pn >1 
-      %ax1 = gca;                   
-      %ax1.YAxis.Visible = 'off';   
-     % end
+      if pn >1 
+      ax1 = gca;                   
+      ax1.YAxis.Visible = 'off';   
+      end
 
     currfig = gcf;
     %currfig.Children(end),
@@ -688,12 +1100,310 @@ end
    set(gcf,'position',[1 1 15 11])
    
    
-   filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\',strcat(sprintf('p_signonsigadapt_stacked_nanmean_bscorr_origin_data_aligned_%s_cells_brewer2',cellclass(nc))));
-   saveas(gcf, strcat(filename, '.svg')); 
-   saveas(gcf, strcat(filename, '.png')); 
+   filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\',strcat(sprintf('p_signonsigadapt_stacked_mean_origin_data_aligned_%s_cells_cbrewer2',cellclass(nc))));
+   %saveas(gcf, strcat(filename, '.svg')); 
+   %saveas(gcf, strcat(filename, '.png')); 
 end
 
 %%
+   %% Figure 6 - Plot 1 subplot for each peak each time including nonsig - overall mean - sig adapt - sig facilitated
+
+pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
+pvalues = dlmread(pvalfilename, ',', 1,1);
+
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+peakvals = load([channeldir 'all_data_peaks']);
+
+layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
+'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
+'','','M','M','M','P','M','M','M','M','P','P'};
+layer([1,46,55]) = [];
+
+cellclass = [ 'M', 'P', 'K'];
+
+%maps
+nlines = 5;
+cmaps = struct();
+
+
+cmaps(1).map = cbrewer2('Greys', nlines);
+cmaps(2).map = cbrewer2('Reds', nlines);
+cmaps(3).map = cbrewer2('Blues', nlines);
+
+
+ylims = [[0 160];[0 105];[0 210]];
+
+for nc = 1:3
+ clear layer_idx
+layer_idx = find(strcmp(layer, cellclass(nc)));
+%%store all trials of a given peak, in a matrix, across all units
+clear aligned_trials
+aligned_trials = nan(1204, length(layer_idx));
+
+clear i
+for i = 1:length(layer_idx)
+    if ~isnan(max_low_dist(layer_idx(i)))
+       for pn = 1:4
+          % aligned_trials(250*(pn-1)+1:250*pn+1,i)= mean(suas_trials(layer_idx(i)).aligned(max_low_dist(layer_idx(i))-125:max_low_dist(layer_idx(i))+125,:,pn),2);
+           aligned_trials(250*(pn-1)+1:250*pn+1,i)= mean(suas_trials(layer_idx(i)).aligned(max_low_dist(layer_idx(i))-1-124:max_low_dist(layer_idx(i))+125,:,pn),2);
+       end
+       %normalizing with max and min of each unit
+       %norm_aligned_trials(:,i) = (aligned_trials(:,i) - min(aligned_trials(:,i)))/(max(aligned_trials(:,i))-min(aligned_trials(:,i)));
+     
+    end
+end
+  
+
+%aligned_trials = aligned_trials(:,~all(isnan(aligned_trials)));
+
+%figure(); plot(1:length(aligned_trials(:,4)), aligned_trials(:,:))
+%figure(); plot(1:length(aligned_trials(:,4)), norm_aligned_trials(:,:))
+
+ clear sig_adapsu sig_incsu non_sig_su mean_sig_su
+ 
+ cntnotsig = 0;
+ cntsigfac = 0;
+ cntsigadapt = 0;
+ cntall = 0;
+ 
+ non_sig_su =nan(length(aligned_trials(:,1)),length(layer_idx));
+ sig_adapsu = nan(length(aligned_trials(:,1)),length(layer_idx));
+ sig_facsu = nan(length(aligned_trials(:,1)),length(layer_idx));
+ all_su = nan(length(aligned_trials(:,1)),length(layer_idx));
+ all_mean_data = nan(4, length(layer_idx));
+  for nunit = 1:length(layer_idx)
+      if ~isempty(peakvals.peak_vals(layer_idx(nunit)).peak)
+          
+          mean_data = nanmean(peakvals.peak_vals(layer_idx(nunit)).peak,2);
+          all_mean_data(:,nunit) = mean_data;
+          
+          cntall= cntall+1;
+          all_su(:,cntall) = aligned_trials(:,nunit);
+        
+          if all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05
+              cntsigadapt= cntsigadapt+1;
+              sig_adapsu(:,cntsigadapt) = aligned_trials(:,nunit);
+              % plot(x_stim,norm_chan(:, nunit)')
+              %hold on
+          end
+           % plot(x_stim,norm_chan(:, nunit)')
+          %hold on
+          
+          if all_mean_data(4,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05
+              cntsigfac = cntsigfac+1;
+              sig_facsu(:,cntsigfac) = aligned_trials(:,nunit);
+          end
+          
+          if  pvalues(layer_idx(nunit),4) > .05
+              
+              cntnotsig= cntnotsig+1;
+              non_sig_su(:,cntnotsig) = aligned_trials(:,nunit);
+              
+          end
+          
+      end
+  end
+  mean_not_sigsu = nanmean(non_sig_su,2);
+  mean_sig_adapsu = nanmean(sig_adapsu,2);
+  mean_sig_facsu = nanmean(sig_facsu,2);
+  mean_allsu = nanmean(all_su,2);
+  
+  gathered_means = [mean_not_sigsu, mean_sig_adapsu, mean_sig_facsu, mean_allsu];
+    
+  
+  figure();  
+         cmap = flip(cmaps(nc).map) ;
+         colormap(cmap); 
+    for pn = 1:4
+        h1 = subplot(1,4,pn); 
+      for nl = 1:length(gathered_means(1,:)) 
+     
+           plot(-125:125, gathered_means(250*(pn-1)+1:250*pn+1,nl), 'LineWidth',2,'color',cmap(nl,:));
+           hold on
+           set(gca,'box','off')
+         
+      end
+       set(h1,'position',get(h1,'position').*[1 1 1.15 1]) 
+          if pn >1 
+          ax1 = gca;                   
+          ax1.YAxis.Visible = 'off';   
+          end
+       
+    end
+     % text(-50,50,sprintf('Number of cells: %d', cntnotsig))
+      
+      ylim(ylims(nc,:))
+     %  ylim([-0.01 1])
+      xlim([-125 125])
+      ylabel({'\fontsize{14}Spike Rate (spikes/s)'});
+   
+     
+    currfig = gcf;
+    %currfig.Children(end),
+    sgtitle({sprintf('%s Units subgroups behavior comparison', cellclass(nc))}, 'Interpreter', 'none', 'FontSize', 20)
+  
+
+    legend( sprintf('Not adapting mean n= %d', cntnotsig), sprintf('Sig suppressed mean n= %d', cntsigadapt), sprintf('Sig facilitated mean n= %d', cntsigfac), sprintf('Overall Mean n= %d', cntall));
+   
+   % xlabel('\fontsize{14}Resolution (ms)')
+    
+   
+   set(gcf,'Units','inches') 
+   set(gcf,'position',[1 1 15 11])
+   
+   
+   filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\',strcat(sprintf('o_four_means_origin_data_aligned_%s_cells_cbrewer2',cellclass(nc))));
+   %saveas(gcf, strcat(filename, '.svg')); 
+   %saveas(gcf, strcat(filename, '.png')); 
+end
+%% Figure 6 - New tentative : 3D plots ; Plot 1 subplot for each peak each time including nonsig - overall mean - sig adapt - sig facilitated
+pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
+pvalues = dlmread(pvalfilename, ',', 1,1);
+
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+peakvals = load([channeldir 'all_data_peaks']);
+
+layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
+'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
+'','','M','M','M','P','M','M','M','M','P','P'};
+layer([1,46,55]) = [];
+
+cellclass = [ 'M', 'P', 'K'];
+zlims = [[0 160];[0 105];[0 210]];
+%maps
+nlines = 5;
+cmaps = struct();
+
+
+cmaps(1).map = cbrewer2('Greys', nlines);
+cmaps(2).map = cbrewer2('Reds', nlines);
+cmaps(3).map = cbrewer2('Blues', nlines);
+
+for nc = 1:3
+ clear layer_idx
+layer_idx = find(strcmp(layer, cellclass(nc)));
+%%store all trials of a given peak, in a matrix, across all units
+clear aligned_trials
+aligned_trials = nan(1204, length(layer_idx));
+
+clear i
+for i = 1:length(layer_idx)
+    if ~isnan(max_low_dist(layer_idx(i)))
+       for pn = 1:4
+          % aligned_trials(250*(pn-1)+1:250*pn+1,i)= mean(suas_trials(layer_idx(i)).aligned(max_low_dist(layer_idx(i))-125:max_low_dist(layer_idx(i))+125,:,pn),2);
+           aligned_trials(250*(pn-1)+1:250*pn+1,i)= mean(suas_trials(layer_idx(i)).aligned(max_low_dist(layer_idx(i))-1-124:max_low_dist(layer_idx(i))+125,:,pn),2);
+       end
+       %normalizing with max and min of each unit
+       %norm_aligned_trials(:,i) = (aligned_trials(:,i) - min(aligned_trials(:,i)))/(max(aligned_trials(:,i))-min(aligned_trials(:,i)));
+     
+    end
+end
+  
+
+%aligned_trials = aligned_trials(:,~all(isnan(aligned_trials)));
+
+%figure(); plot(1:length(aligned_trials(:,4)), aligned_trials(:,:))
+%figure(); plot(1:length(aligned_trials(:,4)), norm_aligned_trials(:,:))
+
+ clear sig_adapsu sig_incsu non_sig_su mean_sig_su
+ 
+ cntnotsig = 0;
+ cntsigfac = 0;
+ cntsigadapt = 0;
+ cntall = 0;
+ 
+ non_sig_su =nan(length(aligned_trials(:,1)),length(layer_idx));
+ sig_adapsu = nan(length(aligned_trials(:,1)),length(layer_idx));
+ sig_facsu = nan(length(aligned_trials(:,1)),length(layer_idx));
+ all_su = nan(length(aligned_trials(:,1)),length(layer_idx));
+ all_mean_data = nan(4, length(layer_idx));
+  for nunit = 1:length(layer_idx)
+      if ~isempty(peakvals.peak_vals(layer_idx(nunit)).peak)
+          
+          mean_data = nanmean(peakvals.peak_vals(layer_idx(nunit)).peak,2);
+          all_mean_data(:,nunit) = mean_data;
+          
+          cntall= cntall+1;
+          all_su(:,cntall) = aligned_trials(:,nunit);
+        
+          if all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05
+              cntsigadapt= cntsigadapt+1;
+              sig_adapsu(:,cntsigadapt) = aligned_trials(:,nunit);
+              % plot(x_stim,norm_chan(:, nunit)')
+              %hold on
+          end
+           % plot(x_stim,norm_chan(:, nunit)')
+          %hold on
+          
+          if all_mean_data(4,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05
+              cntsigfac = cntsigfac+1;
+              sig_facsu(:,cntsigfac) = aligned_trials(:,nunit);
+          end
+          
+          if  pvalues(layer_idx(nunit),4) > .05
+              
+              cntnotsig= cntnotsig+1;
+              non_sig_su(:,cntnotsig) = aligned_trials(:,nunit);
+              
+          end
+          
+      end
+  end
+  mean_not_sigsu = nanmean(non_sig_su,2);
+  mean_sig_adapsu = nanmean(sig_adapsu,2);
+  mean_sig_facsu = nanmean(sig_facsu,2);
+  mean_allsu = nanmean(all_su,2);
+  
+ gathered_means = [ mean_allsu, mean_not_sigsu, mean_sig_adapsu, mean_sig_facsu];
+ 
+ 
+
+  figure();  
+
+         cmap = cmaps(nc).map ;
+         cmap = cmap(2:5,:);
+         colormap(cmap); 
+        idx = repmat(1:4,[251,1]);
+  for pn = 1:4
+           h1 = subplot(1,4,pn);
+           for ln = 1:4
+          % m=   mesh(-125:125,1:4,gathered_means(250*(pn-1)+1:250*pn+1,:)', 'MeshStyle','row','LineStyle', '-', 'LineWidth', 2); %'FaceAlpha', 0);
+         %   m.CData = idx';
+        %    m=   plot3(repmat(-125:125,[4,1])',idx, gathered_means(250*(pn-1)+1:250*pn+1,:), 'LineStyle','-','LineWidth', 2); 
+            m=   plot3(-125:125, idx(:,ln), gathered_means(250*(pn-1)+1:250*pn+1,ln), 'LineStyle','-','LineWidth', 2, 'color', cmap(ln,:)); 
+        hold on
+           end
+           set(gca, 'YTick', 1:4)
+           ylim([1 4])
+           zlim(zlims(nc,:))
+           set(gca, 'YTickLabel', {'Overall Mean', 'Not Significant Mean', 'Sig Adapt Mean', 'Sig Facilitated Mean'})
+           hold on
+           zline = max(gathered_means(250*(pn-1)+1:250*pn+1,:),[],1);
+           [~, xzline] = max(gathered_means(250*(pn-1)+1:250*pn+1,:),[],1);
+           zx = xzline -125; %adjusting to center the indexs on the max values
+           line(zx,1:4, zline, 'LineStyle', '--', 'LineWidth', 2, 'Color', 'k')
+           set(gca,'box','off')
+           xlabel(sprintf('Pk%d', pn));
+           zlabel('Spike rate (spikes/sec)');
+           view(-70,10)
+          
+  end
+  set(gcf,'Units','inches') 
+   %set(gcf,'position',[1 1 15 11])
+   set(gcf,'position',[1 1 20 11])
+  
+filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\',strcat(sprintf('o_four_means_origin_data_aligned_%s_cells_3D_el10_az70',cellclass(nc))));
+export_fig(gcf,strcat(filename,'.eps'));
+
+%saveas(gcf, strcat(filename, '.eps'));    
+%saveas(gcf, strcat(filename, '.svg')); 
+%saveas(gcf, strcat(filename, '.png')); 
+end
+   
+
+%% Other plots for Figure 6
 %% Plot two subplots: sig increase | sig adapt
 
 pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
@@ -714,12 +1424,18 @@ cellclass = [ 'M', 'P', 'K'];
 nlines = 5;
 cmaps = struct();
 
+cmaps(1).map =cbrewer2('Greys', nlines);
+cmaps(2).map =cbrewer2('Reds', nlines);
+cmaps(3).map =cbrewer2('Blues', nlines)
+
+
+%{
 cmaps(1).map =cbrewer2('Blues', nlines);
 cmaps(2).map =cbrewer2('Reds', nlines);
 cmaps(3).map =cbrewer2('Greens', nlines);
 
 
-%{
+
 cmaps(1).map =cbrewer2('Purples', nlines);
 cmaps(2).map =cbrewer2('Oranges', nlines);
 cmaps(3).map =cbrewer2('Greens', nlines);
@@ -856,149 +1572,12 @@ end
    set(gcf,'position',[1 1 15 11])
    
    
-   filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\',strcat(sprintf('p_sigadaptinc_stacked_origin_data_aligned_%s_cells_cbrewer2_scaled',cellclass(nc))));
+   filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\',strcat(sprintf('o_sigadaptinc_stacked_origin_data_aligned_%s_cells_cbrewer2_scaled',cellclass(nc))));
    saveas(gcf, strcat(filename, '.svg')); 
    saveas(gcf, strcat(filename, '.png')); 
 end
-   
- %% Figure 4: Power plots
- 
-%% Plot mean with error bars before stimulation and during stimulation in the same analysis
-%% normalize mean SUA before computing the grand cell class mean
-%% plotting with power significant changes
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
-channelfilename = [newdatadir 'clean_origin_sup_50']; 
-data_file = load(channelfilename);
 
-
-channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
- peakvals = load([channeldir 'all_data_peaks']);
- sig95_idx = load( strcat(newdatadir,'roc_results95_stimonset_to1150ms.mat'));
-  contrast = {'DE0_NDE50','DE50_NDE0','DE50_NDE50'};
- 
-layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
-'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
-'','','M','M','M','P','M','M','M','M','P','P'};
-layer([1,46,55]) = [];
-
-Ses = struct();
-bs_data = struct();
-channum = 1: length(layer);
-mean_S_stim = nan(1646+128,38, length(channum));
-%compute the power spectrum
-%dim 2 = channel, dim3 = trials
- Fs = 1000;
- movingwin       = [.256 .001]; % length of moving window in seconds (should be to the power of 2) + length of sliding window
- params.tapers   = [2 3];
- params.Fs       = Fs;
- params.fpass    = [1 150];
- 
-
-clear i ;
- for i = 1:length(layer)
-      if ~isempty(data_file.clean_origin_data(i).unit)
-data = squeeze(data_file.clean_origin_data(i).unit(1:1901,:));
-   bsl = mean(data(400:599,:));
-   %stim and bl data
-   norm_mean_bs = nan(length(data(:,1)),1,length(data(1,:)));
-   norm_mean_bs = data(1:end,:) - bsl;
-  
-
-clear S namelist;
-[S,t,f]        = mtspecgramc(norm_mean_bs(:,:) ,movingwin, params); 
-
-mean_S_stim(129:end,:,i) = nanmean(S,3);
-      end
-
-%we can also store tvec and f in a struct, but they are all identical
- end
- 
-time_adj = -599:-472;
-x_stim = cat(2, time_adj , t*1000 -600) ;
-cellclass = ['M', 'P', 'K'];
-
-col(1,:) =[146/255 197/255 222/255] ; %--blue 
-col(2,:) = [251/255 154/255 153/255]; % -- red
-col(3,:) = [166/255 219/255 160/255]; % -- green
-
-
-for nc = 1:3
-clear layer_idx
-layer_idx = find(strcmp(layer, cellclass(nc)));
-%log_p_layer = zeros(length(layer),1);
-%log_p_layer(layer_idx) = logical(layer_idx);
- 
-
-%here we compute the individual normalized units necessary for the variance
-%and the data that we are about to plot
-%for both the baseline data and the stimulus data
-clear norm_chan normspec sig_su
-norm_chan = nan(length(mean_S_stim(:,1,1)), length(layer_idx));
-clear i;
-for i = 1:length(layer_idx)
-min_chan =min(squeeze(mean_S_stim(:,1,layer_idx(i))),[],1);
-max_chan = max(squeeze(mean_S_stim(:,1,layer_idx(i))),[],1);
-norm_chan(:,i) = (squeeze(mean_S_stim(:,1,layer_idx(i)))-min_chan)./(max_chan - min_chan);
-end
-
-normspec = nanmean(norm_chan,2);
-ci_low = normspec(:,1) - 1.96*std(norm_chan,0,2,'omitnan')./sqrt(length(norm_chan(1,:)));
-ci_high = normspec(:,1) + 1.96*std(norm_chan,0,2,'omitnan')./sqrt(length(norm_chan(1,:)));
-
-figure,
- h =subplot(1,1,1);
- plot(x_stim,normspec, 'LineWidth',1, 'Color',[40/255 40/255 40/255])
-
- hold on
- %when using ciplot, make sur there is no NAN in the vectors
- h1= ciplot(ci_low(130:end), ci_high(130:end),[-470:1174],col(nc,:),.5);
-     set(h1, 'edgecolor','none') 
- hold on
- 
- plot([0 0], ylim,'k')
- hold on
- plot([1150 1150], ylim,'k')
- hold on 
- 
- 
- cnt = 0;
-  for nunit = 1:length(layer_idx)
- 
-   
-part1 = nanmean(norm_chan(601:1175,nunit),1);
-part2 = nanmean(norm_chan(1176:1750,nunit), 1);
-
-
-if part1 > part2 && sig95_idx.all_sigs95(layer_idx(nunit)) ==1
-    cnt = cnt +1;
-     sig_su(:,cnt) = norm_chan(:,nunit); 
-       % plot(x_stim,norm_chan(:, nunit)')
-     %hold on
-end
-     
-   
-  end
-  
-  mean_sig_su = mean(sig_su,2);
-  plot(x_stim, mean_sig_su,  'LineWidth',1, 'Color',[141/255 140/255 140/255] )
-   xlim([-600 1250])
-   ylim([-0.1 1.15])
-   xticks([-500:500:1000])
- %ylim([-0.8 1.2])
-     set(gca, 'linewidth',2)
-      set(gca,'box','off') 
-      xlabel('Time from stimulus onset(ms)')
-   ylabel('Normalized Power at 4Hz(no units)')
-title({sprintf('%s class cells mean power at 4Hz vs time normalized', cellclass(nc))}, 'Interpreter', 'none')
-
-   % legend('Mean', 'Mean-1.96*sem', 'Mean+1.96*sem', 'Mean significant decrease', 'Location', 'bestoutside')
-    
-filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\power_plots\',contrast{2},sprintf('_%s_layer_4hz_gathered_sig_suamean_pow',cellclass(nc)));
-saveas(gcf, strcat(filename, '.svg'));
-saveas(gcf, strcat(filename, '.png'));
-end
-
-%% Plots of the TROUGHS
+%% Figure 7: Plots of the TROUGHS
 
 %% Troughs alignment (making the data ready for plotting
 newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_troughs_03032020\all_units\';
@@ -1090,7 +1669,77 @@ for i = channum
     end
 end  
 
-   %% plot with significant adapting units and overall mean in two separate sublots, stacking all peaks together
+%% Figure 7: Plot troughs of one single unit one after the other with 95% CI
+
+
+%%store all trials of a given peak, in a matrix, across all units
+%aligned_trials = nan(1204, length(layer_idx));
+mean_aligned = nan(1204, 1);
+stdev = nan(1204,1);
+%norm_aligned_trials = nan(1204, length(layer_idx));
+%norm_aligned_trials = nan(1204, length(layer_idx));
+
+       for pn = 1:3
+          % aligned_trials(250*(pn-1)+1:250*pn+1,i)= mean(suas_trials(layer_idx(i)).aligned(max_low_dist(layer_idx(i))-125:max_low_dist(layer_idx(i))+125,:,pn),2);
+           mean_aligned(250*(pn-1)+1:250*pn+1,1)= mean(suas_trials(1).aligned(max_low_dist(1)-1-124:max_low_dist(1)+125,:,pn),2);
+           stdev(250*(pn-1)+1:250*pn+1,1) = squeeze(std(suas_trials(1).aligned(max_low_dist(1)-1-124:max_low_dist(1)+125,:,pn),[],2));
+       end
+       %normalizing with max and min of each unit
+       %norm_aligned_trials(:,i) = (aligned_trials(:,i) - min(aligned_trials(:,i)))/(max(aligned_trials(:,i))-min(aligned_trials(:,i)));
+     
+  
+  %normalizing with max and min across units
+       maximum = max(mean_aligned,[],'all');
+       minimum = min(mean_aligned,[],'all');
+       norm_aligned_trials = (mean_aligned - minimum)/(maximum-minimum);
+
+%aligned_trials = aligned_trials(:,~all(isnan(aligned_trials)));
+
+%figure(); plot(1:length(aligned_trials(:,1)), aligned_trials(:,:))
+%figure(); plot(1:length(aligned_trials(:,4)), norm_aligned_trials(:,:))
+
+
+   h=  figure();
+     
+    nc =1;
+      nlines = 3;
+      for nl = 1:nlines  
+     
+      cihigh =  mean_aligned(250*(nl-1)+1:250*nl+1)+ 1.96*stdev(250*(nl-1)+1:250*nl+1)/sqrt(14);
+      cilow= mean_aligned(250*(nl-1)+1:250*nl+1)- 1.96*stdev(250*(nl-1)+1:250*nl+1)/sqrt(14);
+   
+      h2= subplot(1,3,nl);
+      plot(-125:125, mean_aligned(250*(nl-1)+1:250*nl+1), 'LineWidth',1);
+      hold on
+      h1= ciplot(cihigh,cilow,[-125:125],[40/255 40/255 40/255],0.1);
+      ylim([0 180])
+      xlim([-125 125])
+      set(h1, 'edgecolor','none') 
+      set(h2,'position',get(h2,'position').*[1 1 1.15 1])
+      set(gca,'box','off')
+      if nl == 1
+            ylabel({'\fontsize{14}Spike Rate (spikes/s)'});
+      end
+      if nl>1
+      ax1 = gca;                   
+      ax1.YAxis.Visible = 'off'; 
+      end
+      end
+
+      title('Single Unit Mean')
+    
+      legend('Mean', '95%CI')
+
+   
+   set(gcf,'Units','inches') 
+   set(gcf,'position',[1 1 15 11])
+   
+   
+   filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\','origin_unit_example_troughs');
+   saveas(gcf, strcat(filename, '.svg')); 
+   saveas(gcf, strcat(filename, '.png')); 
+   
+   %% Figure 7:  plot stacking all troughs together
    
  pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_troughs\';
 pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_troughs.csv'];
@@ -1105,9 +1754,15 @@ layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','
 layer([1,46,55]) = [];
 nlines = 5;
 cmaps = struct();
+%{
 cmaps(1).map =cbrewer2('Blues', nlines);
 cmaps(2).map =cbrewer2('Reds', nlines);
 cmaps(3).map =cbrewer2('Greens', nlines);
+%}
+cmaps(1).map =cbrewer2('Greys', nlines);
+cmaps(2).map =cbrewer2('Reds', nlines);
+cmaps(3).map =cbrewer2('Blues', nlines)
+
 ylims = [[0 140];[0 95];[0 140]];
 
 
@@ -1209,8 +1864,8 @@ end
    
    
    filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_troughs_03032020\plots\',strcat(sprintf('v_common_origin_data_aligned_%s_cells_cmap',cellclass(nc))));
-   saveas(gcf, strcat(filename, '.svg')); 
-   saveas(gcf, strcat(filename, '.png')); 
+   %saveas(gcf, strcat(filename, '.svg')); 
+   %saveas(gcf, strcat(filename, '.png')); 
 end
 
  

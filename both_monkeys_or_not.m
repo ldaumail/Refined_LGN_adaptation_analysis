@@ -1,6 +1,9 @@
 
 %this script intends to determine wether adaptation occurred in both monkeys or not. we look both
-%at the spiking activity and the power
+%at the spiking activity and the power statistical analysis results and
+%gather everything in a spreadsheet (or cell array here in matlb, might
+%have been possible to use a table in order to this
+%%% Written by Loic Daumail -edited on
 
 gendatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\';
 channelfilename = [gendatadir 'refined_dataset']; 
@@ -48,3 +51,39 @@ filename = gen_data_file.new_data(i).channel_data.filename;
   end
    end
 end
+
+%% Get file names
+cnt =0;
+selectedfilenames = cell(length(layer),1);
+for i = 1:length(spikpvalues(:,1))
+    if ~all(isnan(spikpvalues(i,:))) && ~isempty(filenames{i,2})
+     Key = cell2mat(strfind(filenames(i,1), '_'));
+     origin_name = filenames{i,1};
+     trimfilename = erase(filenames{i,1},origin_name(Key(2)+1:Key(4)));
+     selectedfilenames(i) = {trimfilename};
+     cnt = cnt+1;
+    end
+end
+T = table(selectedfilenames);
+
+ savefile = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\selected_units_filenames');
+   writetable(T,strcat(savefile, '.txt')); 
+   
+   %% Get Sessions
+   cnt =0;
+selectedfilenames = cell(length(layer),1);
+for i = 1:length(spikpvalues(:,1))
+    if ~all(isnan(spikpvalues(i,:))) && ~isempty(filenames{i,2})
+     Key = cell2mat(strfind(filenames(i,1), '_'));
+     origin_name = filenames{i,1};
+     trimfilename = erase(filenames{i,1},origin_name(Key(2):end));
+     selectedfilenames(i) = {trimfilename};
+     cnt = cnt+1;
+    end
+end
+T = table(selectedfilenames);
+
+ savefile = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\selected_units_sessions');
+  % writetable(T,strcat(savefile, '.txt')); 
+   save(strcat(savefile, '.mat'), 'selectedfilenames');
+   

@@ -38,7 +38,8 @@ clear i
  
    blankcontrast = data_file.new_data(i).channel_data.contrast ==  0 & data_file.new_data(i).channel_data.fixedc ==  0;
    highcontrast = data_file.new_data(i).channel_data.contrast >=  0.5 & data_file.new_data(i).channel_data.fixedc ==  0; 
-    
+ 
+   
     trialidx = 1:length(data_file.new_data(i).channel_data.sdftr_chan(1,:));
     raw_bs = nan(length(xabs), length(trialidx));
     filtered_dSUA = nan(length(xabs), length(trialidx));
@@ -227,7 +228,7 @@ clear i
    
  data_peaks(i).namelist = all_pks(:,~all(isnan(all_pks)));
  all_pks = all_pks(:,~all(isnan(all_pks)));
-channelfilename = [newdatadir 'su_peaks_03032020_corrected\' filename];
+channelfilename = [newdatadir 'su_peaks_03032020_corrected\individual_units\' filename];
 save(strcat(channelfilename, '.mat'), 'all_pks');
  end
  allfilename = [newdatadir 'su_peaks_03032020_corrected\all_units\all_data_peaks'];
@@ -239,6 +240,7 @@ save(strcat(channelfilename, '.mat'), 'all_pks');
  allfilename = [newdatadir 'su_peaks_03032020_corrected\all_units\clean_origin_sup_50'];
  save(strcat(allfilename, '.mat'), 'clean_origin_data');
  
+ %count number of remaining units after preproc
    cnt =0;
    for i =1:length(data_peaks)
        if ~isempty(data_peaks(i).namelist)
@@ -246,4 +248,6 @@ save(strcat(channelfilename, '.mat'), 'all_pks');
        end
         
    end
+   
+   %
    

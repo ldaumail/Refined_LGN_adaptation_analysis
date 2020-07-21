@@ -6,7 +6,7 @@
 %some lines were commented out and replaced in order to also isolate
 %normalize peak values, averaged across trials in order to plot the
 %normalized average peak values of each unit on R
-
+%Written by Loic Daumail, last edited on 6/29/2020
 
 newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 channelfilename = [newdatadir 'clean_origin_sup_50']; 
@@ -115,12 +115,12 @@ norm_unit = nan(size(origin_dSUA));
  filenames(i,2) = cellstr(layer(i));
  peaks = peak_vals(i).peak;
 channelfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\' filename];
-%save(strcat(channelfilename, '.mat'), 'peaks');
+save(strcat(channelfilename, '.mat'), 'peaks');
 end  
- %mean_peak_vals.peak = mean_peaks;
+ mean_peak_vals.peak = mean_peaks;
  allfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\all_raw_data_peaks'];
  save(strcat(allfilename, '.mat'), 'peak_vals');
  allfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\all_raw_mean_data_peaks'];
- %save(strcat(allfilename, '.mat'), 'mean_peaks');
+ save(strcat(allfilename, '.mat'), 'mean_peaks');
  savefilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\filenames_layers'];
- %save(strcat(savefilename, '.csv'), 'filenames');
+ save(strcat(savefilename, '.csv'), 'filenames');

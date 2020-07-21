@@ -30,7 +30,7 @@ xabs = -100:1301;
  params.fpass    = [1 150];
 
 clear i ;
- for i = 1:length(channum)
+  for i = 1:length(channum)
      if ~isempty(data_file.clean_origin_data(i).unit)
 data = squeeze(data_file.clean_origin_data(i).unit(401:1900,:,:));
    bsl = mean(data(1:200,:));
@@ -53,38 +53,32 @@ tvec = t*1000 -129;
      end
  end
 
-%plot the mean data only in the 5Hz range 
 
-layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
-'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
-'','','M','M','M','P','M','M','M','M','P','P'};
-layer([1,46,55]) = [];
-layer_idx = find(strcmp(layer, 'M'));
+
+%% Power spectrum plot
 figure, 
-normspec = (nanmean(mean_S(:,:,layer_idx),3) - min(nanmean(mean_S(:,:,layer_idx),3)))./(max(nanmean(mean_S(:,:,layer_idx),3)) - min(nanmean(mean_S(:,:,layer_idx),3)));
-%time_adj_data = nan(length(tvec),1);
-%time_adj_data(129:end,1) = normspec(:,1);
-plot(tvec,squeeze(normspec(:,1))')
-%spec = nanmean(mean_S,3);
-%imagesc(tvec,sort(f),spec')
-%ylim([3.9 60]); 
-%set(gca,'ydir','normal')
-      
-title({'Mean power at 4 Hz', sprintf('')}, 'Interpreter', 'none')
-    xlabel('Time from stimulus onset(ms)')
-    ylabel('Power (Normalized)')
-filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\mean_power_4hz');
-saveas(gcf, strcat(filename, '.png')); 
-saveas(gcf, strcat(filename, '.svg')); 
-figure, 
-spec = nanmean(mean_S,3);
-imagesc(tvec,sort(f),mean_S(:,:,1)')
+
+imagesc(tvec,sort(f),mean_S(:,:,i)')
 ylim([2 20]); 
 set(gca,'ydir','normal')
 title({'Mean spectrogram', sprintf('')}, 'Interpreter', 'none')
     xlabel('Time from stimulus onset(ms)')
     ylabel('Frequency band (Hz)')
 filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\mean_powersepc_imagesc');
+saveas(gcf, strcat(filename, '.png')); 
+saveas(gcf, strcat(filename, '.svg')); 
+%% plot the mean power only in the 5Hz range for 1 unit across trials 
+
+figure, 
+normspec = (mean_S(:,:,i) - min(mean_S(:,:,i)))./(max(mean_S(:,:,i)) - min(mean_S(:,:,i)));
+plot(tvec,squeeze(normspec(:,1))')
+
+set(gca, 'box', 'off')
+      
+title({'Mean power at 4 Hz', sprintf('')}, 'Interpreter', 'none')
+    xlabel('Time from stimulus onset(ms)')
+    ylabel('Power (Normalized)')
+filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\mean_power_4hz_1unit');
 saveas(gcf, strcat(filename, '.png')); 
 saveas(gcf, strcat(filename, '.svg')); 
 
@@ -105,7 +99,8 @@ part2 = nanmean(squeeze(Ses(i).namelist2(576:1150,1,:)), 1);
     cond1               = part2;
     cond2               = part1;
     end
-  %{  
+ %% Plot T1 and T2 power distributions of one unit across trials
+ %{
 figure(); boxplot([cond1' cond2'],'notch','on','labels',{'cond1','cond2'}); hold on    
 x=ones(length(cond1),1).*(1+(rand(length(cond1),1)-0.5)/5);
 x1=ones(length(cond1),1).*(1+(rand(length(cond1),1)-0.5)/10);
@@ -116,13 +111,29 @@ ylabel('Power (spikes^2/s^2)')
 filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\distributions_cond1_cond2');
 saveas(gcf, strcat(filename, '.png')); 
 saveas(gcf, strcat(filename, '.svg')); 
-  
-%}
+  %}
+%% Plot AUC of our two samples
+
     [X,Y,T,AUC]           = perfcurve([ones(length(cond1),1); repmat(2,length(cond2),1)],[cond1 cond2],1);
     NP                    = length(cond2);
     PR                    = length(cond1);
     catdat                = [cond1 cond2];
+%{
+    figure();
+plot(X,Y)
+set(gca, 'box','off')   
+%}
+%% Plot  Receiver Operating Characteristics curve examples
 
+ shufPR         = catdat(randperm(length(catdat),PR));
+ shufNP         = catdat(randperm(length(catdat),NP));
+[Xshuf,Yshuf,~, shufAUC]    = perfcurve([ones(PR,1); repmat(2,NP,1)],[shufPR shufNP],1);
+%{
+figure();
+plot(Xshuf,Yshuf)
+set(gca, 'box','off')
+%}   
+ %% Perform repeated ROC on randomly sampled data points
 
     for r       = 1:reps
        clear shufNP shufPR
