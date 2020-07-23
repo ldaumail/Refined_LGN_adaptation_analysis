@@ -1363,29 +1363,36 @@ end
   figure();  
 
          cmap = cmaps(nc).map ;
-         cmap = cmap(2:5,:);
+         cmap = cmap(5:-1:2,:);
          colormap(cmap); 
         idx = repmat(1:4,[251,1]);
-  for pn = 1:4
-           h1 = subplot(1,4,pn);
-           for ln = 1:4
+         zline = nan(4,1);
+        zx = nan(4,1);
+        subgp = {'Overall Mean', 'Not Significant Mean', 'Sig Adapt Mean', 'Sig Facilitated Mean'};
+  for ln = 1:4
+           h1 = subplot(1,4,ln);
+           for pn = 1:4
           % m=   mesh(-125:125,1:4,gathered_means(250*(pn-1)+1:250*pn+1,:)', 'MeshStyle','row','LineStyle', '-', 'LineWidth', 2); %'FaceAlpha', 0);
          %   m.CData = idx';
         %    m=   plot3(repmat(-125:125,[4,1])',idx, gathered_means(250*(pn-1)+1:250*pn+1,:), 'LineStyle','-','LineWidth', 2); 
-            m=   plot3(-125:125, idx(:,ln), gathered_means(250*(pn-1)+1:250*pn+1,ln), 'LineStyle','-','LineWidth', 2, 'color', cmap(ln,:)); 
+            m=   plot3(-125:125, idx(:,pn), gathered_means(250*(pn-1)+1:250*pn+1,ln), 'LineStyle','-','LineWidth', 2, 'color', cmap(pn,:)); 
         hold on
+           
+           zline(pn) = max(gathered_means(250*(pn-1)+1:250*pn+1,ln),[],1);
+           [~, xzline] = max(gathered_means(250*(pn-1)+1:250*pn+1,ln),[],1);
+           zx(pn) = xzline -125; %adjusting to center the indexs on the max values
            end
+           %set(gca, 'YTickLabel', sprintf('Pk%d', 1:4) )
            set(gca, 'YTick', 1:4)
+           set(gca, 'YDir', 'reverse')
            ylim([1 4])
            zlim(zlims(nc,:))
-           set(gca, 'YTickLabel', {'Overall Mean', 'Not Significant Mean', 'Sig Adapt Mean', 'Sig Facilitated Mean'})
+          
            hold on
-           zline = max(gathered_means(250*(pn-1)+1:250*pn+1,:),[],1);
-           [~, xzline] = max(gathered_means(250*(pn-1)+1:250*pn+1,:),[],1);
-           zx = xzline -125; %adjusting to center the indexs on the max values
+          
            line(zx,1:4, zline, 'LineStyle', '--', 'LineWidth', 2, 'Color', 'k')
            set(gca,'box','off')
-           xlabel(sprintf('Pk%d', pn));
+           xlabel(sprintf('%s',char(subgp(ln))));
            zlabel('Spike rate (spikes/sec)');
            view(-70,10)
           
