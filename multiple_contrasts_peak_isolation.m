@@ -1,6 +1,6 @@
 
 
-%% First: use the list of single units file names that were selected in the analysis with
+%% First: use the list of single units file names that were selected in the adaptation analysis with
 %high contrast
 selectUnitsFilenames =load('C:\Users\daumail\Documents\LGN_data\single_units\s_potentials_analysis\analysis\single_units_ns6_metadata.mat');
 filenames = selectUnitsFilenames.STIMFileName;
@@ -106,7 +106,9 @@ for n = 1:length(contLims)-1
        %spiking activity related variables
        mean_wnd1_DE =mean_wnd1(contrastBin);
        filtered_dSUA_high = filtBs(:,contrastBin);
-       origin_data_high = origin_data(:, contrastBin);
+       filtered_dSUA_blank = filtBs(:,blankcontrast);
+       origin_data_high = origin_data(:,contrastBin);
+       origin_data_blank = origin_data(:,blankcontrast);
        %first peak location related variables 
        sua_bsl =  mean(filtered_dSUA_high(1:200,:),1);
 
@@ -222,23 +224,25 @@ for n = 1:length(contLims)-1
         origin_data_high(:,tr) = nan(length(origin_data_high(:,tr)),1);
             end
         end
-        filtered_dSUA_high = filtered_dSUA_high(:,~all(isnan(filtered_dSUA_high))); % for nan - cols
+       filtered_dSUA_high = filtered_dSUA_high(:,~all(isnan(filtered_dSUA_high))); % for nan - cols
        all_locsdSUA_trials =  all_locsdSUA_trials(:,~all(isnan(all_locsdSUA_trials)));
        all_pks = all_pks(:, ~all(isnan(all_pks)));
        origin_data_high = origin_data_high(:,~all(isnan(origin_data_high)));
 
 
       % if length(filtered_dSUA_high(1,:)) >=10
-     
- 
-      
+
        %eval(['peakLocs.' num2str(i) '.bin' num2str(n) ' = all_locsdSUA_trials;'])
       
        filename = sprintf('x%s',char(filename));
        binNb = sprintf('bin%d', n);
        peakLocs.(filename).(binNb) = all_locsdSUA_trials; %create dynamical peak locations structures
        FiltMultiContSUA.(filename).(binNb) =  filtered_dSUA_high;
+       FiltMultiContSUA.(filename).bin0 =  filtered_dSUA_blank;
        NoFiltMultiContSUA.(filename).(binNb) = origin_data_high;
+       NoFiltMultiContSUA.(filename).bin0 = origin_data_blank;
+       FiltMultiContSUA.(filename).cellclass = cellClass{i}; %get the cell class of selected units
+       NoFiltMultiContSUA.(filename).cellclass = cellClass{i};
       % elseif length(filtered_dSUA_high(1,:)) <10  
        % all_pks(:,:) = [];
        % clean_high_SUA(i).namelist =  [];
@@ -254,7 +258,7 @@ for n = 1:length(contLims)-1
         end
      end
 end
-allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\contrast_response_curves\all_units\all_locs\all_locs_data_95CI';
+allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\contrast_response_curves\all_units\all_locs_data_95CI';
 save(strcat(allfilename, '.mat'), 'peakLocs');
 
 
@@ -294,11 +298,6 @@ all_locsdSUA = load(locsfilename);
 %channelfilename = [gendatadir 'refined_dataset']; 
 %gen_data_file = load(channelfilename);
 
-layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
-'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
-'','','M','M','M','P','M','M','M','M','P','P'};
-layer([1,46,55]) = [];
-
 
 xabs = -199:1300;
 nyq = 500;
@@ -308,8 +307,9 @@ mean_origin_dSUA = struct();
 mean_filtered_dSUA = struct();
 suas_aligned_trials = struct();
 peak_vals = struct();
-mean_peak_vals = struct();
+%mean_peak_vals = struct();
 mean_peaks =struct();
+median_peaks = struct();
 up_dist = nan(1, length(channum),4);
 max_low_dist = struct();
 all_locsdSUA_filtered = nan(1,length(channum),4);
@@ -382,11 +382,20 @@ for i = channum
                %mean peaks for the R plots 
                mean_peaks.(filename).(binNb) = mean(peak_vals.(filename).(binNb),2);
 
+               mean_peaks.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
+               
+               %median
+               median_peaks.(filename).(binNb) = median(peak_vals.(filename).(binNb),2);
+
+               median_peaks.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
+         
                 %peak data for the stats
             %  peak_vals(i).peak = [];
               %peak data for the R plots
              % mean_peaks(:,i) = nan(4,1);
-        end 
+        end
+        mean_peaks.(filename).bin0 = mean(mean(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).bin0(401:1900,:),1));
+        median_peaks.(filename).bin0 = median(median(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).bin0(401:1900,:),1));      
     end
  %filename = [gen_data_file.new_data(i).channel_data.filename, f{2}];
  %filename = erase(filename, '.mat');
@@ -396,11 +405,256 @@ for i = channum
 %channelfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\' filename];
 %save(strcat(channelfilename, '.mat'), 'peaks');
 end  
- mean_peak_vals.peak = mean_peaks;
- allfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\all_raw_data_peaks'];
- save(strcat(allfilename, '.mat'), 'peak_vals');
- allfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\all_raw_mean_data_peaks'];
+ %mean_peak_vals.peak = mean_peaks;
+ allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\contrast_response_curves\all_units\all_unfiltered_data_peaks';
  save(strcat(allfilename, '.mat'), 'mean_peaks');
- savefilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\filenames_layers'];
- save(strcat(savefilename, '.csv'), 'filenames');
+ %allfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\all_raw_mean_data_peaks'];
+ %save(strcat(allfilename, '.mat'), 'mean_peaks');
+ %savefilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\filenames_layers'];
+ %save(strcat(savefilename, '.csv'), 'filenames');
+ allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\contrast_response_curves\all_units\all_unfiltered_median_peaks';
+ save(strcat(allfilename, '.mat'), 'median_peaks');
+ % post peak isolation count
+ 
+ cellclass = {'M','P','K'};
+ cnt = zeros(4,length(contLims)-1, length(cellclass));
+ 
+for c = 1:length(cellclass)
+    cellC =sprintf('%s',cellclass{c});
+
+    for i =1:length(fieldnames(peak_vals))
+        filename = filenames{i};
+
+        if nnz(strcmp(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass,cellC))
+
+            for bin = 1:length(contLims)-1
+                binNb = sprintf('bin%d',bin);
+                
+                if nnz(strcmp(fieldnames(peak_vals.(filename)), binNb))
+                    for pn =1:4
+                        cnt(pn, bin, c) =cnt(pn, bin, c)+ numel(peak_vals.(filename).(binNb)(pn,:));
+
+
+                    end
+                end
+            end
+        end
+
+    end
+end
+ 
+ %% Plot the contrast response curves of each cell class
+ clear all
+ 
+ estAvgCont = [0.01,0.05,0.2,0.4,0.6,0.85];
+ %realAvgCont =  need to compute it from the actual contrast values
+ 
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\contrast_response_curves\all_units\';
+channelfilename = [newdatadir 'NoFiltMultiContSUA']; 
+NoFiltMultiContSUA = load(channelfilename);
+filenames = fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA);
+
+meanPks = load([newdatadir 'all_unfiltered_data_peaks']);
+ 
+
+class ={'M','P','K'};
+
+for c = 1:length(class)
+mean_pk1 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(estAvgCont)+1); 
+mean_pk4 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(estAvgCont)+1); 
+
+    for i =1:length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA))
+         filename = filenames{i};
+        if strcmp(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass, class{c})
+            for bin = 1:length(estAvgCont)
+                binNb = sprintf('bin%d',bin);
+                if nnz(strcmp(fieldnames(meanPks.mean_peaks.(filename)),binNb))
+                    
+                    mean_pk1(i,bin+1) = meanPks.mean_peaks.(filename).(binNb)(1);
+                    mean_pk4(i,bin+1) = meanPks.mean_peaks.(filename).(binNb)(4);
+                end
+            end
+             mean_pk1(i,1) = meanPks.mean_peaks.(filename).bin0(1);
+             mean_pk4(i,1) = meanPks.mean_peaks.(filename).bin0(1);
+        end
+    end
+    
+    meanAllPk1 = nanmean(mean_pk1,1);
+    meanAllPk4 = nanmean(mean_pk4,1);
+    
+    idxs = ~isnan(meanAllPk1);
+    
+    figure();
+    semilogx(estAvgCont(idxs),meanAllPk1(idxs), 'Marker', 'o','col', 'r')
+    %plot(estAvgCont(idxs),meanAllPk1(idxs), 'Marker', 'o','col', 'r')
+    hold on
+    sem1 = std(mean_pk1, 'omitnan')/sqrt(length(mean_pk1(~isnan(mean_pk1(:,1)),1)));
+    h1= ciplot( meanAllPk1(idxs)+ 1.96*sem1(idxs),  meanAllPk1(idxs)- 1.96*sem1(idxs), estAvgCont(idxs),'r',0.1);
+     set(h1, 'edgecolor','none') 
+    hold on
+    semilogx(estAvgCont(idxs),meanAllPk4(idxs), 'Marker', 'o', 'col', 'b')
+    %plot(estAvgCont(idxs),meanAllPk4(idxs), 'Marker', 'o', 'col', 'b')
+    hold on
+    sem4 =std(mean_pk4, 'omitnan')/sqrt(length(mean_pk4(~isnan(mean_pk4(:,1)),1)));
+    h2= ciplot( meanAllPk4(idxs)+ 1.96*sem4(idxs),  meanAllPk4(idxs)- 1.96*sem4(idxs), estAvgCont(idxs),'b',0.1); %[40/255 40/255 40/255]
+      set(h2, 'edgecolor','none') 
+  
+    xlabel('Contrast')
+    ylabel('Spike rate (spikes/sec)')
+    title(sprintf('Average contrast response curve of %s cells',class{c}))
+    legend('Pk1', '95%CI Pk1','Pk4','95%CI Pk4', 'Location', 'bestoutside')
+    xlim([0 1])
+    set(gca,'box','off')
+    set(gca, 'linewidth',2)
+    plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\contrast_response_curves\plots\',strcat(sprintf('crf%s_cells_blank_log',class{c})));
+   % saveas(gcf,strcat(plotdir, '.png'));
+end
+                
+    
+%% plot normalized crfs
+
+ estAvgCont = [0.01,0.05,0.2,0.4,0.6,0.85];
+ %realAvgCont =  need to compute it from the actual contrast values
+ 
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\contrast_response_curves\all_units\';
+channelfilename = [newdatadir 'NoFiltMultiContSUA']; 
+NoFiltMultiContSUA = load(channelfilename);
+filenames = fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA);
+
+meanPks = load([newdatadir 'all_unfiltered_data_peaks']);
+ 
+
+class ={'M','P','K'};
+
+for c = 1:length(class)
+mean_pk1 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(estAvgCont)+1); 
+mean_pk4 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(estAvgCont)+1); 
+
+    for i =1:length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA))
+         filename = filenames{i};
+        if strcmp(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass, class{c})
+             mean_pk1(i,1) = meanPks.mean_peaks.(filename).bin0(1);
+             mean_pk4(i,1) = meanPks.mean_peaks.(filename).bin0(1);
+            for bin = 1:length(estAvgCont)
+                binNb = sprintf('bin%d',bin);
+                if nnz(strcmp(fieldnames(meanPks.mean_peaks.(filename)),binNb))
+                    
+                    mean_pk1(i,bin+1) = meanPks.mean_peaks.(filename).(binNb)(1);
+                    mean_pk4(i,bin+1) = meanPks.mean_peaks.(filename).(binNb)(4);
+    
+                end
+            end
+            
+        end
+    end
+    
+    normMeanPk1 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(estAvgCont)+1);
+    normMeanPk4 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(estAvgCont)+1);
+    for j =1:length(mean_pk1(:,1))
+        normMeanPk1(j,:) = (mean_pk1(j,:)-min(mean_pk1(j,:),[],'omitnan'))/(max(mean_pk1(j,:),[],'omitnan')-min(mean_pk1(j,:),[],'omitnan'));
+        normMeanPk4(j,:) = (mean_pk4(j,:)-min(mean_pk4(j,:)))/(max(mean_pk4(j,:))-min(mean_pk4(j,:)));
+    end
+        
+    
+    meanAllPk1 = nanmean(mean_pk1,1);
+    meanAllPk4 = nanmean(mean_pk4,1);
+    
+    normMeanAllPk1 = (meanAllPk1 - min([meanAllPk1,meanAllPk4]))/(max([meanAllPk1,meanAllPk4])-min([meanAllPk1,meanAllPk4]));
+    normMeanAllPk4 = (meanAllPk4 - min([meanAllPk1,meanAllPk4]))/(max([meanAllPk1,meanAllPk4])-min([meanAllPk1,meanAllPk4]));
+   
+    idxs = ~isnan(normMeanAllPk1);
+    
+    figure();
+    %semilogx(estAvgCont(idxs),normMeanAllPk1(idxs), 'Marker', 'o','col', 'r')
+    plot(estAvgCont(idxs),normMeanAllPk1(idxs), 'Marker', 'o','col', 'r')
+    hold on
+    sem1 = std(normMeanPk1, 'omitnan')/sqrt(length(normMeanPk1(~isnan(normMeanPk1(:,1)),1)));
+    h1= ciplot( normMeanAllPk1(idxs)+ 1.96*sem1(idxs),  normMeanAllPk1(idxs)- 1.96*sem1(idxs), estAvgCont(idxs),'r',0.1);
+      set(h1, 'edgecolor','none') 
+    hold on
+    %semilogx(estAvgCont(idxs),normMeanAllPk4(idxs), 'Marker', 'o', 'col', 'b')
+    plot(estAvgCont(idxs),normMeanAllPk4(idxs), 'Marker', 'o', 'col', 'b')
+    hold on
+    sem4 =std(normMeanPk4, 'omitnan')/sqrt(length(normMeanPk4(~isnan(normMeanPk4(:,1)),1)));
+    h2= ciplot( normMeanAllPk4(idxs)+ 1.96*sem4(idxs),  normMeanAllPk4(idxs)- 1.96*sem4(idxs), estAvgCont(idxs),'b',0.1); %[40/255 40/255 40/255]
+      set(h2, 'edgecolor','none') 
+  
+    xlabel('Contrast')
+    ylabel('Spike rate (spikes/sec)')
+    title(sprintf('Average contrast response curve of %s cells',class{c}))
+    legend('Pk1', '95%CI Pk1','Pk4','95%CI Pk4', 'Location', 'bestoutside')
+    xlim([0 1])
+    ylim([0 1])
+    set(gca,'box','off')
+    set(gca, 'linewidth',2)
+    plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\contrast_response_curves\plots\',strcat(sprintf('normalized_crf%s_cells_blank',class{c})));
+   saveas(gcf,strcat(plotdir, '.png'));
+end
+ 
+ 
+%% plot median
+
+estAvgCont = [0.01,0.05,0.2,0.4,0.6,0.85];
+ %realAvgCont =  need to compute it from the actual contrast values
+ 
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\contrast_response_curves\all_units\';
+channelfilename = [newdatadir 'NoFiltMultiContSUA']; 
+NoFiltMultiContSUA = load(channelfilename);
+filenames = fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA);
+
+medianPks = load([newdatadir 'all_unfiltered_median_peaks']);
+ 
+
+class ={'M','P','K'};
+
+for c = 1:length(class)
+median_pk1 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(estAvgCont)+1); 
+median_pk4 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(estAvgCont)+1); 
+
+    for i =1:length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA))
+         filename = filenames{i};
+        if strcmp(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass, class{c})
+            for bin = 1:length(estAvgCont)
+                binNb = sprintf('bin%d',bin);
+                if nnz(strcmp(fieldnames(medianPks.median_peaks.(filename)),binNb))
+                    
+                    median_pk1(i,bin+1) = medianPks.median_peaks.(filename).(binNb)(1);
+                    median_pk4(i,bin+1) = medianPks.median_peaks.(filename).(binNb)(4);
+                end
+            end
+             median_pk1(i,1) = medianPks.median_peaks.(filename).bin0(1);
+             median_pk4(i,1) = medianPks.median_peaks.(filename).bin0(1);
+        end
+    end
+    
+    medianAllPk1 = nanmedian(median_pk1,1);
+    medianAllPk4 = nanmedian(median_pk4,1);
+    
+    idxs = ~isnan(medianAllPk1);
+    
+    figure();
+    %semilogx(estAvgCont(idxs),medianAllPk1(idxs), 'Marker', 'o','col', 'r')
+    plot(estAvgCont(idxs),medianAllPk1(idxs), 'Marker', 'o','col', 'r')
+    hold on
+    sem1 = std(median_pk1, 'omitnan')/sqrt(length(median_pk1(~isnan(median_pk1(:,1)),1)));
+    h1= ciplot( medianAllPk1(idxs)+ 1.96*sem1(idxs),  medianAllPk1(idxs)- 1.96*sem1(idxs), estAvgCont(idxs),'r',0.1);
+     set(h1, 'edgecolor','none') 
+    hold on
+    %semilogx(estAvgCont(idxs),medianAllPk4(idxs), 'Marker', 'o', 'col', 'b')
+    plot(estAvgCont(idxs),medianAllPk4(idxs), 'Marker', 'o', 'col', 'b')
+    hold on
+    sem4 =std(median_pk4, 'omitnan')/sqrt(length(median_pk4(~isnan(median_pk4(:,1)),1)));
+    h2= ciplot( medianAllPk4(idxs)+ 1.96*sem4(idxs),  medianAllPk4(idxs)- 1.96*sem4(idxs), estAvgCont(idxs),'b',0.1); %[40/255 40/255 40/255]
+      set(h2, 'edgecolor','none') 
+  
+    xlabel('Contrast')
+    ylabel('Spike rate (spikes/sec)')
+    title(sprintf('Median contrast response curve of %s cells',class{c}))
+    legend('Pk1', '95%CI Pk1','Pk4','95%CI Pk4', 'Location', 'bestoutside')
+    xlim([0 1])
+    set(gca,'box','off')
+    set(gca, 'linewidth',2)
+    plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\contrast_response_curves\plots\',strcat(sprintf('median_crf%s_cells_blank',class{c})));
+    saveas(gcf,strcat(plotdir, '.png'));
+end
 
