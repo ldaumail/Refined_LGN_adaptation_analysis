@@ -15,8 +15,7 @@ cellClass = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P',
 cellClass([1,46,55]) = [];
 
 
-%% SECOND: isolate peak locations of smoothed data ==> use code from
-%%"get_clean_peaks_and_data.m",
+%% SECOND: isolate peak locations of smoothed data ==> use code from %%"get_clean_peaks_and_data.m",
         % use multiple contrast levels
         % select trials the same way..?
  %% find peak locations of smoothed data, to further allow us to isolate peak values of unfiltered data in order to analyze them on R and fit a LMER
@@ -39,6 +38,7 @@ nyq = 500;
 
  FiltMultiContSUA =  struct();
  NoFiltMultiContSUA = struct();
+ BsNoFiltMultiContSUA = struct();
 %data_peaks = struct();
 peakLocs = struct(); %store filtered data peak locations used to isolate peak values of unfiltered data
 
@@ -46,16 +46,16 @@ for n = 1:length(contLims)
     clear i
      for i = channum
         if ~isempty(filenames{i})
-       filename = filenames(i);
+           filename = filenames(i);
 
-       blankcontrast = unitsData.new_data(i).channel_data.contrast ==  0 & unitsData.new_data(i).channel_data.fixedc ==  0;
-       if n == 1
-       contrastBin =unitsData.new_data(i).channel_data.contrast >=  0.5 & unitsData.new_data(i).channel_data.fixedc ==  0; 
-       else
-           if n>1
-       contrastBin = (unitsData.new_data(i).channel_data.fixedc >  contLims(n-1) & unitsData.new_data(i).channel_data.fixedc <= contLims(n))& unitsData.new_data(i).channel_data.contrast >=  0.5; 
+           blankcontrast = unitsData.new_data(i).channel_data.contrast ==  0 & unitsData.new_data(i).channel_data.fixedc ==  0;
+           if n == 1
+               contrastBin =unitsData.new_data(i).channel_data.contrast >=  0.5 & unitsData.new_data(i).channel_data.fixedc ==  0; 
+               else
+               if n>1
+                   contrastBin = (unitsData.new_data(i).channel_data.fixedc >  contLims(n-1) & unitsData.new_data(i).channel_data.fixedc <= contLims(n))& unitsData.new_data(i).channel_data.contrast >=  0.5; 
+               end
            end
-       end
         trialidx = 1:length(unitsData.new_data(i).channel_data.sdftr_chan(1,:)); %trial number of each trial for a given unit
         noFiltBs = nan(length(xabs), length(trialidx)); %to store the baseline corrected unfiltered data
         filtBs = nan(length(xabs), length(trialidx));
@@ -73,30 +73,31 @@ for n = 1:length(contLims)
 
          for tridx = trialidx
 
-        all_data = unitsData.new_data(i).channel_data.sdftr_chan(401:1900,tridx);
-        origin_data(:,tridx) = unitsData.new_data(i).channel_data.sdftr_chan(:,tridx);
-        noFiltBs(:,tridx) = all_data(1:end)- mean(all_data(1:200));
-
-        lpc       = 4.5; %low pass cutoff
-        lWn       = lpc/nyq;
-        [bwb,bwa] = butter(4,lWn,'low');
-        lpdSUA      = filtfilt(bwb,bwa, noFiltBs(:,tridx));
-
-
-        filtBs(:,tridx) = lpdSUA;
-        %all_norm_lpdSUA(:,tridx) = (lpdSUA - min(lpdSUA))/(max(lpdSUA)- min(lpdSUA));
-        mean_wnd1(tridx) = mean(lpdSUA(201:480));
-
-        %%% power
+                all_data = unitsData.new_data(i).channel_data.sdftr_chan(401:1900,tridx);
+                origin_data(:,tridx) = unitsData.new_data(i).channel_data.sdftr_chan(:,tridx);
+                noFiltBs(:,tridx) = all_data(1:end)- mean(all_data(1:200));
+                
+               
+                lpc       = 4.5; %low pass cutoff
+                lWn       = lpc/nyq;
+                [bwb,bwa] = butter(4,lWn,'low');
+                lpdSUA      = filtfilt(bwb,bwa, noFiltBs(:,tridx));
 
 
-        [powerstim(tridx,:), freqstim(tridx,:)] = calcFFT(all_data(200:1350));
+                filtBs(:,tridx) = lpdSUA;
+                %all_norm_lpdSUA(:,tridx) = (lpdSUA - min(lpdSUA))/(max(lpdSUA)- min(lpdSUA));
+                mean_wnd1(tridx) = mean(lpdSUA(201:480));
 
-        %find the index of the frequency vector closest to 4hz and point to the
-        %power value of this index for every trial, and store the value in
-        %fourhzpower
-        [val,index] = min(abs(4-freqstim(tridx,:)));
-        fourhzpowerstim(tridx,1) = powerstim(tridx,index);
+                %%% power
+
+
+                [powerstim(tridx,:), freqstim(tridx,:)] = calcFFT(all_data(200:1350));
+
+                %find the index of the frequency vector closest to 4hz and point to the
+                %power value of this index for every trial, and store the value in
+                %fourhzpower
+                [val,index] = min(abs(4-freqstim(tridx,:)));
+                fourhzpowerstim(tridx,1) = powerstim(tridx,index);
 
          end
 
@@ -111,19 +112,22 @@ for n = 1:length(contLims)
        filtered_dSUA_blank = filtBs(:,blankcontrast);
        origin_data_high = origin_data(:,contrastBin);
        origin_data_blank = origin_data(:,blankcontrast);
+       bsl_origin_data_high = noFiltBs(:,contrastBin);
        %first peak location related variables 
        sua_bsl =  mean(filtered_dSUA_high(1:200,:),1);
-
+       
 
        for tr = 1:length(powerDE)
           if mean_wnd1_DE(tr) > mean(sua_bsl)+1.96*std(sua_bsl)/sqrt(length(sua_bsl))  && powerDE(tr) > mean(power0)+1.96*std(power0)/sqrt(length(power0)) %/sqrt(length(sua_bsl)) /sqrt(length(power0))
 
               filtered_dSUA_high(:,tr) = filtered_dSUA_high(:,tr);
               origin_data_high(:,tr) = origin_data_high(:,tr);
+              bsl_origin_data_high(:,tr) = bsl_origin_data_high(:,tr);
            else
 
                filtered_dSUA_high(:,tr) = nan(length(filtered_dSUA_high(:,tr)),1);
                origin_data_high(:,tr) =  nan(length(origin_data_high(:,tr)),1);
+               bsl_origin_data_high(:,tr) = nan(length(bsl_origin_data_high(:,tr)),1);
            end
        end
 
@@ -153,28 +157,34 @@ for n = 1:length(contLims)
             if nnz(~isnan(all_locsdSUA_trials(:,trial))) >= 4 && ~all(isnan(all_locsdSUA_trials(:,trial)))
                  %adjust location to the first data point of lpsu (+ln),
 
-        all_pks(:,trial) = filtered_dSUA_high(all_locsdSUA_trials(1:4,trial), trial);
-        filtered_dSUA_high(:,trial) = filtered_dSUA_high(:,trial); 
-        all_locsdSUA_trials(:,trial) = all_locsdSUA_trials(:,trial);
-        origin_data_high(:,trial) = origin_data_high(:,trial);
+                all_pks(:,trial) = filtered_dSUA_high(all_locsdSUA_trials(1:4,trial), trial);
+                filtered_dSUA_high(:,trial) = filtered_dSUA_high(:,trial); 
+                all_locsdSUA_trials(:,trial) = all_locsdSUA_trials(:,trial);
+                origin_data_high(:,trial) = origin_data_high(:,trial);
+                bsl_origin_data_high(:,trial) = bsl_origin_data_high(:,trial);
              else
-        filtered_dSUA_high(:,trial) = nan(length(filtered_dSUA_high(:,trial)),1);
-        all_locsdSUA_trials(:,trial) = nan(size(all_locsdSUA_trials(:,trial)));
-        origin_data_high(:,trial) =  nan(length(origin_data_high(:,trial)),1);
+                filtered_dSUA_high(:,trial) = nan(length(filtered_dSUA_high(:,trial)),1);
+                all_locsdSUA_trials(:,trial) = nan(size(all_locsdSUA_trials(:,trial)));
+                origin_data_high(:,trial) =  nan(length(origin_data_high(:,trial)),1);
+                bsl_origin_data_high(:,trial) =  nan(length(bsl_origin_data_high(:,trial)),1);
+
             end 
 
-            if ~all(isnan(all_locsdSUA_trials(:,trial))) && (all_locsdSUA_trials(4,trial) ~= 1500)
+            if ~all(isnan(all_locsdSUA_trials(:,trial))) && (all_locsdSUA_trials(4,trial) ~= 1500) %remove trials for which the pk4 is the last data point (= not a peak if this happens)
                  %adjust location to the first data point of lpsu (+ln),
 
-        all_pks(:,trial) = filtered_dSUA_high(all_locsdSUA_trials(1:4,trial), trial);
-        filtered_dSUA_high(:,trial) = filtered_dSUA_high(:,trial); 
-        all_locsdSUA_trials(:,trial) = all_locsdSUA_trials(:,trial);
-        origin_data_high(:,trial) = origin_data_high(:,trial);
+                all_pks(:,trial) = filtered_dSUA_high(all_locsdSUA_trials(1:4,trial), trial);
+                filtered_dSUA_high(:,trial) = filtered_dSUA_high(:,trial); 
+                all_locsdSUA_trials(:,trial) = all_locsdSUA_trials(:,trial);
+                origin_data_high(:,trial) = origin_data_high(:,trial);
+                bsl_origin_data_high(:,trial) = bsl_origin_data_high(:,trial);
             else
-        all_pks(:,trial) = nan(length(all_pks(:,trial)),1);      
-        filtered_dSUA_high(:,trial) = nan(length(filtered_dSUA_high(:,trial)),1);
-        all_locsdSUA_trials(:,trial) = nan(size(all_locsdSUA_trials(:,trial)));
-        origin_data_high(:,trial) =  nan(length(origin_data_high(:,trial)),1);
+                all_pks(:,trial) = nan(length(all_pks(:,trial)),1);      
+                filtered_dSUA_high(:,trial) = nan(length(filtered_dSUA_high(:,trial)),1);
+                all_locsdSUA_trials(:,trial) = nan(size(all_locsdSUA_trials(:,trial)));
+                origin_data_high(:,trial) =  nan(length(origin_data_high(:,trial)),1);
+                bsl_origin_data_high(:,trial) =  nan(length(bsl_origin_data_high(:,trial)),1);
+
 
             end 
         end
@@ -214,22 +224,27 @@ for n = 1:length(contLims)
             %exclude trials
             if p1outliers(tr) == 0 && ~all(isnan(all_pks(:,tr))) && out_bsl_peaks(tr) ==0 
 
-        filtered_dSUA_high(:,tr) = filtered_dSUA_high(:, tr);
-        all_pks(:, tr) = all_pks(:,tr);
-        all_locsdSUA_trials(:,tr) = all_locsdSUA_trials(:,tr);
-        origin_data_high(:,tr) = origin_data_high(:, tr);
+                filtered_dSUA_high(:,tr) = filtered_dSUA_high(:, tr);
+                all_pks(:, tr) = all_pks(:,tr);
+                all_locsdSUA_trials(:,tr) = all_locsdSUA_trials(:,tr);
+                origin_data_high(:,tr) = origin_data_high(:, tr);
+                bsl_origin_data_high(:,tr) =  bsl_origin_data_high(:,tr);
+
 
             else 
-        filtered_dSUA_high(:,tr) = nan(length(filtered_dSUA_high(:,tr)),1);
-        all_pks(:,tr) = nan(length(all_pks(:,tr)),1);
-        all_locsdSUA_trials(:,tr) = nan(size(all_locsdSUA_trials(:,tr)));
-        origin_data_high(:,tr) = nan(length(origin_data_high(:,tr)),1);
+                filtered_dSUA_high(:,tr) = nan(length(filtered_dSUA_high(:,tr)),1);
+                all_pks(:,tr) = nan(length(all_pks(:,tr)),1);
+                all_locsdSUA_trials(:,tr) = nan(size(all_locsdSUA_trials(:,tr)));
+                origin_data_high(:,tr) = nan(length(origin_data_high(:,tr)),1);
+                bsl_origin_data_high(:,tr) =  nan(length(bsl_origin_data_high(:,tr)),1);
+
             end
         end
        filtered_dSUA_high = filtered_dSUA_high(:,~all(isnan(filtered_dSUA_high))); % for nan - cols
        all_locsdSUA_trials =  all_locsdSUA_trials(:,~all(isnan(all_locsdSUA_trials)));
        all_pks = all_pks(:, ~all(isnan(all_pks)));
        origin_data_high = origin_data_high(:,~all(isnan(origin_data_high)));
+       bsl_origin_data_high = bsl_origin_data_high(:,~all(isnan(bsl_origin_data_high)));
 
 
       % if length(filtered_dSUA_high(1,:)) >=10
@@ -242,9 +257,11 @@ for n = 1:length(contLims)
        FiltMultiContSUA.(filename).(binNb) =  filtered_dSUA_high;
       % FiltMultiContSUA.(filename).bin0 =  filtered_dSUA_blank;
        NoFiltMultiContSUA.(filename).(binNb) = origin_data_high;
+       BsNoFiltMultiContSUA.(filename).(binNb) = bsl_origin_data_high;
        %NoFiltMultiContSUA.(filename).bin0 = origin_data_blank;
        FiltMultiContSUA.(filename).cellclass = cellClass{i}; %get the cell class of selected units
        NoFiltMultiContSUA.(filename).cellclass = cellClass{i};
+       BsNoFiltMultiContSUA.(filename).cellclass = cellClass{i};
       % elseif length(filtered_dSUA_high(1,:)) <10  
        % all_pks(:,:) = [];
        % clean_high_SUA(i).namelist =  [];
@@ -273,9 +290,11 @@ save(strcat(allfilename, '.mat'), 'peakLocs');
  allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\NoFiltMultiContSUA';
  save(strcat(allfilename, '.mat'), 'NoFiltMultiContSUA');
  
+ allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\BsNoFiltMultiContSUA';
+ save(strcat(allfilename, '.mat'), 'BsNoFiltMultiContSUA');
+ 
 
-%% Third: isolate peak values of the origin data ==> use the code from
-%%"get_origin_peaks"
+%% Third: isolate peak values of the origin data ==> use the code from "get_origin_peaks.m"
 
 %following the script get_clean_peaks_and_data.m (data cleaning and
 %selection pipeline)
@@ -306,12 +325,15 @@ nyq = 500;
 
 channum = 1: length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA));
 mean_origin_dSUA = struct();
-mean_filtered_dSUA = struct();
+%mean_filtered_dSUA = struct();
 suas_aligned_trials = struct();
+peak_aligned_trials = struct();
 peak_vals = struct();
+zscore_peak_vals = struct();
 %mean_peak_vals = struct();
 mean_peaks =struct();
 median_peaks = struct();
+zscore = struct();
 up_dist = nan(1, length(channum),4);
 max_low_dist = struct();
 all_locsdSUA_filtered = nan(1,length(channum),4);
@@ -325,18 +347,20 @@ for i = channum
         filename = filenames{i};
         if ~isempty(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb))
             trialidx = 1:length(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(1,:));
-            origin_dSUA = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:1900,:); %- mean(data_file.clean_origin_data(i).unit(401:600,:),1);
-
-            %create normalized origin trials data to plot average peaks for each unit with R
-            %{
-            norm_unit = nan(size(origin_dSUA));
+            origin_dSUA = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:1900,:); %- mean(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:600,:),1);
+            bs_origin_dSUA = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:1900,:)- mean(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:600,:),1);
+           
+            %origin_dSUA = NoFiltMultiContSUA.BsNoFiltMultiContSUA.(filename).(binNb)(1:end,:);
+            %create zscore origin trials data to plot average peaks for each unit with R
+            
+            zscore_unit = nan(size(origin_dSUA));
             clear tr
             for tr =trialidx
-                    min_unit =min(origin_dSUA(:,tr),[],1);
-                    max_unit = max(origin_dSUA(:,tr),[],1);
-                    norm_unit(:,tr) = (origin_dSUA(:,tr)-min_unit)./(max_unit - min_unit);
+                    
+                   zscore_unit(:,tr) = (origin_dSUA(:,tr)-mean(origin_dSUA(:,tr)))./(std(origin_dSUA(:,tr)));
             end
-            %}
+            
+             
             filtered_dSUA = FiltMultiContSUA.FiltMultiContSUA.(filename).(binNb);
 
 
@@ -347,15 +371,17 @@ for i = channum
             up_dist_trials = nan(4,length(trialidx));
             clear pn
             for pn = 1:4
-            locs_peak = all_locsdSUA_trials(pn, :);
-            up_dist_trials(pn,:)= length(xabs)- locs_peak;
+                locs_peak = all_locsdSUA_trials(pn, :);
+                up_dist_trials(pn,:)= length(xabs)- locs_peak;
             end
             %get the max distance between the peakalign and the stimulus onset
             max_low_dist_unit = max(all_locsdSUA_trials,[],'all');
             %create new matrix with the length(max(d)+max(xabs - d))
             new_dist_unit = max_low_dist_unit + max(up_dist_trials,[],'all'); 
             fp_locked_trials = nan(new_dist_unit,length(origin_dSUA(1,:)),4);
-            filtered_fp_locked_trials = nan(new_dist_unit,length(filtered_dSUA(1,:)),4);
+            bs_fp_locked_trials = nan(new_dist_unit,length(origin_dSUA(1,:)),4);
+            zscore_fp_locked_trials = nan(new_dist_unit,length(origin_dSUA(1,:)),4);
+            %filtered_fp_locked_trials = nan(new_dist_unit,length(filtered_dSUA(1,:)),4);
              clear n pn
              for pn =1:4
                    for n =trialidx
@@ -364,23 +390,39 @@ for i = channum
 
                           %origin data of the statistical analysis
                           fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = origin_dSUA(:,n);
-                          %normalized data for the plotting
-                         % fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = norm_unit(:,n);
+                          %baseline corrected data
+                          bs_fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = bs_origin_dSUA(:,n);
+                          %zscore transformed data for the plotting
+                          zscore_fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = zscore_unit(:,n);
 
-                          filtered_fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = filtered_dSUA(:,n);
+                          %filtered_fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = filtered_dSUA(:,n);
                    end
 
              end
             %get the aligned data if it exists for the unit 
-            suas_aligned_trials.(filename).(binNb)= fp_locked_trials;
+            suas_aligned_trials.(filename).origin.(binNb)= fp_locked_trials;
+            suas_aligned_trials.(filename).bsorigin.(binNb)= bs_fp_locked_trials;
+            suas_aligned_trials.(filename).zscore.(binNb)= zscore_fp_locked_trials;
+             
             max_low_dist.(filename).(binNb) = max_low_dist_unit;
-
 
             clear pn
                for pn = 1:4
                    %peak data for the stats
-              peak_vals.(filename).(binNb)(pn,:)= max(suas_aligned_trials.(filename).(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn), [],1);
+                  peak_vals.(filename).(binNb)(pn,:)= max(suas_aligned_trials.(filename).origin.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn), [],1);
+                  zscore_peak_vals.(filename).(binNb)(pn,:)= max(suas_aligned_trials.(filename).zscore.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn), [],1);
+            
+                  
+                  %peak aligne trials
+                pkNb = sprintf('pk%d', pn);
+                peak_aligned_trials.(filename).origin.(binNb).(pkNb) = suas_aligned_trials.(filename).origin.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn);
+                peak_aligned_trials.(filename).bsorigin.(binNb).(pkNb) = suas_aligned_trials.(filename).bsorigin.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn);
+                peak_aligned_trials.(filename).zscore.(binNb).(pkNb) = suas_aligned_trials.(filename).zscore.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn);
+                peak_aligned_trials.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
+
+
                end
+               
                %mean peaks for the R plots 
                mean_peaks.(filename).(binNb) = mean(peak_vals.(filename).(binNb),2);
 
@@ -390,32 +432,32 @@ for i = channum
                median_peaks.(filename).(binNb) = median(peak_vals.(filename).(binNb),2);
 
                median_peaks.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
-         
-                %peak data for the stats
-            %  peak_vals(i).peak = [];
-              %peak data for the R plots
-             % mean_peaks(:,i) = nan(4,1);
+               %zscore
+               %zscore.(filename).(binNb) = (peak_vals.(filename).(binNb)-repmat(mean(peak_vals.(filename).(binNb),2), 1,length(peak_vals.(filename).(binNb)(1,:))))./repmat(std(peak_vals.(filename).(binNb),0,2),1,length(peak_vals.(filename).(binNb)(1,:)));
+             
+               zscore_peak_vals.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
+   
         end
-        %mean_peaks.(filename).bin0 = mean(mean(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).bin0(401:1900,:),1));
-        %median_peaks.(filename).bin0 = median(median(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).bin0(401:1900,:),1));      
-    end
- %filename = [gen_data_file.new_data(i).channel_data.filename, f{2}];
- %filename = erase(filename, '.mat');
- %filenames(i,1) = cellstr(filename);
- %filenames(i,2) = cellstr(layer(i));
- %peaks = peak_vals(i).peak;
-%channelfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\' filename];
-%save(strcat(channelfilename, '.mat'), 'peaks');
+     end
+
 end  
  %mean_peak_vals.peak = mean_peaks;
- allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_unfiltered_data_peaks';
+ allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_unfiltered_bsdata_peaks';
  save(strcat(allfilename, '.mat'), 'mean_peaks');
  %allfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\all_raw_mean_data_peaks'];
  %save(strcat(allfilename, '.mat'), 'mean_peaks');
  %savefilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\filenames_layers'];
  %save(strcat(savefilename, '.csv'), 'filenames');
- allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_unfiltered_median_peaks';
+ allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_unfiltered_bsmedian_peaks';
  save(strcat(allfilename, '.mat'), 'median_peaks');
+ 
+ %save z-score transformed data
+ allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_unfiltered_zscore_peaks';
+ save(strcat(allfilename, '.mat'), 'zscore_peak_vals');
+ 
+ allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_orig_bs_zscore_trials';
+ save(strcat(allfilename, '.mat'), 'peak_aligned_trials');
+
  % post peak isolation count
  
  cellclass = {'M','P','K'};
@@ -503,8 +545,16 @@ mean_pk4 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(
 end
                 
     
-%% plot only adapting units
+%% plot only adapting units (overal mean or all units)
+ NdeAvgCont = [0,0.85];
+ %realAvgCont =  need to compute it from the actual contrast values
+ 
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+channelfilename = [newdatadir 'NoFiltMultiContSUA']; 
+NoFiltMultiContSUA = load(channelfilename);
+filenames = fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA);
 
+meanPks = load([newdatadir 'all_unfiltered_data_peaks']);
 pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
 pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
 pvalues = dlmread(pvalfilename, ',', 1,1)';
@@ -522,7 +572,9 @@ for nunit = 1:length(peakvals.peak_vals)
 end
 all_mean_data =   all_mean_data(:,~all(isnan(all_mean_data)));
 
- class ={'M','P','K'};
+ 
+
+%% Plot difference pk1 - pk4 of adapting unitsclass ={'M','P','K'};
 bins =[1,6];
 for c = 1:length(class)
 mean_pk1 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(NdeAvgCont)); 
@@ -548,23 +600,686 @@ mean_pk4 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(
     meanAllPk1 = nanmean(mean_pk1,1);
     meanAllPk4 = nanmean(mean_pk4,1);
     
-    idxs = ~isnan(meanAllPk1);
+    idxs = find(~isnan(mean_pk1(:,1)));
+    %{
+    figure();
+    meanAllBin1 =[meanAllPk1(1,1),meanAllPk4(1,1)]';
+    mean_bin1 =[mean_pk1(:,1),mean_pk4(:,1)]';
+    h1= plot(meanAllBin1,'-o', 'Color', 'b');
+    %hold on
+    %sem1 =std(mean_bin1,0 ,2, 'omitnan')/sqrt(length(mean_bin1(1,~isnan(mean_bin1(1,:)))));
+    %ci1= ciplot( meanAllBin1(idxs)+ 1.96*sem1(idxs),  meanAllBin1(idxs)- 1.96*sem1(idxs), [1 2],'b',0.1); %[40/255 40/255 40/255]
+ 
+    hold on
+    meanAllBin2 =[meanAllPk1(1,2),meanAllPk4(1,2)]';
+    mean_bin2 =[mean_pk1(:,2),mean_pk4(:,2)]';
+  
+   %h2= plot([meanAllPk1(1,2),meanAllPk4(1,2)]','-o','Color', 'r');
+   %sem2 =std(mean_bin2,0 ,2, 'omitnan')/sqrt(length(mean_bin2(1,~isnan(mean_bin2(1,:)))));
+   %ci2= ciplot( meanAllBin2(idxs)+ 1.96*sem2(idxs),  meanAllBin2(idxs)- 1.96*sem2(idxs), [1 2],'r',0.1); %[40/255 40/255 40/255]
+ %}
+    figure();
+    
+    for u =1:length(idxs)
+        subplot(2, ceil(length(idxs)/2), u)
+        h1 =plot([mean_pk1(idxs(u),1),mean_pk4(idxs(u),1)],'-o', 'Color', 'b');
+        hold on
+        h2= plot([mean_pk1(idxs(u),2),mean_pk4(idxs(u),2)],'-o', 'Color', 'r');
+        xticks([0,1,2,3])
+        xticklabels({'','Pk1','Pk4',''})
+        xlim([0 3])
+        ylabel('Spike rate (spikes/sec)')
+        xlabel('Peak #')
+        legend([h1(1), h2(1)],'Monocular', 'Binocular', 'location', 'bestoutside')
+        set(gca,'box','off')
+        set(gca, 'linewidth',2)
+        title(sprintf('Monocular vs Binocular stimulation response of adapting %s cell',class{c}))  
+        plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat(sprintf('comparison_mono_bino_highcontrast_adapting_mean_%s_cells',class{c})));
+       % saveas(gcf,strcat(plotdir, '.png'));
+    end
+end 
+
+
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+channelfilename = [newdatadir 'NoFiltMultiContSUA']; 
+NoFiltMultiContSUA = load(channelfilename);
+filenames = fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA);
+
+meanPks = load([newdatadir 'all_unfiltered_bsdata_peaks']);
+nBsMeanPks = load([newdatadir 'all_unfiltered_data_peaks']);
+%ylims = [[0 270];[0 230];[0 250]];
+ 
+pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
+pvalues = dlmread(pvalfilename, ',', 1,1)';
+pvalues = pvalues(:,~all(isnan(pvalues)));
+
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+peakvals = load([channeldir 'all_data_peaks']);
+
+all_mean_data = nan(4, length(peakvals.peak_vals));
+for nunit = 1:length(peakvals.peak_vals)
+ if ~isempty(peakvals.peak_vals(nunit).peak)
+ mean_data = nanmean(peakvals.peak_vals(nunit).peak,2);
+   all_mean_data(:,nunit) = mean_data;
+ end
+end
+all_mean_data =   all_mean_data(:,~all(isnan(all_mean_data)));
+
+ class ={'M','P','K'};
+bins =[1,6];
+for c = 1:length(class)
+mean_pk1 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(bins)); 
+mean_pk4 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(bins)); 
+  
+ 
+    for i =1:length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA))
+        if all_mean_data(4,i) < all_mean_data(1,i) && pvalues(4,i) < .05
+             filename = filenames{i};
+            if strcmp(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass, class{c})
+                for bin = 1:length(bins)
+                    binNb = sprintf('bin%d',bins(bin));
+                    if nnz(strcmp(fieldnames(meanPks.mean_peaks.(filename)),binNb))
+
+                        mean_pk1(i,bin) = meanPks.mean_peaks.(filename).(binNb)(1);
+                        mean_pk4(i,bin) = meanPks.mean_peaks.(filename).(binNb)(4);
+                    end
+                end
+            end
+        end
+    end
+    
+    diffBin1 = mean_pk1(:,1) -mean_pk4(:,1);
+    diffBin2 = mean_pk1(:,2) -mean_pk4(:,2);
+    
+    meanDiffBin1 = nanmean(diffBin1);
+    meanDiffBin2 = nanmean(diffBin2);
+    idxs = ~isnan(diffBin1);
     
     figure();
-  % h1= plot([mean_pk1(~isnan(mean_pk1(:,1)),1),mean_pk4(~isnan(mean_pk4(:,1)),1)]','-o', 'Color', 'b');
-   h1= plot([meanAllPk1(1,1),meanAllPk4(1,1)]','-o', 'Color', 'b');
-  
-    hold on
-   h2= plot([meanAllPk1(1,2),meanAllPk4(1,2)]','-o','Color', 'r');
+    %x = ones(length(diffBin1(idxs)),1);
+    x = ones(1,1);
+    h1= plot([x,2*x]',[diffBin1(idxs), diffBin2(idxs)]', '-o');
+   % h1= plot([x,2*x]',[meanDiffBin1, meanDiffBin2]', '-o');
+    %hold on 
+    %sem1 =std([diffBin1,diffBin2],0 ,1, 'omitnan')/sqrt(length(diffBin1(~isnan(diffBin1(:,1)))));
+    %ci1= ciplot( [meanDiffBin1, meanDiffBin2]+ 1.96*sem1,  [meanDiffBin1, meanDiffBin2]- 1.96*sem1, [1 2],'b',0.1); %[40/255 40/255 40/255]
+ 
+   % h2 = scatter(2*x,diffBin2)
     xticks([0,1,2,3])
-    xticklabels({'','Pk1','Pk4',''})
+    xticklabels({'','Monocular','Binocular',''})
     xlim([0 3])
-    ylabel('Spike rate (spikes/sec)')
-    xlabel('Peak #')
-    legend([h1(1), h2(1)],'Monocular', 'Binocular', 'location', 'bestoutside')
+    ylabel('Pk1-Pk4 spike rate difference (spikes/sec)')
+    xlabel('Condition')
+   % legend([h1(1), h1(2)],'Monocular', 'Binocular', 'location', 'bestoutside')
     set(gca,'box','off')
     set(gca, 'linewidth',2)
     title(sprintf('Monocular vs Binocular stimulation response of adapting %s cells',class{c}))  
-    plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat(sprintf('comparison_mono_bino_highcontrast_adapting_mean_%s_cells',class{c})));
-    saveas(gcf,strcat(plotdir, '.png'));
+    plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat(sprintf('comparison_mono_bino_highcontrast_adapting_meandiffBSpk1pk4_%s_cells',class{c})));
+    %saveas(gcf,strcat(plotdir, '.png'));
 end 
+
+
+%% Plot the difference pk1 - pk4 of adapting units with z-score transformed data
+
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+channelfilename = [newdatadir 'NoFiltMultiContSUA']; 
+NoFiltMultiContSUA = load(channelfilename);
+filenames = fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA);
+
+zscorePks = load([newdatadir 'all_unfiltered_zscore_peaks']);
+
+%ylims = [[0 270];[0 230];[0 250]];
+ 
+pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
+pvalues = dlmread(pvalfilename, ',', 1,1)';
+pvalues = pvalues(:,~all(isnan(pvalues)));
+
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+peakvals = load([channeldir 'all_data_peaks']);
+
+all_mean_data = nan(4, length(peakvals.peak_vals));
+for nunit = 1:length(peakvals.peak_vals)
+ if ~isempty(peakvals.peak_vals(nunit).peak)
+ mean_data = nanmean(peakvals.peak_vals(nunit).peak,2);
+   all_mean_data(:,nunit) = mean_data;
+ end
+end
+all_mean_data =   all_mean_data(:,~all(isnan(all_mean_data)));
+
+ class ={'M','P','K'};
+bins =[1,6];
+for c = 1:length(class)
+mean_pk1 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(bins)); 
+mean_pk4 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(bins)); 
+  
+ 
+    for i =1:length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA))
+        if all_mean_data(4,i) < all_mean_data(1,i) && pvalues(4,i) < .05
+             filename = filenames{i};
+            if strcmp(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass, class{c})
+                for bin = 1:length(bins)
+                    binNb = sprintf('bin%d',bins(bin));
+                    if nnz(strcmp(fieldnames(zscorePks.zscore_peak_vals.(filename)),binNb))
+
+                        mean_pk1(i,bin) = mean(zscorePks.zscore_peak_vals.(filename).(binNb)(1,:));
+                        mean_pk4(i,bin) = mean(zscorePks.zscore_peak_vals.(filename).(binNb)(4,:));
+                    end
+                end
+            end
+        end
+    end
+    
+    diffBin1 = mean_pk1(:,1) -mean_pk4(:,1);
+    diffBin2 = mean_pk1(:,2) -mean_pk4(:,2);
+    
+    meanDiffBin1 = nanmean(diffBin1);
+    meanDiffBin2 = nanmean(diffBin2);
+    idxs = ~isnan(diffBin1);
+    
+    figure();
+    %x = ones(length(diffBin1(idxs)),1);
+    x = ones(1,1);
+    %h1= plot([x,2*x]',[diffBin1(idxs), diffBin2(idxs)]', '-o');
+    h1= plot([x,2*x]',[meanDiffBin1, meanDiffBin2]', '-o');
+    hold on 
+    sem1 =std([diffBin1,diffBin2],0 ,1, 'omitnan')/sqrt(length(diffBin1(~isnan(diffBin1(:,1)))));
+    ci1= ciplot( [meanDiffBin1, meanDiffBin2]+ 1.96*sem1,  [meanDiffBin1, meanDiffBin2]- 1.96*sem1, [1 2],'b',0.1); %[40/255 40/255 40/255]
+ 
+   % h2 = scatter(2*x,diffBin2)
+    xticks([0,1,2,3])
+    xticklabels({'','Monocular','Binocular',''})
+    xlim([0 3])
+    ylabel('Pk1-Pk4 spike rate difference (z-score transformed)')
+    xlabel('Condition')
+   % legend([h1(1), h1(2)],'Monocular', 'Binocular', 'location', 'bestoutside')
+    set(gca,'box','off')
+    set(gca, 'linewidth',2)
+    title(sprintf('Monocular vs Binocular stimulation response of adapting %s cells',class{c}))  
+    plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat(sprintf('comparison_mono_bino_highcontrast_adapting_allmeanzscorediffpk1pk4_%s_cells',class{c})));
+    %saveas(gcf,strcat(plotdir, '.png'));
+end 
+
+%% Plot the difference pk1 - pk4 of adapting units with z-score transformed data unit by unit
+
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+channelfilename = [newdatadir 'NoFiltMultiContSUA']; 
+NoFiltMultiContSUA = load(channelfilename);
+filenames = fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA);
+
+zscorePks = load([newdatadir 'all_unfiltered_zscore_peaks']);
+
+%ylims = [[0 270];[0 230];[0 250]];
+ 
+pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
+pvalues = dlmread(pvalfilename, ',', 1,1)';
+pvalues = pvalues(:,~all(isnan(pvalues)));
+
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+peakvals = load([channeldir 'all_data_peaks']);
+
+all_mean_data = nan(4, length(peakvals.peak_vals));
+for nunit = 1:length(peakvals.peak_vals)
+ if ~isempty(peakvals.peak_vals(nunit).peak)
+ mean_data = nanmean(peakvals.peak_vals(nunit).peak,2);
+   all_mean_data(:,nunit) = mean_data;
+ end
+end
+all_mean_data =   all_mean_data(:,~all(isnan(all_mean_data)));
+
+ class ={'M','P','K'};
+bins =[1,6];
+for c = 1:length(class)
+mean_pk1 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(bins)); 
+mean_pk4 = nan(length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA)),length(bins)); 
+  
+ 
+    for i =1:length(fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA))
+        if all_mean_data(4,i) < all_mean_data(1,i) && pvalues(4,i) < .05
+             filename = filenames{i};
+            if strcmp(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass, class{c})
+                for bin = 1:length(bins)
+                    binNb = sprintf('bin%d',bins(bin));
+                    if nnz(strcmp(fieldnames(zscorePks.zscore_peak_vals.(filename)),binNb))
+
+                        mean_pk1(i,bin) = mean(zscorePks.zscore_peak_vals.(filename).(binNb)(1,:));
+                        mean_pk4(i,bin) = mean(zscorePks.zscore_peak_vals.(filename).(binNb)(4,:));
+                    end
+                end
+            end
+        end
+    end
+    
+    diffBin1 = mean_pk1(:,1) -mean_pk4(:,1);
+    diffBin2 = mean_pk1(:,2) -mean_pk4(:,2);
+
+    idxs = find(~isnan(diffBin1));
+    
+    for u =1:length(idxs)
+    figure();
+    %x = ones(length(diffBin1(idxs)),1);
+    x = ones(1,1);
+    
+    h1= plot([x,2*x]',[diffBin1(idxs(u)), diffBin2(idxs(u))]', '-o');
+    %h1= plot([x,2*x]',[meanDiffBin1, meanDiffBin2]', '-o');
+    %hold on 
+    %sem1 =std([diffBin1,diffBin2],0 ,1, 'omitnan')/sqrt(length(diffBin1(~isnan(diffBin1(:,1)))));
+    %ci1= ciplot( [meanDiffBin1, meanDiffBin2]+ 1.96*sem1,  [meanDiffBin1, meanDiffBin2]- 1.96*sem1, [1 2],'b',0.1); %[40/255 40/255 40/255]
+ 
+   % h2 = scatter(2*x,diffBin2)
+    xticks([0,1,2,3])
+    xticklabels({'','Monocular','Binocular',''})
+    xlim([0 3])
+    ylabel('Pk1-Pk4 spike rate difference (z-score transformed)')
+    xlabel('Condition')
+   % legend([h1(1), h1(2)],'Monocular', 'Binocular', 'location', 'bestoutside')
+    set(gca,'box','off')
+    set(gca, 'linewidth',2)
+    title(sprintf('Monocular vs Binocular stimulation response of adapting %s cells',class{c}))  
+    plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat(sprintf('comparison_mono_bino_highcontrast_adapting_meanzscorediffpk1pk4_%s_cell_%d',class{c},u)));
+    saveas(gcf,strcat(plotdir, '.png'));
+    end
+end 
+
+
+
+
+%% Plot 3 subplots for every unit: Peak aligned origin data , bs corrected, zscore transformed 
+
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+
+zscorePks = load([newdatadir 'all_unfiltered_zscore_peaks']);
+trialsTraces =load([newdatadir 'all_orig_bs_zscore_trials']);
+
+filenames = fieldnames(trialsTraces.peak_aligned_trials);
+
+pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
+pvalues = dlmread(pvalfilename, ',', 1,1)';
+pvalues = pvalues(:,~all(isnan(pvalues)));
+
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+peakvals = load([channeldir 'all_data_peaks']);
+
+all_mean_data = nan(4, length(peakvals.peak_vals));
+for nunit = 1:length(peakvals.peak_vals)
+ if ~isempty(peakvals.peak_vals(nunit).peak)
+ mean_data = nanmean(peakvals.peak_vals(nunit).peak,2);
+   all_mean_data(:,nunit) = mean_data;
+ end
+end
+all_mean_data =   all_mean_data(:,~all(isnan(all_mean_data)));
+
+ class ={'M','P','K'};
+ ylims = [[0 270];[0 230];[0 250]];
+ bsylims = [[-30 250];[-20 210];[-20 230]];
+ zylim = [-1 3];
+bins =[1,6];
+
+for c = 1:length(class)
+    
+    for i =1:length(filenames)
+        if all_mean_data(4,i) < all_mean_data(1,i) && pvalues(4,i) < .05
+            filename = filenames{i};
+           
+            if strcmp(trialsTraces.peak_aligned_trials.(filename).cellclass, class{c})
+                        bin1 = sprintf('bin%d',1);
+                        pk1 = sprintf('pk%d', 1);
+                        
+                         origTrace = repmat(nan(size(squeeze(mean(trialsTraces.peak_aligned_trials.(filename).origin.(bin1).(pk1),2)))),1,4,2);
+                         bsTrace =repmat(nan(size(squeeze(mean(trialsTraces.peak_aligned_trials.(filename).bsorigin.(bin1).(pk1),2)))),1,4,2);
+                         zTrace = repmat(nan(size(squeeze(mean(trialsTraces.peak_aligned_trials.(filename).zscore.(bin1).(pk1),2)))),1,4,2);
+                
+                for bin = 1:length(bins)
+                    binNb = sprintf('bin%d',bins(bin));
+                    
+                        
+                    for pn =1:4
+                         pkNb = sprintf('pk%d', pn);
+                        
+                
+                        if nnz(strcmp(fieldnames(zscorePks.zscore_peak_vals.(filename)),binNb))
+                             origTrace(:,pn,bin) = squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).origin.(binNb).(pkNb),2)); 
+                             bsTrace(:,pn,bin) = squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).bsorigin.(binNb).(pkNb),2)); 
+                             zTrace(:,pn,bin) =  squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).zscore.(binNb).(pkNb),2)); 
+
+                        end
+                    end
+                end
+    
+    
+                figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+                for p =1:4
+                    %monocular
+                    subplot(3,8,p)
+                    plot(origTrace(:,p,1),'Color','b')
+                    if p == 1
+                    title(sprintf('Monocular stimulation %s',class{c}))
+                    ylabel('Spike rate (spikes/s)')
+                    end
+                    set(gca,'box','off')
+                    ylim(ylims(c,:))
+                    
+                    if p>1
+                         ax1 = gca;                   
+                         ax1.YAxis.Visible = 'off';   
+                    end
+                    
+                    subplot(3,8,4+p)
+                    plot(origTrace(:,p,2),'Color','b')
+                    if p == 1
+                    title(sprintf('Binocular stimulation %s',class{c}))
+                    ylabel('Spike rate (spikes/s)')
+                    end
+                    set(gca,'box','off')
+                    ylim(ylims(c,:))
+                    if p>1
+                         ax1 = gca;                   
+                         ax1.YAxis.Visible = 'off';   
+                    end
+              
+                    subplot(3,8,8+p)
+                    plot(bsTrace(:,p,1),'Color','r')
+                    if p == 1
+                    title(sprintf('Baseline corrected monocular stimulation %s',class{c}))
+                    
+                    ylabel('Spike rate ( delta spikes/s)')
+                    end
+                    set(gca,'box','off')
+                    ylim(bsylims(c,:))
+                    
+                    if p>1
+                         ax1 = gca;                   
+                         ax1.YAxis.Visible = 'off';   
+                    end
+                   
+                    subplot(3,8,12+p)
+                    plot(bsTrace(:,p,2),'Color','r')
+                    if p == 1
+                    title(sprintf('Baseline corrected binocular stimulation %s',class{c}))
+                    ylabel('Spike rate ( delta spikes/s)')
+                    end
+                     set(gca,'box','off')
+                     ylim(bsylims(c,:))
+                    if p>1
+                         ax1 = gca;                   
+                         ax1.YAxis.Visible = 'off';   
+                    end
+                    
+                    subplot(3,8,16+p)
+                    plot(zTrace(:,p,1),'Color','k')
+                    if p == 1
+                    title(sprintf('Z-score transformed monocular stimulation %s',class{c}))
+                    
+                    ylabel('Spike rate (z-score transformed)')
+                    end
+                     set(gca,'box','off')
+                     ylim(zylim)
+                    
+                    if p>1
+                         ax1 = gca;                   
+                         ax1.YAxis.Visible = 'off';   
+                    end
+                     
+
+                    %binocular
+
+                    subplot(3,8,20+p)
+                    plot(zTrace(:,p,2),'Color','k')
+                    
+                    if p == 1
+                    title(sprintf('Z-score transformed binocular stimulation %s',class{c}))
+                    ylabel('Spike rate (z-score transformed)')
+                    end 
+                    
+                    set(gca,'box','off')
+                    ylim(zylim)
+                    
+                    if p>1
+                         ax1 = gca;                   
+                         ax1.YAxis.Visible = 'off';   
+                    end
+                        
+                    
+                end
+                 
+                 plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat(sprintf('mono_bino_orig_bs_zscore_%s_cell%d',class{c},i)));
+                % saveas(gcf,strcat(plotdir, '.png'));
+                
+            end
+        
+        end
+    end
+end
+
+
+%% Plot overall mean of binocular condition vs overall mean of monocular condition
+
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+
+zscorePks = load([newdatadir 'all_unfiltered_zscore_peaks']);
+trialsTraces =load([newdatadir 'all_orig_bs_zscore_trials']);
+
+filenames = fieldnames(trialsTraces.peak_aligned_trials);
+pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
+pvalues = dlmread(pvalfilename, ',', 1,1)';
+pvalues = pvalues(:,~all(isnan(pvalues)));
+
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+peakvals = load([channeldir 'all_data_peaks']);
+
+all_mean_data = nan(4, length(peakvals.peak_vals));
+for nunit = 1:length(peakvals.peak_vals)
+ if ~isempty(peakvals.peak_vals(nunit).peak)
+ mean_data = nanmean(peakvals.peak_vals(nunit).peak,2);
+   all_mean_data(:,nunit) = mean_data;
+ end
+end
+all_mean_data =   all_mean_data(:,~all(isnan(all_mean_data)));
+
+
+ class ={'M','P','K'};
+%ylims = [[0 160];[0 105];[0 210]];
+ylims = [[0 200];[0 140];[0 210]];
+ bsylims = [[-30 250];[-20 210];[-20 230]];
+ zylim = [-1 3];
+bins =[1,6];
+col(1,:) =[86/255 86/255 86/255] ; %--dark grey 
+col(2,:) = [251/255 154/255 153/255]; % -- red
+col(3,:) = [146/255 197/255 222/255]; % -- blue
+
+for c = 1:length(class)
+    
+         origTrace = nan(250,4,length(filenames),2);
+         bsTrace =nan(250,4,length(filenames),2);
+         zTrace = nan(250,4,length(filenames),2);
+    for i =1:length(filenames)
+       if all_mean_data(4,i) < all_mean_data(1,i) && pvalues(4,i) < .05
+            filename = filenames{i};
+           
+            if strcmp(trialsTraces.peak_aligned_trials.(filename).cellclass, class{c})
+
+                for bin = 1:length(bins)
+                    binNb = sprintf('bin%d',bins(bin));
+                    
+                        
+                    for pn =1:4
+                         pkNb = sprintf('pk%d', pn);
+                        
+                
+                        if nnz(strcmp(fieldnames(zscorePks.zscore_peak_vals.(filename)),binNb))
+                             origTrace(:,pn,i,bin) = squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).origin.(binNb).(pkNb),2)); 
+                             bsTrace(:,pn,i,bin) = squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).bsorigin.(binNb).(pkNb),2)); 
+                             zTrace(:,pn,i,bin) =  squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).zscore.(binNb).(pkNb),2)); 
+
+                        end
+                    end
+                end
+            end
+       end
+    end
+    meanOrig = squeeze(nanmean(origTrace,3));
+    monCi_low = meanOrig(:,:,1) - 1.96*std(origTrace(:,:,:,1),0,3, 'omitnan')./sqrt(length(find(~isnan(origTrace(1,1,:,1)))));
+    monCi_high = meanOrig(:,:,1) + 1.96*std(origTrace(:,:,:,1),0,3, 'omitnan')./sqrt(length(find(~isnan(origTrace(1,1,:,1)))));
+   
+    binCi_low = meanOrig(:,:,2) - 1.96*std(origTrace(:,:,:,2),0,3, 'omitnan')./sqrt(length(find(~isnan(origTrace(1,1,:,1)))));
+    binCi_high = meanOrig(:,:,2) + 1.96*std(origTrace(:,:,:,2),0,3, 'omitnan')./sqrt(length(find(~isnan(origTrace(1,1,:,1)))));
+   
+   
+                figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+                for p =1:4
+                    
+                    
+                       h= subplot(1,4,p);
+                    
+                       %binocular
+                       plot(-125:124,meanOrig(:,p,2),'LineWidth',2, 'Color',[40/255 40/255 40/255])
+                     hold on
+                      h1= ciplot(binCi_low(:,p), binCi_high(:,p),[-125:124],col(c,:),0.5);
+                      set(h1, 'edgecolor','none') 
+                      hold on
+                         %monocular
+                       plot(-125:124,meanOrig(:,p,1),'LineWidth',2, 'Color','green')
+                
+                    set(h,'position',get(h,'position').*[1 1 1.15 1])
+                    ylim(ylims(c,:))
+                    if p == 1
+                        
+                        ylabel('Spike rate (spikes/s)')
+                    end
+                    xlim([-125 125])
+                    set(gca, 'linewidth',2)
+                    set(gca,'box','off')
+                    
+                    if p>1
+                         ax1 = gca;                   
+                         ax1.YAxis.Visible = 'off';   
+                    end               
+                end
+                legend('Binocular','','Monocular', 'Location', 'bestoutside')
+                currfig = gcf;
+                title(currfig.Children(end),sprintf('Mean response of %s cells in the binocular condition',class{c}))
+                 
+                 plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat(sprintf('suppressedMean_mono_bino_orig_%s_cell',class{c})));
+                 saveas(gcf,strcat(plotdir, '.png'));
+                 %saveas(gcf,strcat(plotdir, '.svg'));
+                
+end
+
+%% scatter plot of each peak comparing binocular vs monocular
+
+
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+
+zscorePks = load([newdatadir 'all_unfiltered_zscore_peaks']);
+trialsTraces =load([newdatadir 'all_orig_bs_zscore_trials']);
+
+filenames = fieldnames(trialsTraces.peak_aligned_trials);
+pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
+pvalues = dlmread(pvalfilename, ',', 1,1)';
+pvalues = pvalues(:,~all(isnan(pvalues)));
+
+channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+peakvals = load([channeldir 'all_data_peaks']);
+
+all_mean_data = nan(4, length(peakvals.peak_vals));
+for nunit = 1:length(peakvals.peak_vals)
+ if ~isempty(peakvals.peak_vals(nunit).peak)
+ mean_data = nanmean(peakvals.peak_vals(nunit).peak,2);
+   all_mean_data(:,nunit) = mean_data;
+ end
+end
+all_mean_data =   all_mean_data(:,~all(isnan(all_mean_data)));
+
+
+ class ={'M','P','K'};
+%ylims = [[0 160];[0 105];[0 210]];
+ylims = [[0 250];[0 200];[0 240]];
+% bsylims = [[-30 250];[-20 210];[-20 230]];
+ %zylim = [-1 3];
+bins =[1,6];
+col(1,:) =[86/255 86/255 86/255] ; %--dark grey 
+col(2,:) = [251/255 154/255 153/255]; % -- red
+col(3,:) = [146/255 197/255 222/255]; % -- blue
+
+for c = 1:length(class)
+    
+         origTrace = nan(4,length(filenames),2);
+         %bsTrace =nan(250,4,length(filenames),2);
+         %zTrace = nan(250,4,length(filenames),2);
+    for i =1:length(filenames)
+    %   if all_mean_data(4,i) < all_mean_data(1,i) && pvalues(4,i) < .05
+            filename = filenames{i};
+           
+            if strcmp(trialsTraces.peak_aligned_trials.(filename).cellclass, class{c})
+
+                for bin = 1:length(bins)
+                    binNb = sprintf('bin%d',bins(bin));
+                    
+                        
+                    for pn =1:4
+                         pkNb = sprintf('pk%d', pn);
+                        
+                
+                        if nnz(strcmp(fieldnames(zscorePks.zscore_peak_vals.(filename)),binNb))
+                             origTrace(pn,i,bin) = max(squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).origin.(binNb).(pkNb),2))); 
+                             %bsTrace(:,pn,i,bin) = squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).bsorigin.(binNb).(pkNb),2)); 
+                             %zTrace(:,pn,i,bin) =  squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).zscore.(binNb).(pkNb),2)); 
+
+                        end
+                    end
+                end
+            end
+       %end
+    end
+    meanOrig = squeeze(nanmean(origTrace,3));
+    %monCi_low = meanOrig(:,:,1) - 1.96*std(origTrace(:,:,:,1),0,3, 'omitnan')./sqrt(length(find(~isnan(origTrace(1,1,:,1)))));
+    %monCi_high = meanOrig(:,:,1) + 1.96*std(origTrace(:,:,:,1),0,3, 'omitnan')./sqrt(length(find(~isnan(origTrace(1,1,:,1)))));
+   
+    %binCi_low = meanOrig(:,:,2) - 1.96*std(origTrace(:,:,:,2),0,3, 'omitnan')./sqrt(length(find(~isnan(origTrace(1,1,:,1)))));
+    %binCi_high = meanOrig(:,:,2) + 1.96*std(origTrace(:,:,:,2),0,3, 'omitnan')./sqrt(length(find(~isnan(origTrace(1,1,:,1)))));
+   
+   
+                figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+                for p =1:4
+                    
+                    
+                       h= subplot(1,4,p);
+                     idxs = find(~isnan(origTrace(p,:,1)));
+                     for u =1:length(idxs)
+                       x =ones(1,1);
+                       plot([x,2*x],[origTrace(p,idxs(u),1),origTrace(p,idxs(u),2)],'-*','LineWidth', 2, 'Color',col(c,:))
+                     hold on
+                     end
+                         %monocular
+                      %scatter(origTrace(p,:,1),'o', 'Color',col(c,:))
+                
+                    set(h,'position',get(h,'position').*[1 1 1.15 1])
+                    ylim(ylims(c,:))
+                    if p == 1
+                        
+                        ylabel('Spike rate (spikes/s)')
+                    end
+                    xlim([0 3])
+                    xticklabels({'','', 'Monocular','','Binocular',''})
+                    set(gca, 'linewidth',2)
+                    set(gca,'box','off')
+                    
+                    if p>1
+                         ax1 = gca;                   
+                         ax1.YAxis.Visible = 'off';   
+                    end               
+                end
+                %legend('Binocular','Monocular', 'Location', 'bestoutside')
+                currfig = gcf;
+                title(currfig.Children(end),sprintf('Peak responses of %s cells in the binocular condition',class{c}))
+                 
+                 plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat(sprintf('all_pks_mono_bino_orig_%s_cell',class{c})));
+                 saveas(gcf,strcat(plotdir, '.png'));
+                 %saveas(gcf,strcat(plotdir, '.svg'));
+                
+end
