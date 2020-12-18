@@ -1174,10 +1174,20 @@ end
 
 newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
 
-zscorePks = load([newdatadir 'all_unfiltered_zscore_peaks']);
 trialsTraces =load([newdatadir 'all_orig_bs_zscore_trials']);
-
 filenames = fieldnames(trialsTraces.peak_aligned_trials);
+
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\results_simple_Anova_diffpks.csv',',',1,1)';
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_results_lmer_allpks.csv',',',1,1)';
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\monobino_maineffect_results_lmer_allpks.csv',',',1,1)';
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_results_anova_allpks.csv',',',1,1)';
+pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_contrast_aov.csv',',',1,1)';
+
+
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_pvals_anova_linearTrend.csv',',',1,1)';
+%r2 = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_r2_anova_linearTrend.csv',',',1,1)';
+
+%{
 pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
 pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
 pvalues = dlmread(pvalfilename, ',', 1,1)';
@@ -1195,7 +1205,7 @@ for nunit = 1:length(peakvals.peak_vals)
 end
 all_mean_data =   all_mean_data(:,~all(isnan(all_mean_data)));
 
-
+%}
  class ={'M','P','K'};
 %ylims = [[0 160];[0 105];[0 210]];
 ylims = [[0 250];[0 200];[0 240]];
@@ -1205,17 +1215,16 @@ bins =[1,6];
 col(1,:) =[86/255 86/255 86/255] ; %--dark grey 
 col(2,:) = [251/255 154/255 153/255]; % -- red
 col(3,:) = [146/255 197/255 222/255]; % -- blue
+col(4,:) = [238/255 58/255 104/255]; % -- pink
 
-for c = 1:length(class)
+
     
          origTrace = nan(4,length(filenames),2);
-         %bsTrace =nan(250,4,length(filenames),2);
-         %zTrace = nan(250,4,length(filenames),2);
     for i =1:length(filenames)
     %   if all_mean_data(4,i) < all_mean_data(1,i) && pvalues(4,i) < .05
             filename = filenames{i};
            
-            if strcmp(trialsTraces.peak_aligned_trials.(filename).cellclass, class{c})
+            %if strcmp(trialsTraces.peak_aligned_trials.(filename).cellclass, class{c})
 
                 for bin = 1:length(bins)
                     binNb = sprintf('bin%d',bins(bin));
@@ -1225,41 +1234,59 @@ for c = 1:length(class)
                          pkNb = sprintf('pk%d', pn);
                         
                 
-                        if nnz(strcmp(fieldnames(zscorePks.zscore_peak_vals.(filename)),binNb))
+                        if nnz(strcmp(fieldnames(trialsTraces.peak_aligned_trials.(filename).origin),binNb))
                              origTrace(pn,i,bin) = max(squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).origin.(binNb).(pkNb),2))); 
-                             %bsTrace(:,pn,i,bin) = squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).bsorigin.(binNb).(pkNb),2)); 
-                             %zTrace(:,pn,i,bin) =  squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).zscore.(binNb).(pkNb),2)); 
-
+                             
                         end
                     end
                 end
-            end
-       %end
+         
     end
-    meanOrig = squeeze(nanmean(origTrace,3));
-    %monCi_low = meanOrig(:,:,1) - 1.96*std(origTrace(:,:,:,1),0,3, 'omitnan')./sqrt(length(find(~isnan(origTrace(1,1,:,1)))));
-    %monCi_high = meanOrig(:,:,1) + 1.96*std(origTrace(:,:,:,1),0,3, 'omitnan')./sqrt(length(find(~isnan(origTrace(1,1,:,1)))));
-   
-    %binCi_low = meanOrig(:,:,2) - 1.96*std(origTrace(:,:,:,2),0,3, 'omitnan')./sqrt(length(find(~isnan(origTrace(1,1,:,1)))));
-    %binCi_high = meanOrig(:,:,2) + 1.96*std(origTrace(:,:,:,2),0,3, 'omitnan')./sqrt(length(find(~isnan(origTrace(1,1,:,1)))));
    
    
                 figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+
                 for p =1:4
                     
                     
                        h= subplot(1,4,p);
-                     idxs = find(~isnan(origTrace(p,:,1)));
-                     for u =1:length(idxs)
-                       x =ones(1,1);
-                       plot([x,2*x],[origTrace(p,idxs(u),1),origTrace(p,idxs(u),2)],'-*','LineWidth', 2, 'Color',col(c,:))
-                     hold on
+                     clear idx nsidx
+                     cnt =0;
+                     for i=1:length(pvalues)
+                      x =ones(1,1);
+                      %[~, maxr2] = max(r2(:,i)); %take index of best explained variance through linear trend =1, quad trend =2, cubic =3 
+                       %  if pvalues(6,i) < 0.05 && (maxr2 ==3)
+                         if pvalues(1,i) < 0.05 
+                       plot([x,2*x],[origTrace(p,i,1),origTrace(p,i,2)],'-*','LineWidth', 3, 'Color',col(4,:))
+                       cnt = cnt+1;
+                       idx(cnt) =i;
+                      
+                         else
+                     
+                        plot([x,2*x],[origTrace(p,i,1),origTrace(p,i,2)],'-*','LineWidth', 2, 'Color',[161/255,161/255,161/255])
+                  
+                       
+                         end
+                       
+                          hold on
+                         
+                         if i == length(pvalues)
+                       nsidx = 1:length(origTrace(p,:,1));
+                       nsidx(idx) = 0;
+                       nsidx = find(nsidx);
+                            plot([x,2*x],[mean(origTrace(p,idx,1),2),mean(origTrace(p,idx,2),2)],'--*','LineWidth', 6, 'Color',col(4,:))
+                            hold on
+                            plot([x,2*x],[mean(origTrace(p,nsidx,1),2),mean(origTrace(p,nsidx,2),2)],'--*','LineWidth', 6, 'Color',col(4,:))
+                   
+         
+                         end
+                       
                      end
-                         %monocular
-                      %scatter(origTrace(p,:,1),'o', 'Color',col(c,:))
-                
+                     
+                    plot([x,2*x],[mean(origTrace(1,idx,1),2),mean(origTrace(1,idx,2),2)],'*','LineWidth', 6, 'Color',[61/255,61/255,61/255])
+                     
                     set(h,'position',get(h,'position').*[1 1 1.15 1])
-                    ylim(ylims(c,:))
+                    ylim(ylims(1,:))
                     if p == 1
                         
                         ylabel('Spike rate (spikes/s)')
@@ -1276,10 +1303,248 @@ for c = 1:length(class)
                 end
                 %legend('Binocular','Monocular', 'Location', 'bestoutside')
                 currfig = gcf;
-                title(currfig.Children(end),sprintf('Peak responses of %s cells in the binocular condition',class{c}))
-                 
-                 plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat(sprintf('all_pks_mono_bino_orig_%s_cell',class{c})));
-                 saveas(gcf,strcat(plotdir, '.png'));
+                %title(currfig.Children(end),sprintf('Peak responses of %s cells in the binocular condition',class{c}))
+                title(currfig.Children(end),'Peak responses of all cells in the binocular condition')
+         
+                 plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_orig_allcells'));
+                %saveas(gcf,strcat(plotdir, '.png'));
                  %saveas(gcf,strcat(plotdir, '.svg'));
                 
-end
+%end
+%% Plotting the slopes of monocular vs binocular
+
+
+
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+
+trialsTraces =load([newdatadir 'all_orig_bs_zscore_trials']);
+filenames = fieldnames(trialsTraces.peak_aligned_trials);
+
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\results_simple_Anova_diffpks.csv',',',1,1)';
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_results_lmer_allpks.csv',',',1,1)';
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\monobino_maineffect_results_lmer_allpks.csv',',',1,1)';
+pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_results_anova_allpks.csv',',',1,1)';
+
+
+ %class ={'M','P','K'};
+%ylims = [[0 160];[0 105];[0 210]];
+ylims = [[0 250];[0 200];[0 240]];
+% bsylims = [[-30 250];[-20 210];[-20 230]];
+ %zylim = [-1 3];
+bins =[1,6];
+col(1,:) =[86/255 86/255 86/255] ; %--dark grey 
+col(2,:) = [251/255 154/255 153/255]; % -- red
+col(3,:) = [146/255 197/255 222/255]; % -- blue
+col(4,:) = [238/255 58/255 104/255]; % -- pink
+
+   
+        % origTrace = nan(4,length(filenames),2);
+         zTrace = nan(4,length(filenames),2);
+         zslope = nan(length(filenames),2);
+          t =linspace(1,1100,4);
+   for i =1:length(filenames)
+              filename = filenames{i};
+       
+                for bin = 1:length(bins)
+                    binNb = sprintf('bin%d',bins(bin));
+                    
+                        
+                    for pn =1:4
+                         pkNb = sprintf('pk%d', pn);
+                        
+                
+                        if nnz(strcmp(fieldnames(trialsTraces.peak_aligned_trials.(filename).origin),binNb))
+                             %origTrace(pn,i,bin) = max(squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).origin.(binNb).(pkNb),2))); 
+                             zTrace(pn,i,bin) =  max(squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).zscore.(binNb).(pkNb),2))); 
+
+                            
+                        end
+                    end
+                    slope = polyfit(t,zTrace(:,i,bin)',1);
+                    zslope(i,bin) = slope(1);
+                end
+         
+   end
+  
+   
+ 
+   
+                h =figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+
+               
+                    
+                    
+                     clear idx nsidx
+                     cnt =0;
+                     for i=1:length(pvalues)
+                      x =ones(1,1);
+                         if pvalues(3,i) > 0.05
+                     
+                       plot([x,2*x],[zslope(i,1),zslope(i,2)],'-*','LineWidth', 2, 'Color',[161/255,161/255,161/255])
+                  
+                         else
+                       plot([x,2*x],[zslope(i,1),zslope(i,2)],'-*','LineWidth', 3, 'Color',col(4,:))
+                       cnt = cnt+1;
+                       idx(cnt) =i;
+                       
+                         end
+                       
+                          hold on
+                         
+                         if i == length(pvalues)
+                       nsidx = 1:length(origTrace(1,:,1));
+                       nsidx(idx) = 0;
+                       nsidx = find(nsidx);
+                        h1 =    plot([x,2*x],[mean(zslope(idx,1)),mean(zslope(idx,2))],'--*','LineWidth', 6, 'Color',col(4,:));
+                            hold on
+                        h2 =    plot([x,2*x],[mean(zslope(nsidx,1)),mean(zslope(nsidx,2))],'--*','LineWidth', 6, 'Color',col(3,:));
+                   
+         
+                         end
+                       
+                             
+                        
+                       
+                     end
+                         %monocular
+                      %scatter(origTrace(p,:,1),'o', 'Color',col(c,:))
+                
+                    set(h,'position',get(h,'position').*[1 1 1.15 1])
+                    %ylim(ylims(1,:))
+ 
+                        ylabel('Spike rate change across peaks (z-score slope)')
+                   
+                    xlim([0 3])
+                    xticklabels({'','', 'Monocular','','Binocular',''})
+                    set(gca, 'linewidth',2)
+                    set(gca,'box','off')
+                           
+                legend([h1 h2],'Significant Interaction Mean','NS', 'Location', 'bestoutside')
+                currfig = gcf;
+                %title(currfig.Children(end),sprintf('Peak responses of %s cells in the binocular condition',class{c}))
+                title(currfig.Children(end),'Slope across peaks of all cells in the monocular and binocular condition')
+         
+                 plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_orig_allcells'));
+                %saveas(gcf,strcat(plotdir, '.png'));
+                 %saveas(gcf,strcat(plotdir, '.svg'));
+                
+%end
+
+%% scatter plot of peak 1 vs Pk4 comparing binocular vs monocular
+
+
+newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+
+trialsTraces =load([newdatadir 'all_orig_bs_zscore_trials']);
+filenames = fieldnames(trialsTraces.peak_aligned_trials);
+
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\results_simple_Anova_diffpks.csv',',',1,1)';
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_results_lmer_allpks.csv',',',1,1)';
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\monobino_maineffect_results_lmer_allpks.csv',',',1,1)';
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_results_anova_allpks.csv',',',1,1)';
+pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_contrast_aov.csv',',',1,1)';
+
+
+ class ={'M','P','K'};
+%ylims = [[0 160];[0 105];[0 210]];
+ylims = [[0 250];[0 200];[0 240]];
+% bsylims = [[-30 250];[-20 210];[-20 230]];
+ %zylim = [-1 3];
+bins =[1,6];
+col(1,:) =[86/255 86/255 86/255] ; %--dark grey 
+col(2,:) = [251/255 154/255 153/255]; % -- red
+col(3,:) = [146/255 197/255 222/255]; % -- blue
+col(4,:) = [238/255 58/255 104/255]; % -- pink
+
+%for c = 1:length(class)
+    
+         zTrace = nan(4,length(filenames),2);
+    for i =1:length(filenames)
+             filename = filenames{i};
+        
+                for bin = 1:length(bins)
+                    binNb = sprintf('bin%d',bins(bin));
+                    
+                        
+                    for pn =1:4
+                         pkNb = sprintf('pk%d', pn);
+                        
+                
+                        if nnz(strcmp(fieldnames(trialsTraces.peak_aligned_trials.(filename).zscore),binNb))
+                               zTrace(pn,i,bin) =  max(squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).zscore.(binNb).(pkNb),2))); 
+
+                        end
+                    end
+                end
+    end
+     
+   
+               h= figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+
+                                         
+                     clear idx nsidx
+                     cnt =0;
+                     for i=1:length(pvalues)
+                      x =ones(1,1);
+                         if pvalues(1,i) > 0.05
+                     
+                       %plot([x,2*x],[origTrace(1,i,1),origTrace(4,i,1)],'-*','LineWidth', 2, 'Color',[161/255,161/255,161/255])
+                       %hold on
+                       %plot([x,2*x],[origTrace(1,i,2),origTrace(4,i,2)],'-*','LineWidth', 2, 'Color',[161/255,161/255,161/255])
+                  
+                         else
+                 %      plot([x,2*x],[origTrace(1,i,1),origTrace(4,i,1)],'-*','LineWidth', 3, 'Color',[161/255,161/255,161/255])
+                  %     hold on
+                   %     plot([x,2*x],[origTrace(1,i,2),origTrace(4,i,2)],'-*','LineWidth', 3, 'Color',[161/255,161/255,161/255])
+
+                       cnt = cnt+1;
+                       idx(cnt) =i;
+                       
+                         end
+                       
+                          hold on
+                         
+                         if i == length(pvalues)
+                       nsidx = 1:length(zTrace(1,:,1));
+                       nsidx(idx) = 0;
+                       nsidx = find(nsidx);
+                    plot([x,2*x],[mean(zTrace(1,idx,1),2),mean(zTrace(4,idx,1),2)],'--*','LineWidth', 6, 'Color',col(4,:))
+                    hold on
+                    plot([x,2*x],[mean(zTrace(1,nsidx,1),2),mean(zTrace(4,nsidx,1),2)],'--*','LineWidth', 6, 'Color',[141/255,141/255,141/255])
+                    hold on
+                    plot([x,2*x],[mean(zTrace(1,idx,2),2),mean(zTrace(4,idx,2),2)],'--*','LineWidth', 6, 'Color',col(4,:))
+                    hold on
+                    plot([x,2*x],[mean(zTrace(1,nsidx,2),2),mean(zTrace(4,nsidx,2),2)],'--*','LineWidth', 6, 'Color',[141/255,141/255,141/255])
+                    hold on
+                    plot([x,2*x],[median(zTrace(1,idx,1),2),median(zTrace(4,idx,1),2)],'--*','LineWidth', 6, 'Color',col(2,:))
+                    hold on
+                    plot([x,2*x],[median(zTrace(1,nsidx,1),2),median(zTrace(4,nsidx,1),2)],'--*','LineWidth', 6, 'Color',[161/255,161/255,161/255])
+                    hold on
+                    plot([x,2*x],[median(zTrace(1,idx,2),2),median(zTrace(4,idx,2),2)],'--*','LineWidth', 6, 'Color',col(2,:))
+                    hold on
+                    plot([x,2*x],[median(zTrace(1,nsidx,2),2),median(zTrace(4,nsidx,2),2)],'--*','LineWidth', 6, 'Color',[161/255,161/255,161/255])
+
+         
+                         end
+                       
+                             
+                        
+                       
+                     end
+              
+                set(h,'position',get(h,'position').*[1 1 1.15 1])
+                %ylim(ylims(1,:))
+                ylabel('Spike rate (z-score)')
+                xlim([0 3])
+                xticklabels({'','', 'Pk1','','Pk4',''})
+                set(gca, 'linewidth',2)
+                set(gca,'box','off')
+
+               
+                legend('Mean Mono Significant Pk*Condition','Mean Mono NS','Mean Bino Significant Pk*Condition','Mean Bino NS',...
+                    'Median Mono Significant Pk*Condition','Median Mono NS','Median Bino Significant Pk*Condition','Median Bino NS', 'Location', 'bestoutside')
+                currfig = gcf;
+                %title(currfig.Children(end),sprintf('Peak responses of %s cells in the binocular condition',class{c}))
+                title(currfig.Children(end),'Peak 1 and Peak 4 responses of all cells in the binocular vs monocular condition')
+         
+   
