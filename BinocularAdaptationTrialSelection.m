@@ -1181,11 +1181,14 @@ filenames = fieldnames(trialsTraces.peak_aligned_trials);
 %pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_results_lmer_allpks.csv',',',1,1)';
 %pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\monobino_maineffect_results_lmer_allpks.csv',',',1,1)';
 %pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_results_anova_allpks.csv',',',1,1)';
-pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_contrast_aov.csv',',',1,1)';
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_contrast_aov.csv',',',1,1)';
+
+%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_contrast_indepSampleTtest.csv',',',1,1)';
 
 
-%pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_pvals_anova_linearTrend.csv',',',1,1)';
-%r2 = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_r2_anova_linearTrend.csv',',',1,1)';
+
+pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_pvals_anova_linearTrend.csv',',',1,1)';
+r2 = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_r2_anova_linearTrend.csv',',',1,1)';
 
 %{
 pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
@@ -1215,7 +1218,11 @@ bins =[1,6];
 col(1,:) =[86/255 86/255 86/255] ; %--dark grey 
 col(2,:) = [251/255 154/255 153/255]; % -- red
 col(3,:) = [146/255 197/255 222/255]; % -- blue
-col(4,:) = [238/255 58/255 104/255]; % -- pink
+col(4,:) =[194/255 165/255 207/255] ; %--purple
+col(5,:) = [253/255 174/255 97/255]; % -- orange
+col(6,:) = [166/255 219/255 160/255]; % -- green
+col(7,:) = [238/255 58/255 104/255]; % -- pink
+
 
 
     
@@ -1244,7 +1251,7 @@ col(4,:) = [238/255 58/255 104/255]; % -- pink
     end
    
    
-                figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+            figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
 
                 for p =1:4
                     
@@ -1254,11 +1261,12 @@ col(4,:) = [238/255 58/255 104/255]; % -- pink
                      cnt =0;
                      for i=1:length(pvalues)
                       x =ones(1,1);
-                      %[~, maxr2] = max(r2(:,i)); %take index of best explained variance through linear trend =1, quad trend =2, cubic =3 
-                       %  if pvalues(6,i) < 0.05 && (maxr2 ==3)
-                         if pvalues(1,i) < 0.05 
-                       plot([x,2*x],[origTrace(p,i,1),origTrace(p,i,2)],'-*','LineWidth', 3, 'Color',col(4,:))
+                     % [~, maxr2] = max(r2(:,i)); %take index of best explained variance through linear trend =1, quad trend =2, cubic =3 
+                        % if pvalues(2,i) < 0.05 && (maxr2 ==1)
+                         if pvalues(6,i) < 0.05
+                       
                        cnt = cnt+1;
+                       plot([x,2*x],[origTrace(p,i,1),origTrace(p,i,2)],'-*','LineWidth', 3, 'Color',col(cnt+1,:))
                        idx(cnt) =i;
                       
                          else
@@ -1274,16 +1282,17 @@ col(4,:) = [238/255 58/255 104/255]; % -- pink
                        nsidx = 1:length(origTrace(p,:,1));
                        nsidx(idx) = 0;
                        nsidx = find(nsidx);
-                            plot([x,2*x],[mean(origTrace(p,idx,1),2),mean(origTrace(p,idx,2),2)],'--*','LineWidth', 6, 'Color',col(4,:))
+                          h1 =  plot([x,2*x],[mean(origTrace(p,idx,1),2),mean(origTrace(p,idx,2),2)],'--*','LineWidth', 6, 'Color',col(7,:));
                             hold on
-                            plot([x,2*x],[mean(origTrace(p,nsidx,1),2),mean(origTrace(p,nsidx,2),2)],'--*','LineWidth', 6, 'Color',col(4,:))
-                   
+                         % h2 =  plot([x,2*x],[mean(origTrace(p,nsidx,1),2),mean(origTrace(p,nsidx,2),2)],'--*','LineWidth', 6, 'Color',col(1,:));
+                          h2 =  plot([x,2*x],[mean(origTrace(p,:,1),2),mean(origTrace(p,:,2),2)],'--*','LineWidth', 6, 'Color',col(1,:));
+                       r2sig = mean(r2,2);
          
                          end
                        
                      end
                      
-                    plot([x,2*x],[mean(origTrace(1,idx,1),2),mean(origTrace(1,idx,2),2)],'*','LineWidth', 6, 'Color',[61/255,61/255,61/255])
+                    plot([x,2*x],[mean(origTrace(1,idx,1),2),mean(origTrace(1,idx,2),2)],'>','LineWidth', 6, 'Color',[61/255,61/255,61/255])
                      
                     set(h,'position',get(h,'position').*[1 1 1.15 1])
                     ylim(ylims(1,:))
@@ -1301,7 +1310,7 @@ col(4,:) = [238/255 58/255 104/255]; % -- pink
                          ax1.YAxis.Visible = 'off';   
                     end               
                 end
-                %legend('Binocular','Monocular', 'Location', 'bestoutside')
+                %legend([h1 h2], 'Significant mean','Population mean', 'Location', 'bestoutside')
                 currfig = gcf;
                 %title(currfig.Children(end),sprintf('Peak responses of %s cells in the binocular condition',class{c}))
                 title(currfig.Children(end),'Peak responses of all cells in the binocular condition')
