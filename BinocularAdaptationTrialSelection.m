@@ -461,7 +461,7 @@ end
  % post peak isolation count
  
  cellclass = {'M','P','K'};
- cnt = zeros(4,length(contLims), length(cellclass));
+ scnt = zeros(4,length(contLims), length(cellclass));
  
 for c = 1:length(cellclass)
     cellC =sprintf('%s',cellclass{c});
@@ -476,7 +476,7 @@ for c = 1:length(cellclass)
                 
                 if nnz(strcmp(fieldnames(peak_vals.(filename)), binNb))
                     for pn =1:4
-                        cnt(pn, bin, c) =cnt(pn, bin, c)+ numel(peak_vals.(filename).(binNb)(pn,:));
+                        scnt(pn, bin, c) =scnt(pn, bin, c)+ numel(peak_vals.(filename).(binNb)(pn,:));
 
 
                     end
@@ -1169,7 +1169,7 @@ for c = 1:length(class)
                 
 end
 
-%% scatter plot of each peak comparing binocular vs monocular
+%% Figure for the paper: scatter plot of each peak comparing binocular vs monocular
 
 
 newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
@@ -1182,10 +1182,7 @@ filenames = fieldnames(trialsTraces.peak_aligned_trials);
 %pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\monobino_maineffect_results_lmer_allpks.csv',',',1,1)';
 %pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_results_anova_allpks.csv',',',1,1)';
 %pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_contrast_aov.csv',',',1,1)';
-
 %pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_contrast_indepSampleTtest.csv',',',1,1)';
-
-
 
 pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_pvals_anova_linearTrend.csv',',',1,1)';
 r2 = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_r2_anova_linearTrend.csv',',',1,1)';
@@ -1250,76 +1247,178 @@ col(7,:) = [238/255 58/255 104/255]; % -- pink
          
     end
    
-   
-            figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+   %Main figure
+               figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
 
-                for p =1:4
-                    
-                    
-                       h= subplot(1,4,p);
-                     clear idx nsidx
-                     cnt =0;
-                     for i=1:length(pvalues)
-                      x =ones(1,1);
-                     % [~, maxr2] = max(r2(:,i)); %take index of best explained variance through linear trend =1, quad trend =2, cubic =3 
-                        % if pvalues(2,i) < 0.05 && (maxr2 ==1)
-                         if pvalues(6,i) < 0.05
+               for p =1:4
+
+
+                   h= subplot(1,4,p);
+                   clear sidx nsidx idx 
+                   scnt =0;
+                   cnt =0;
+                   for i=1:length(pvalues)
+                       x =ones(1,1);
+                       filename = filenames{i};
                        
-                       cnt = cnt+1;
-                       plot([x,2*x],[origTrace(p,i,1),origTrace(p,i,2)],'-*','LineWidth', 3, 'Color',col(cnt+1,:))
-                       idx(cnt) =i;
-                      
-                         else
-                     
-                        plot([x,2*x],[origTrace(p,i,1),origTrace(p,i,2)],'-*','LineWidth', 2, 'Color',[161/255,161/255,161/255])
-                  
                        
-                         end
-                       
-                          hold on
-                         
-                         if i == length(pvalues)
-                       nsidx = 1:length(origTrace(p,:,1));
-                       nsidx(idx) = 0;
-                       nsidx = find(nsidx);
-                          h1 =  plot([x,2*x],[mean(origTrace(p,idx,1),2),mean(origTrace(p,idx,2),2)],'--*','LineWidth', 6, 'Color',col(7,:));
-                            hold on
-                         % h2 =  plot([x,2*x],[mean(origTrace(p,nsidx,1),2),mean(origTrace(p,nsidx,2),2)],'--*','LineWidth', 6, 'Color',col(1,:));
-                          h2 =  plot([x,2*x],[mean(origTrace(p,:,1),2),mean(origTrace(p,:,2),2)],'--*','LineWidth', 6, 'Color',col(1,:));
-                       r2sig = mean(r2,2);
-         
-                         end
-                       
-                     end
-                     
-                    plot([x,2*x],[mean(origTrace(1,idx,1),2),mean(origTrace(1,idx,2),2)],'>','LineWidth', 6, 'Color',[61/255,61/255,61/255])
-                     
-                    set(h,'position',get(h,'position').*[1 1 1.15 1])
-                    ylim(ylims(1,:))
-                    if p == 1
-                        
-                        ylabel('Spike rate (spikes/s)')
-                    end
-                    xlim([0 3])
-                    xticklabels({'','', 'Monocular','','Binocular',''})
-                    set(gca, 'linewidth',2)
-                    set(gca,'box','off')
-                    
-                    if p>1
-                         ax1 = gca;                   
-                         ax1.YAxis.Visible = 'off';   
-                    end               
-                end
-                %legend([h1 h2], 'Significant mean','Population mean', 'Location', 'bestoutside')
-                currfig = gcf;
-                %title(currfig.Children(end),sprintf('Peak responses of %s cells in the binocular condition',class{c}))
-                title(currfig.Children(end),'Peak responses of all cells in the binocular condition')
-         
-                 plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_orig_allcells'));
-                %saveas(gcf,strcat(plotdir, '.png'));
-                 %saveas(gcf,strcat(plotdir, '.svg'));
-                
-%end
+                       if ~isempty(trialsTraces.peak_aligned_trials.(filename).cellclass)
+                           cnt = cnt+1;
+                           idx(cnt) =i;
+                           % [~, maxr2] = max(r2(:,i)); %take index of best explained variance through linear trend =1, quad trend =2, cubic =3
+                           % if pvalues(2,i) < 0.05 && (maxr2 ==1)
+                           if pvalues(6,i) < 0.05
+                               
+                               scnt = scnt+1;
+                               plot([x,2*x],[origTrace(p,i,1),origTrace(p,i,2)],'-*','LineWidth', 3, 'Color',col(scnt+1,:))
+                               sidx(scnt) =i;
+                               
+                           else
+                               
+                               plot([x,2*x],[origTrace(p,i,1),origTrace(p,i,2)],'-*','LineWidth', 2, 'Color',[161/255,161/255,161/255])
+                               
+                               
+                           end
+                           
+                           hold on
+                           
+                           if i == length(pvalues)
+                               nsidx = 1:length(origTrace(p,:,1));
+                               nsidx(sidx) = 0;
+                               nsidx = find(nsidx);
+                               h1 =  plot([x,2*x],[mean(origTrace(p,sidx,1),2),mean(origTrace(p,sidx,2),2)],'--*','LineWidth', 6, 'Color',col(7,:));
+                               hold on
+                               % h2 =  plot([x,2*x],[mean(origTrace(p,nsidx,1),2),mean(origTrace(p,nsidx,2),2)],'--*','LineWidth', 6, 'Color',col(1,:));
+                               h2 =  plot([x,2*x],[mean(origTrace(p,idx,1),2),mean(origTrace(p,idx,2),2)],'--*','LineWidth', 6, 'Color',col(1,:));
+                               %r2sig = mean(r2,2);
+                               
+                           end
+                           
+                       end
+                   end
+                   plot([x,2*x],[mean(origTrace(1,sidx,1),2),mean(origTrace(1,sidx,2),2)],'>','LineWidth', 6, 'Color',[61/255,61/255,61/255])
+
+                   set(h,'position',get(h,'position').*[1 1 1.15 1])
+                   ylim(ylims(1,:))
+                   if p == 1
+
+                       ylabel('Spike rate (spikes/s)')
+                   end
+                   xlim([0 3])
+                   xticklabels({'','', 'Monocular','','Binocular',''})
+                   set(gca, 'linewidth',2)
+                   set(gca,'box','off')
+
+                   if p>1
+                       ax1 = gca;
+                       ax1.YAxis.Visible = 'off';
+                   end
+               end
+               %legend([h1 h2], 'Significant mean','Population mean', 'Location', 'bestoutside')
+               currfig = gcf;
+               %title(currfig.Children(end),sprintf('Peak responses of %s cells in the binocular condition',class{c}))
+               title(currfig.Children(end),'Peak responses of all cells in the binocular condition')
+               plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_orig_identifiedcells'));
+               saveas(gcf,strcat(plotdir, '.png'));
+               saveas(gcf,strcat(plotdir, '.svg'));
+               
+%%Figure inset
+%getting indices for cells that were significant awithin the identified
+%pool of cells
+cnt =0;
+scnt =0;
+for i=1:length(pvalues)
+    if ~isempty(trialsTraces.peak_aligned_trials.(filename).cellclass)
+        cnt = cnt+1;
+        %index of cells that were identified
+        idx(cnt) =i;
+        
+        if pvalues(6,i) < 0.05
+            
+            scnt = scnt+1;
+            sidx(scnt) =i;
+        end
+    end
+end
+
+%percent change from Pk1
+%individual cells
+percentTrace = nan(size(origTrace));
+for n =1:length(origTrace(1,:,1))
+    percentTrace(:,n,1) = 100.*(origTrace(:,n,1)-origTrace(1,n,1))./origTrace(1,n,1);
+    percentTrace(:,n,2) = 100.*(origTrace(:,n,2)-origTrace(1,n,2))./origTrace(1,n,2);
+end
+
+h =figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+x =1:4;
+%h1 =  plot(x,mean(percentTrace(:,sidx,1),2),'-','LineWidth', 6, 'Color',col(7,:));
+%hold on
+%h2 =  plot(x,mean(percentTrace(:,sidx,2),2),'--','LineWidth', 6, 'Color',col(7,:));
+%hold on
+h3 =  plot(x,mean(percentTrace(:,:,1),2),'-','LineWidth', 6, 'Color',col(1,:));
+hold on
+h4 =  plot(x,mean(percentTrace(:,:,2),2),'-','LineWidth', 6, 'Color',col(1,:));
+h3.Color(4) = 0.4;
+
+
+set(h,'position',get(h,'position').*[1 1 1.15 1])
+xlim([0.5 4.5])
+ylim([-10 1])
+hold on
+hline([0 0], '-k')
+ylabel('Percent Change (%)')
+
+xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+
+legend([h3 h4],'Monocular Population mean','Binocular Population mean', 'Location', 'bestoutside')
+currfig = gcf;
+title(currfig.Children(end),'Monocular vs binocular condition percent change from Pk1')
+
+plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_percentPk1_allcells_indivmeans'));
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
+%same but computing the percent change with the overall units mean
+%percent change from Pk1
+meansigTrace =squeeze(mean(origTrace(:,sidx,:),2));
+meanTrace =squeeze(mean(origTrace(:,:,:),2));
+percentsigTrace = 100.*(meansigTrace-meansigTrace(1,:))./meansigTrace(1,:);
+percentTrace = 100.*(meanTrace-meanTrace(1,:))./meanTrace(1,:);
+
+
+h =figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+x =1:4;
+%h1 =  plot(x,percentsigTrace(:,1),'-','LineWidth', 6, 'Color',col(7,:));
+%hold on
+%h2 =  plot(x,percentsigTrace(:,2),'-','LineWidth', 6, 'Color',col(7,:));
+%hold on
+h3 =  plot(x,percentTrace(:,2),'-','LineWidth', 6, 'Color',col(1,:));
+hold on
+h4 =  plot(x,percentTrace(:,1),'-','LineWidth', 6, 'Color',col(1,:));
+%h1.Color(4) = 0.4;
+h4.Color(4) = 0.4;
+
+set(h,'position',get(h,'position').*[1 1 1.15 1])
+xlim([0.5 4.5])
+ylim([-10 1])
+hold on
+hline([0 0], '-k')
+ylabel('Percent Change (%)')
+
+xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+
+legend([h3 h4],'Binocular Population mean','Monocular Population mean', 'Location', 'bestoutside')
+currfig = gcf;
+title(currfig.Children(end),'Monocular vs binocular condition percent change from Pk1')
+
+plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_percentPk1_allcells_population_mean'));
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
 %% Plotting the slopes of monocular vs binocular
 
 
@@ -1384,7 +1483,7 @@ col(4,:) = [238/255 58/255 104/255]; % -- pink
                     
                     
                      clear idx nsidx
-                     cnt =0;
+                     scnt =0;
                      for i=1:length(pvalues)
                       x =ones(1,1);
                          if pvalues(3,i) > 0.05
@@ -1393,8 +1492,8 @@ col(4,:) = [238/255 58/255 104/255]; % -- pink
                   
                          else
                        plot([x,2*x],[zslope(i,1),zslope(i,2)],'-*','LineWidth', 3, 'Color',col(4,:))
-                       cnt = cnt+1;
-                       idx(cnt) =i;
+                       scnt = scnt+1;
+                       sidx(scnt) =i;
                        
                          end
                        
@@ -1402,9 +1501,9 @@ col(4,:) = [238/255 58/255 104/255]; % -- pink
                          
                          if i == length(pvalues)
                        nsidx = 1:length(origTrace(1,:,1));
-                       nsidx(idx) = 0;
+                       nsidx(sidx) = 0;
                        nsidx = find(nsidx);
-                        h1 =    plot([x,2*x],[mean(zslope(idx,1)),mean(zslope(idx,2))],'--*','LineWidth', 6, 'Color',col(4,:));
+                        h1 =    plot([x,2*x],[mean(zslope(sidx,1)),mean(zslope(sidx,2))],'--*','LineWidth', 6, 'Color',col(4,:));
                             hold on
                         h2 =    plot([x,2*x],[mean(zslope(nsidx,1)),mean(zslope(nsidx,2))],'--*','LineWidth', 6, 'Color',col(3,:));
                    
@@ -1492,7 +1591,7 @@ col(4,:) = [238/255 58/255 104/255]; % -- pink
 
                                          
                      clear idx nsidx
-                     cnt =0;
+                     scnt =0;
                      for i=1:length(pvalues)
                       x =ones(1,1);
                          if pvalues(1,i) > 0.05
@@ -1506,8 +1605,8 @@ col(4,:) = [238/255 58/255 104/255]; % -- pink
                   %     hold on
                    %     plot([x,2*x],[origTrace(1,i,2),origTrace(4,i,2)],'-*','LineWidth', 3, 'Color',[161/255,161/255,161/255])
 
-                       cnt = cnt+1;
-                       idx(cnt) =i;
+                       scnt = scnt+1;
+                       sidx(scnt) =i;
                        
                          end
                        
@@ -1515,21 +1614,21 @@ col(4,:) = [238/255 58/255 104/255]; % -- pink
                          
                          if i == length(pvalues)
                        nsidx = 1:length(zTrace(1,:,1));
-                       nsidx(idx) = 0;
+                       nsidx(sidx) = 0;
                        nsidx = find(nsidx);
-                    plot([x,2*x],[mean(zTrace(1,idx,1),2),mean(zTrace(4,idx,1),2)],'--*','LineWidth', 6, 'Color',col(4,:))
+                    plot([x,2*x],[mean(zTrace(1,sidx,1),2),mean(zTrace(4,sidx,1),2)],'--*','LineWidth', 6, 'Color',col(4,:))
                     hold on
                     plot([x,2*x],[mean(zTrace(1,nsidx,1),2),mean(zTrace(4,nsidx,1),2)],'--*','LineWidth', 6, 'Color',[141/255,141/255,141/255])
                     hold on
-                    plot([x,2*x],[mean(zTrace(1,idx,2),2),mean(zTrace(4,idx,2),2)],'--*','LineWidth', 6, 'Color',col(4,:))
+                    plot([x,2*x],[mean(zTrace(1,sidx,2),2),mean(zTrace(4,sidx,2),2)],'--*','LineWidth', 6, 'Color',col(4,:))
                     hold on
                     plot([x,2*x],[mean(zTrace(1,nsidx,2),2),mean(zTrace(4,nsidx,2),2)],'--*','LineWidth', 6, 'Color',[141/255,141/255,141/255])
                     hold on
-                    plot([x,2*x],[median(zTrace(1,idx,1),2),median(zTrace(4,idx,1),2)],'--*','LineWidth', 6, 'Color',col(2,:))
+                    plot([x,2*x],[median(zTrace(1,sidx,1),2),median(zTrace(4,sidx,1),2)],'--*','LineWidth', 6, 'Color',col(2,:))
                     hold on
                     plot([x,2*x],[median(zTrace(1,nsidx,1),2),median(zTrace(4,nsidx,1),2)],'--*','LineWidth', 6, 'Color',[161/255,161/255,161/255])
                     hold on
-                    plot([x,2*x],[median(zTrace(1,idx,2),2),median(zTrace(4,idx,2),2)],'--*','LineWidth', 6, 'Color',col(2,:))
+                    plot([x,2*x],[median(zTrace(1,sidx,2),2),median(zTrace(4,sidx,2),2)],'--*','LineWidth', 6, 'Color',col(2,:))
                     hold on
                     plot([x,2*x],[median(zTrace(1,nsidx,2),2),median(zTrace(4,nsidx,2),2)],'--*','LineWidth', 6, 'Color',[161/255,161/255,161/255])
 
