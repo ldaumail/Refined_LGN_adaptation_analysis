@@ -1445,13 +1445,12 @@ filenames = fieldnames(trialsTraces.peak_aligned_trials);
 pvalues = dlmread('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_pvals_anova_linearTrend.csv',',',1,1)';
 bins =[1,6];
 col(1,:) =[86/255 86/255 86/255] ; %--dark grey
-col(2,:) = [251/255 154/255 153/255]; % -- red
+col(2,:) = [251/255 154/255 153/255]; % -- pink
 col(3,:) = [146/255 197/255 222/255]; % -- blue
 col(4,:) =[194/255 165/255 207/255] ; %--purple
 col(5,:) = [253/255 174/255 97/255]; % -- orange
 col(6,:) = [166/255 219/255 160/255]; % -- green
-col(7,:) = [238/255 58/255 104/255]; % -- pink
-
+col(7,:) = [238/255 58/255 104/255]; % -- red
 origTrace = nan(4,length(filenames),2);
 normTrace = nan(4,length(filenames),2);
 for i =1:length(filenames)
@@ -1505,22 +1504,39 @@ for n =1:length(origTrace(1,:,1))
     RegCoeffs(:,n,2) =  polyfit(t,normTrace(:,n,2)',1);
 end
 
+%Plot slopes and intercept
 h =figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
 x =1:4;
 h1 =subplot(1,2,1);
 y = RegCoeffs(2,:,1)' +repmat((t-1),46,1).*(RegCoeffs(1,:,1)');
 plot(x,y,'-','LineWidth', 4, 'Color',[180/255 180/255 180/255])
+hold on
+
+y = mean(RegCoeffs(2,sidx,1)' +repmat((t-1),length(sidx),1).*(RegCoeffs(1,sidx,1)'),1);
+plot(x,y,'-','LineWidth', 8, 'Color',col(7,:))
+hold on
+y = mean(RegCoeffs(2,:,1)' +repmat((t-1),length(1:46),1).*(RegCoeffs(1,:,1)'),1);
+plot(x,y,'-','LineWidth', 8, 'Color','k')
+
 xlim([0.5 4.5])
-ylim([0.4 1.4])
+ylim([0.6 1.4])
 xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
 title('Monocular condition')
 set(gca, 'linewidth',2)
 set(gca,'box','off')
 
 h2 =subplot(1,2,2);
-y = RegCoeffs(2,:,1)'+repmat((t-1),46,1).*(RegCoeffs(1,:,2)');
+y = RegCoeffs(2,:,2)'+repmat((t-1),46,1).*(RegCoeffs(1,:,2)');
 plot(x,y,'-','LineWidth', 4, 'Color',col(1,:))
-ylim([0.4 1.4])
+hold on
+
+y = mean(RegCoeffs(2,sidx,2)' +repmat((t-1),length(sidx),1).*(RegCoeffs(1,sidx,2)'),1);
+plot(x,y,'-','LineWidth', 8, 'Color',col(7,:))
+hold on
+y = mean(RegCoeffs(2,:,2)' +repmat((t-1),length(1:46),1).*(RegCoeffs(1,:,2)'),1);
+plot(x,y,'-','LineWidth', 8, 'Color','k')
+
+ylim([0.6 1.4])
 xlim([0.5 4.5])
 xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
 set(h,'position',get(h,'position').*[1 1 1.15 1])
@@ -1530,6 +1546,110 @@ set(gca, 'linewidth',2)
 set(gca,'box','off')
 
 plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_linearReg_allcells'));
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
+%% Plot slopes separately from intercepts
+h =figure('Renderer', 'painters', 'Position', [10 10 1200 1200]);
+x =1:4;
+%first, plot linear change over time
+h1 =subplot(3,2,1);
+y = repmat((t-1),46,1).*(RegCoeffs(1,:,1)');
+plot(x,y,'-','LineWidth', 2, 'Color',[180/255 180/255 180/255])
+hold on
+
+y = mean(repmat((t-1),length(sidx),1).*(RegCoeffs(1,sidx,1)'),1);
+plot(x,y,'-','LineWidth', 4, 'Color',col(7,:))
+hold on
+y =mean(repmat((t-1),length(1:46),1).*(RegCoeffs(1,:,1)'),1);
+plot(x,y,'-','LineWidth', 4, 'Color','k')
+
+xlim([0.5 4.5])
+%ylim([0.6 1.4])
+xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
+ylabel('Spike Rate (normalized)')
+title('Linear change in the monocular condition (slope)')
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+
+h2 =subplot(3,2,2);
+y = repmat((t-1),46,1).*(RegCoeffs(1,:,2)');
+plot(x,y,'-','LineWidth', 2, 'Color',col(1,:))
+hold on
+
+y = mean(repmat((t-1),length(sidx),1).*(RegCoeffs(1,sidx,2)'),1);
+plot(x,y,'-','LineWidth', 4, 'Color',col(7,:))
+hold on
+y = mean(repmat((t-1),length(1:46),1).*(RegCoeffs(1,:,2)'),1);
+plot(x,y,'-','LineWidth', 4, 'Color','k')
+
+%ylim([0.6 1.4])
+xlim([0.5 4.5])
+xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
+set(h,'position',get(h,'position').*[1 1 1.15 1])
+title('Linear change in the binocular condition (slope)')
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+
+%plot intercepts
+h3 =subplot(3,2,3:4);
+boxplot([RegCoeffs(2,:,1)' RegCoeffs(2,:,2)'],'notch','off','labels',{'Monocular','Binocular'});
+hx = findobj(gca,'Tag','Box');
+patch(get(hx(1),'XData'),get(hx(1),'YData'),[80/255 80/255 80/255],'FaceAlpha',.5);
+patch(get(hx(2),'XData'),get(hx(2),'YData'),[180/255 180/255 180/255],'FaceAlpha',.5);
+
+
+hold on    
+x2=ones(length(RegCoeffs(2,:,1)),1).*(1+(rand(length(RegCoeffs(2,:,1)),1)-0.5)/5);
+x3=ones(length(RegCoeffs(2,:,1)),1).*(1+(rand(length(RegCoeffs(2,:,1)),1)-0.5)/10);
+f1=scatter(x2,RegCoeffs(2,:,1),'k','filled','jitter', 'off');f1.MarkerFaceAlpha = 0.4;
+hold on
+f2=scatter(x3*2,RegCoeffs(2,:,2),'k', 'filled','jitter', 'off');%f2.MarkerFaceAlpha = 0.4;
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+ylabel('Initial Spike Rate(normalized)')
+title('Regression intercepts of normalized data')
+
+%Plot everything (intercept+slope) together over time
+h4 =subplot(3,2,5);
+y = RegCoeffs(2,:,1)' +repmat((t-1),46,1).*(RegCoeffs(1,:,1)');
+plot(x,y,'-','LineWidth', 2, 'Color',[180/255 180/255 180/255])
+hold on
+
+y = mean(RegCoeffs(2,sidx,1)' +repmat((t-1),length(sidx),1).*(RegCoeffs(1,sidx,1)'),1);
+plot(x,y,'-','LineWidth', 4, 'Color',col(7,:))
+hold on
+y = mean(RegCoeffs(2,:,1)' +repmat((t-1),length(1:46),1).*(RegCoeffs(1,:,1)'),1);
+plot(x,y,'-','LineWidth', 4, 'Color','k')
+
+xlim([0.5 4.5])
+ylim([0.6 1.4])
+xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
+title('Linear fit: Monocular condition')
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+
+h5 =subplot(3,2,6);
+y = RegCoeffs(2,:,2)'+repmat((t-1),46,1).*(RegCoeffs(1,:,2)');
+plot(x,y,'-','LineWidth', 2, 'Color',col(1,:))
+hold on
+
+y = mean(RegCoeffs(2,sidx,2)' +repmat((t-1),length(sidx),1).*(RegCoeffs(1,sidx,2)'),1);
+plot(x,y,'-','LineWidth', 4, 'Color',col(7,:))
+hold on
+y = mean(RegCoeffs(2,:,2)' +repmat((t-1),length(1:46),1).*(RegCoeffs(1,:,2)'),1);
+plot(x,y,'-','LineWidth', 4, 'Color','k')
+
+ylim([0.6 1.4])
+xlim([0.5 4.5])
+xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
+set(h,'position',get(h,'position').*[1 1 1.15 1])
+ylabel('Spike Rate (normalized)')
+title('Linear fit: Binocular condition')
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_linearReg_allcells_slope_intercept'));
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
