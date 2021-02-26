@@ -1169,10 +1169,10 @@ for c = 1:length(class)
                 
 end
 
-%% Figure for the paper: scatter plot of each peak comparing binocular vs monocular
+%% Figures for the paper: scatter plot of each peak comparing binocular vs monocular
 
 
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
 
 trialsTraces =load([newdatadir 'all_orig_bs_zscore_trials']);
 filenames = fieldnames(trialsTraces.peak_aligned_trials);
@@ -1184,28 +1184,10 @@ filenames = fieldnames(trialsTraces.peak_aligned_trials);
 %pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_contrast_aov.csv',',',1,1)';
 %pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_contrast_indepSampleTtest.csv',',',1,1)';
 
-pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_pvals_anova_linearTrend.csv',',',1,1)';
-r2 = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_r2_anova_linearTrend.csv',',',1,1)';
+pvalues = dlmread('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_pvals_anova_linearTrend.csv',',',1,1)';
+r2 = dlmread('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_r2_anova_linearTrend.csv',',',1,1)';
 
-%{
-pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
-pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
-pvalues = dlmread(pvalfilename, ',', 1,1)';
-pvalues = pvalues(:,~all(isnan(pvalues)));
 
-channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
-peakvals = load([channeldir 'all_data_peaks']);
-
-all_mean_data = nan(4, length(peakvals.peak_vals));
-for nunit = 1:length(peakvals.peak_vals)
- if ~isempty(peakvals.peak_vals(nunit).peak)
- mean_data = nanmean(peakvals.peak_vals(nunit).peak,2);
-   all_mean_data(:,nunit) = mean_data;
- end
-end
-all_mean_data =   all_mean_data(:,~all(isnan(all_mean_data)));
-
-%}
  class ={'M','P','K'};
 %ylims = [[0 160];[0 105];[0 210]];
 ylims = [[0 250];[0 200];[0 240]];
@@ -1222,112 +1204,108 @@ col(7,:) = [238/255 58/255 104/255]; % -- pink
 
 
 
-    
-         origTrace = nan(4,length(filenames),2);
-    for i =1:length(filenames)
-    %   if all_mean_data(4,i) < all_mean_data(1,i) && pvalues(4,i) < .05
-            filename = filenames{i};
-           
-            %if strcmp(trialsTraces.peak_aligned_trials.(filename).cellclass, class{c})
 
-                for bin = 1:length(bins)
-                    binNb = sprintf('bin%d',bins(bin));
-                    
-                        
-                    for pn =1:4
-                         pkNb = sprintf('pk%d', pn);
-                        
-                
-                        if nnz(strcmp(fieldnames(trialsTraces.peak_aligned_trials.(filename).origin),binNb))
-                             origTrace(pn,i,bin) = max(squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).origin.(binNb).(pkNb),2))); 
-                             
-                        end
-                    end
-                end
+ origTrace = nan(4,length(filenames),2);
+ for i =1:length(filenames)
+     filename = filenames{i};
+     %if strcmp(trialsTraces.peak_aligned_trials.(filename).cellclass, class{c})
+     for bin = 1:length(bins)
+         binNb = sprintf('bin%d',bins(bin));
+
+         for pn =1:4
+             pkNb = sprintf('pk%d', pn);
+
+             if nnz(strcmp(fieldnames(trialsTraces.peak_aligned_trials.(filename).origin),binNb))
+                 origTrace(pn,i,bin) = max(squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).origin.(binNb).(pkNb),2)));
+
+             end
+         end
+     end
+ end
+
+ %% Main figure
+ figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+ 
+ for p =1:4
+     
+     
+     h= subplot(1,4,p);
+     clear sidx nsidx idx
+     scnt =0;
+     cnt =0;
+     for i=1:length(pvalues)
+         x =ones(1,1);
+         filename = filenames{i};
          
-    end
-   
-   %Main figure
-               figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
-
-               for p =1:4
-
-
-                   h= subplot(1,4,p);
-                   clear sidx nsidx idx 
-                   scnt =0;
-                   cnt =0;
-                   for i=1:length(pvalues)
-                       x =ones(1,1);
-                       filename = filenames{i};
-                       
-                       
-                       if ~isempty(trialsTraces.peak_aligned_trials.(filename).cellclass)
-                           cnt = cnt+1;
-                           idx(cnt) =i;
-                           % [~, maxr2] = max(r2(:,i)); %take index of best explained variance through linear trend =1, quad trend =2, cubic =3
-                           % if pvalues(2,i) < 0.05 && (maxr2 ==1)
-                           if pvalues(6,i) < 0.05
-                               
-                               scnt = scnt+1;
-                               plot([x,2*x],[origTrace(p,i,1),origTrace(p,i,2)],'-*','LineWidth', 3, 'Color',col(scnt+1,:))
-                               sidx(scnt) =i;
-                               
-                           else
-                               
-                               plot([x,2*x],[origTrace(p,i,1),origTrace(p,i,2)],'-*','LineWidth', 2, 'Color',[161/255,161/255,161/255])
-                               
-                               
-                           end
-                           
-                           hold on
-                           
-                           if i == length(pvalues)
-                               nsidx = 1:length(origTrace(p,:,1));
-                               nsidx(sidx) = 0;
-                               nsidx = find(nsidx);
-                               h1 =  plot([x,2*x],[mean(origTrace(p,sidx,1),2),mean(origTrace(p,sidx,2),2)],'--*','LineWidth', 6, 'Color',col(7,:));
-                               hold on
-                               % h2 =  plot([x,2*x],[mean(origTrace(p,nsidx,1),2),mean(origTrace(p,nsidx,2),2)],'--*','LineWidth', 6, 'Color',col(1,:));
-                               h2 =  plot([x,2*x],[mean(origTrace(p,idx,1),2),mean(origTrace(p,idx,2),2)],'--*','LineWidth', 6, 'Color',col(1,:));
-                               %r2sig = mean(r2,2);
-                               
-                           end
-                           
-                       end
-                   end
-                   plot([x,2*x],[mean(origTrace(1,sidx,1),2),mean(origTrace(1,sidx,2),2)],'>','LineWidth', 6, 'Color',[61/255,61/255,61/255])
-
-                   set(h,'position',get(h,'position').*[1 1 1.15 1])
-                   ylim(ylims(1,:))
-                   if p == 1
-
-                       ylabel('Spike rate (spikes/s)')
-                   end
-                   xlim([0 3])
-                   xticklabels({'','', 'Monocular','','Binocular',''})
-                   set(gca, 'linewidth',2)
-                   set(gca,'box','off')
-
-                   if p>1
-                       ax1 = gca;
-                       ax1.YAxis.Visible = 'off';
-                   end
-               end
-               %legend([h1 h2], 'Significant mean','Population mean', 'Location', 'bestoutside')
-               currfig = gcf;
-               %title(currfig.Children(end),sprintf('Peak responses of %s cells in the binocular condition',class{c}))
-               title(currfig.Children(end),'Peak responses of all cells in the binocular condition')
-               plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_orig_identifiedcells'));
-               saveas(gcf,strcat(plotdir, '.png'));
-               saveas(gcf,strcat(plotdir, '.svg'));
+         
+         if ~isempty(trialsTraces.peak_aligned_trials.(filename).cellclass)
+             cnt = cnt+1;
+             idx(cnt) =i;
+             % [~, maxr2] = max(r2(:,i)); %take index of best explained variance through linear trend =1, quad trend =2, cubic =3
+             % if pvalues(2,i) < 0.05 && (maxr2 ==1)
+             if pvalues(6,i) < 0.05
+                 
+                 scnt = scnt+1;
+                 plot([x,2*x],[origTrace(p,i,1),origTrace(p,i,2)],'-*','LineWidth', 3, 'Color',col(scnt+1,:))
+                 sidx(scnt) =i;
+                 cellclass{scnt} =trialsTraces.peak_aligned_trials.(filename).cellclass;
+                 
+             else
+                 
+                 plot([x,2*x],[origTrace(p,i,1),origTrace(p,i,2)],'-*','LineWidth', 2, 'Color',[161/255,161/255,161/255])
+                 
+                 
+             end
+             
+             hold on
+             
+             if i == length(pvalues)
+                 nsidx = 1:length(origTrace(p,:,1));
+                 nsidx(sidx) = 0;
+                 nsidx = find(nsidx);
+                 h1 =  plot([x,2*x],[mean(origTrace(p,sidx,1),2),mean(origTrace(p,sidx,2),2)],'--*','LineWidth', 6, 'Color',col(7,:));
+                 hold on
+                 % h2 =  plot([x,2*x],[mean(origTrace(p,nsidx,1),2),mean(origTrace(p,nsidx,2),2)],'--*','LineWidth', 6, 'Color',col(1,:));
+                 h2 =  plot([x,2*x],[mean(origTrace(p,idx,1),2),mean(origTrace(p,idx,2),2)],'--*','LineWidth', 6, 'Color',col(1,:));
+                 %r2sig = mean(r2,2);
+                 
+             end
+             
+         end
+     end
+     plot([x,2*x],[mean(origTrace(1,sidx,1),2),mean(origTrace(1,sidx,2),2)],'>','LineWidth', 6, 'Color',[61/255,61/255,61/255])
+     
+     set(h,'position',get(h,'position').*[1 1 1.15 1])
+     ylim(ylims(1,:))
+     if p == 1
+         
+         ylabel('Spike rate (spikes/s)')
+     end
+     xlim([0 3])
+     xticklabels({'','', 'Monocular','','Binocular',''})
+     set(gca, 'linewidth',2)
+     set(gca,'box','off')
+     
+     if p>1
+         ax1 = gca;
+         ax1.YAxis.Visible = 'off';
+     end
+ end
+ %legend([h1 h2], 'Significant mean','Population mean', 'Location', 'bestoutside')
+ currfig = gcf;
+ %title(currfig.Children(end),sprintf('Peak responses of %s cells in the binocular condition',class{c}))
+ title(currfig.Children(end),'Peak responses of all cells in the binocular condition')
+ plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_orig_identifiedcells'));
+ saveas(gcf,strcat(plotdir, '.png'));
+ saveas(gcf,strcat(plotdir, '.svg'));
                
-%%Figure inset
-%getting indices for cells that were significant awithin the identified
+%% Figure inset
+%getting indices for cells that were significant within the identified
 %pool of cells
 cnt =0;
 scnt =0;
 for i=1:length(pvalues)
+    filename = filenames{i};
     if ~isempty(trialsTraces.peak_aligned_trials.(filename).cellclass)
         cnt = cnt+1;
         %index of cells that were identified
@@ -1380,7 +1358,7 @@ plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_ada
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
-%same but computing the percent change with the overall units mean
+%same type of figure but computing the percent change with the overall units mean
 %percent change from Pk1
 meansigTrace =squeeze(mean(origTrace(:,sidx,:),2));
 meanTrace =squeeze(mean(origTrace(:,:,:),2));
@@ -1390,6 +1368,7 @@ percentTrace = 100.*(meanTrace-meanTrace(1,:))./meanTrace(1,:);
 
 h =figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
 x =1:4;
+
 %h1 =  plot(x,percentsigTrace(:,1),'-','LineWidth', 6, 'Color',col(7,:));
 %hold on
 %h2 =  plot(x,percentsigTrace(:,2),'-','LineWidth', 6, 'Color',col(7,:));
@@ -1399,6 +1378,7 @@ hold on
 h4 =  plot(x,percentTrace(:,1),'-','LineWidth', 6, 'Color',col(1,:));
 %h1.Color(4) = 0.4;
 h4.Color(4) = 0.4;
+ 
 
 set(h,'position',get(h,'position').*[1 1 1.15 1])
 xlim([0.5 4.5])
@@ -1416,6 +1396,140 @@ currfig = gcf;
 title(currfig.Children(end),'Monocular vs binocular condition percent change from Pk1')
 
 plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_percentPk1_allcells_population_mean'));
+%saveas(gcf,strcat(plotdir, '.png'));
+%saveas(gcf,strcat(plotdir, '.svg'));
+
+%plot normalized responses relative to Pk1 (very similar)
+meansigTrace =squeeze(mean(origTrace(:,sidx,:),2));
+meanTrace =squeeze(mean(origTrace(:,:,:),2));
+normsigTrace = 100.*(meansigTrace)./meansigTrace(1,:);
+normTrace = 100.*(meanTrace)./meanTrace(1,:);
+
+
+h =figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+x =1:4;
+h1 =  plot(x,normsigTrace(:,2),'-','LineWidth', 6, 'Color',col(7,:));
+hold on
+h2 =  plot(x,normsigTrace(:,1),'-','LineWidth', 6, 'Color',col(7,:));
+hold on
+h3 =  plot(x,normTrace(:,2),'-','LineWidth', 6, 'Color',col(1,:));
+hold on
+h4 =  plot(x,normTrace(:,1),'-','LineWidth', 6, 'Color',col(1,:));
+h2.Color(4) = 0.4;
+h4.Color(4) = 0.4;
+
+set(h,'position',get(h,'position').*[1 1 1.15 1])
+xlim([0.5 4.5])
+ylim([80 105])
+hold on
+hline([1 1], '-k')
+ylabel('Percent of Pk1 (%)')
+
+xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+
+legend([h1 h2 h3 h4],'Binocular Significant mean','Monocular Significant mean','Binocular Population mean','Monocular Population mean', 'Location', 'bestoutside')
+currfig = gcf;
+title(currfig.Children(end),'Monocular vs binocular condition normalized response relative to Pk1')
+
+plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_percentPk1_allcells_population_mean'));
+%saveas(gcf,strcat(plotdir, '.png'));
+%saveas(gcf,strcat(plotdir, '.svg'));
+
+%% Plotting the linear regressions of monovular vs binocular of significant units
+
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+trialsTraces =load([newdatadir 'all_orig_bs_zscore_trials']);
+filenames = fieldnames(trialsTraces.peak_aligned_trials);
+pvalues = dlmread('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_pvals_anova_linearTrend.csv',',',1,1)';
+bins =[1,6];
+col(1,:) =[86/255 86/255 86/255] ; %--dark grey
+col(2,:) = [251/255 154/255 153/255]; % -- red
+col(3,:) = [146/255 197/255 222/255]; % -- blue
+col(4,:) =[194/255 165/255 207/255] ; %--purple
+col(5,:) = [253/255 174/255 97/255]; % -- orange
+col(6,:) = [166/255 219/255 160/255]; % -- green
+col(7,:) = [238/255 58/255 104/255]; % -- pink
+
+origTrace = nan(4,length(filenames),2);
+normTrace = nan(4,length(filenames),2);
+for i =1:length(filenames)
+    filename = filenames{i};
+    %if strcmp(trialsTraces.peak_aligned_trials.(filename).cellclass, class{c})
+    for bin = 1:length(bins)
+        binNb = sprintf('bin%d',bins(bin));
+        
+        for pn =1:4
+            pkNb = sprintf('pk%d', pn);
+            
+            if nnz(strcmp(fieldnames(trialsTraces.peak_aligned_trials.(filename).origin),binNb))
+                origTrace(pn,i,bin) = max(squeeze(nanmean(trialsTraces.peak_aligned_trials.(filename).origin.(binNb).(pkNb),2)));
+                normTrace(pn,i,bin) = origTrace(pn,i,bin)./origTrace(1,i,bin);
+            end
+        end
+        
+    end
+end
+
+%getting indices for cells that were significant within the identified
+%pool of cells
+ncnt =0;
+scnt =0;
+clear filename
+for i=1:length(pvalues)
+    filename = filenames{i};
+    if ~isempty(trialsTraces.peak_aligned_trials.(filename).cellclass)
+       
+        
+        if pvalues(6,i) < 0.05 
+            
+            scnt = scnt+1;
+            sidx(scnt) =i; %index of cells with significant interaction
+        else 
+            if pvalues(6,i) > 0.05
+         ncnt = ncnt+1;
+        %index of cells that were identified
+        idx(ncnt) =i;
+            end
+        end
+    end
+end
+
+%percent change from Pk1
+%individual cells
+RegCoeffs = nan([2,size(origTrace,2,3)]);
+t =linspace(1,4,4);
+for n =1:length(origTrace(1,:,1))
+    RegCoeffs(:,n,1) = polyfit(t,normTrace(:,n,1)',1);
+    RegCoeffs(:,n,2) =  polyfit(t,normTrace(:,n,2)',1);
+end
+
+h =figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+x =1:4;
+h1 =subplot(1,2,1);
+y = RegCoeffs(2,:,1)' +repmat((t-1),46,1).*(RegCoeffs(1,:,1)');
+plot(x,y,'-','LineWidth', 4, 'Color',[180/255 180/255 180/255])
+xlim([0.5 4.5])
+ylim([0.4 1.4])
+xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
+title('Monocular condition')
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+
+h2 =subplot(1,2,2);
+y = RegCoeffs(2,:,1)'+repmat((t-1),46,1).*(RegCoeffs(1,:,2)');
+plot(x,y,'-','LineWidth', 4, 'Color',col(1,:))
+ylim([0.4 1.4])
+xlim([0.5 4.5])
+xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
+set(h,'position',get(h,'position').*[1 1 1.15 1])
+ylabel('Spike Rate (normalized)')
+title('Binocular condition')
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_linearReg_allcells'));
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
