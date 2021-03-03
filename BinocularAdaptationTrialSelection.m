@@ -1437,7 +1437,7 @@ plotdir = strcat('C:\Users\daumail\Documents\LGN_data\single_units\binocular_ada
 %saveas(gcf,strcat(plotdir, '.png'));
 %saveas(gcf,strcat(plotdir, '.svg'));
 
-%% Plotting the linear regressions of monovular vs binocular of significant units
+%% Plotting the linear regressions of monocular vs binocular of significant units
 
 newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
 trialsTraces =load([newdatadir 'all_orig_bs_zscore_trials']);
@@ -1549,6 +1549,45 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\sing
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
+% same plot only with means
+h =figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);
+x =1:4;
+h1 =subplot(1,2,1);
+
+y = mean(RegCoeffs(2,sidx,1)' +repmat((t-1),length(sidx),1).*(RegCoeffs(1,sidx,1)'),1);
+plot(x,y,'-','LineWidth', 8, 'Color',col(7,:))
+hold on
+y = mean(RegCoeffs(2,:,1)' +repmat((t-1),length(1:46),1).*(RegCoeffs(1,:,1)'),1);
+plot(x,y,'-','LineWidth', 8, 'Color','k')
+
+xlim([0.5 4.5])
+ylim([0.94 1.08])
+xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
+title('Monocular condition')
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+
+h2 =subplot(1,2,2);
+
+
+y = mean(RegCoeffs(2,sidx,2)' +repmat((t-1),length(sidx),1).*(RegCoeffs(1,sidx,2)'),1);
+plot(x,y,'-','LineWidth', 8, 'Color',col(7,:))
+hold on
+y = mean(RegCoeffs(2,:,2)' +repmat((t-1),length(1:46),1).*(RegCoeffs(1,:,2)'),1);
+plot(x,y,'-','LineWidth', 8, 'Color','k')
+
+ylim([0.94 1.08])
+xlim([0.5 4.5])
+xticklabels({'','Pk1','','Pk2','', 'Pk3','','Pk4',''})
+set(h,'position',get(h,'position').*[1 1 1.15 1])
+ylabel('Spike Rate (normalized)')
+title('Binocular condition')
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\plots\',strcat('all_pks_mono_bino_linearReg_means'));
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
 %% Plot slopes separately from intercepts
 h =figure('Renderer', 'painters', 'Position', [10 10 1200 1200]);
 x =1:4;
