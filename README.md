@@ -4,3 +4,5 @@
 ### Most of the repository includes data processing/analysis of the monocular stimulation condition.
 ### One file however includes the comparison between monocular and binocular stimulation
 
+## Comparison of adaptation between monocular and binocular stimulation: (BinocularAdaptationTrialSelection.m)
+       -Data Location:-
