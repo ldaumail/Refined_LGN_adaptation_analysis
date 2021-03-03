@@ -6,3 +6,4 @@
 
 ## Comparison of adaptation between monocular and binocular stimulation: (BinocularAdaptationTrialSelection.m)
        -Data Location:-
+       #### "C:\Users\daumail\Documents\LGN_data\single_units\s_potentials_analysis\analysis\single_units_ns6_metadata.mat"
