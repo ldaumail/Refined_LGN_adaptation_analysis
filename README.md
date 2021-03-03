@@ -14,7 +14,7 @@
        #### "C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_unfiltered_data_peaks.mat"
        #### 4) Monocular adaptation pvalues (from R analysis): "C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\lmer_results_orig_03032020_corrected.csv"
        #### 5) Monocular condition peak values: "C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\all_data_peaks"
-       #### 5) Monocular and Binocular neural data obtained through a pre-processing of the data in 1): 
+       #### 6) Monocular and Binocular neural data obtained through a pre-processing of the data in 1): 
        "C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_orig_bs_zscore_trials"
        #### Interaction condition pvalues (from R analysis):
        "C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_pvals_anova_linearTrend.csv"
