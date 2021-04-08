@@ -34,6 +34,9 @@
      #### "peak_alignment_figures.m": makes figures that show how peak responses were retriggered for plotting
      #### other plotting scripts (most of them are in "paper_plots.m" in a better version: "plot_clean_origin_data.m", "plot_clean_origin_peaks.m", "plot_clean_origin_troughs.m", "plot_spike_waveform.m", "plot_units_peak_aligned.m".
 
+### Spike waveform shapes: 
+    ##### "NarrowVsBroadWf.m"
+
 ### Multiple contrasts analysis:
      #### "multiple_contrasts_peak_isolation.m": allows to isolate monocular responses under various stimulation contrasts and to plot contrast response curves of LGN neurons.
 
