@@ -31,6 +31,7 @@
      #### "clean_data_ROCAnalysis.m": computes spectrogram, isolates response at 4Hz frequency, performs ROC analysis between two time windows (beginning of the trial versus end of the trial power responses)
 ### Plotting scripts of adaptation analysis in monocular stimulation condition:
      #### "paper_plots.m": summarizes most of the plots of adaptation manuscript, especially for monocular stimulation condition.
+     #### "peak_alignment_figures.m": makes figures that show how peak responses were retriggered for plotting
      #### other plotting scripts (most of them are in "paper_plots.m" in a better version: "plot_clean_origin_data.m", "plot_clean_origin_peaks.m", "plot_clean_origin_troughs.m", "plot_spike_waveform.m", "plot_units_peak_aligned.m".
 
 ### Multiple contrasts analysis:
