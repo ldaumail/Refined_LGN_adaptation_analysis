@@ -1,5 +1,5 @@
 % This script intends to compute an adaptation index for every single unit
-% both in the monocular condition and the binocular condition to plot both
+% both in the monocular condition and the binocular condition and to plot both
 % monocular and binocular conditions
 % This script follows the processing steps of BinocularAdaptationTrialSelection.m
 
@@ -247,46 +247,99 @@ g(1,1).set_title({'Adaptation index distribution across all cells in the monocul
 g(2,1).stat_bin('nbins',15);
 g(2,1).stat_density();
 g(2,1).set_names('x','Adaptation Index','color','Legend','row','','y','Count');
+g(2,1).set_color_options('hue_range',[-100 100],'chroma',60);%,'legend','separate');
 %g(2,1).set_color_options('hue_range',[-40 40],'chroma',30,'lightness',90);
 g(2,1).set_title({'Adaptation index distribution of M cells, in the monocular and binocular conditions'});
 
 
-f = figure('Position',[100 100 800 800]);
+f = figure('Position',[100 100 800 1400]);
 %g.set_title({'Adaptation index distribution across all cells in the monocular and binocular conditions'});
 g.draw();
 set(f,'position',get(f,'position').*[1 1 1.15 1])
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_sdf_mono_bino_allcells_combined_and_M');
-saveas(gcf,strcat(plotdir, '.png'));
-saveas(gcf,strcat(plotdir, '.svg'));
+%plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_sdf_mono_bino_allcells_combined_and_M_taller');
+%saveas(gcf,strcat(plotdir, '.png'));
+%saveas(gcf,strcat(plotdir, '.svg'));
 
 
 %%
-clear g10
-figure('Position',[100 100 600 450]);
-g10=gramm('x',cars.Horsepower,'y',cars.Acceleration,'subset',cars.Cylinders~=3 & cars.Cylinders~=5);
-g10.set_names('color','# Cylinders','x','Horsepower','y','Acceleration','Column','Origin');
-g10.set_color_options('chroma',0,'lightness',30);
-g10.stat_glm('geom','area','disp_fit',false);
-g10.set_title('Update example'); %Title must be provided before the first draw() call
-g10.draw();
-snapnow;
-
-%%
-% After the first draw() call (optional), we call the update() method by specifying a
-% new grouping variable determining colors. We also change the facet_grid()
-% options, which will duplicate the fit made earlier across all new facets.
-% Last, color options are reinitialized to default values
-
-g10.update('color',cars.Cylinders);
-g10.facet_grid([],cars.Origin_Region);
-g10.set_color_options();
-g10.geom_point();
-g10.draw();
-
-%% Example data
+%% Example data from gramm tutorial
 %data = load('C:\Users\daumail\OneDrive - Vanderbilt\Documents\MATLAB\gramm-master\example_data.mat');
 load 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\MATLAB\gramm-master\example_data.mat';
 % Create a gramm object, provide x (year of production) and y (fuel economy) data,
 % color grouping data (number of cylinders) and select a subset of the data
 g=gramm('x',cars.Model_Year,'y',cars.MPG,'color',cars.Cylinders,'subset',cars.Cylinders~=3 & cars.Cylinders~=5);
 %%% 
+
+%% Tests of goodness of fit
+
+
+%{
+%% ROC analyis of distributions in the monocular versus binocular condition
+
+reps   = 10000;
+all_sigs95 = nan(length(Ses),1);
+all_sigs90 = nan(length(Ses),1);
+
+part1 = index(strcmp(condition, 'Monocular'));
+part2 = index(strcmp(condition, 'Binocular'));
+
+if nanmean(part1) > nanmean(part2)
+    cond1               = part1;
+    cond2               = part2;
+else
+    cond1               = part2;
+    cond2               = part1;
+end
+%% Plot cond1 and cond2 distributions  in box/scatter plots
+figure(); boxplot([cond1 cond2],'notch','off','labels',{'Binocular','Monocular'}); hold on    %here we now know that cond1 = part2 = binocular/ cond2 = part1 = Monocular
+x=ones(length(cond1),1).*(1+(rand(length(cond1),1)-0.5)/5);
+x1=ones(length(cond1),1).*(1+(rand(length(cond1),1)-0.5)/10);
+f1=scatter(x,cond1,'k','filled');f1.MarkerFaceAlpha = 0.4;hold on
+f2=scatter(x1*2,cond2,'k','filled');f1.MarkerFaceAlpha = 0.4;
+%ylim([0 400])
+ylabel('Adaptation Index')
+
+%% Plot AUC of our two samples
+
+[X,Y,T,AUC]           = perfcurve([ones(length(cond1),1); repmat(2,length(cond2),1)],[cond1' cond2'],1);
+NP                    = length(cond2);
+PR                    = length(cond1);
+catdat                = [cond1' cond2'];
+figure();
+plot(X,Y)
+set(gca, 'box','off')
+
+%% Plot Receiver Operating Characteristics curve examples
+
+ shufPR         = catdat(randperm(length(catdat),PR));
+ shufNP         = catdat(randperm(length(catdat),NP));
+[Xshuf,Yshuf,~, shufAUC]    = perfcurve([ones(PR,1); repmat(2,NP,1)],[shufPR shufNP],1);
+
+figure();
+plot(Xshuf,Yshuf)
+set(gca, 'box','off')
+
+ %% Plot randomized distribution
+ 
+ NP                    = length(cond2);
+ PR                    = length(cond1);
+ catdat                = [cond1' cond2'];
+ for r       = 1:reps
+     clear shufNP shufPR
+     shufPR         = catdat(randperm(length(catdat),PR));
+     shufNP         = catdat(randperm(length(catdat),NP));
+     [~,~,~,...
+         shufAUC(r)]    = perfcurve([ones(PR,1); repmat(2,NP,1)],[shufPR shufNP],1);
+ end
+ critT95         = quantile(shufAUC,.95);
+ 
+ figure();
+ histogram(shufAUC)
+ hold on
+ plot([critT95, critT95], [0, 900], 'linewidth', 2)
+ hold on
+ plot([AUC, AUC], [0, 900], 'Color', 'k','linewidth', 2)
+ set(gca, 'box', 'off')
+
+ critT90         = quantile(shufAUC,.90);
+%}
