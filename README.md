@@ -47,7 +47,8 @@
     #### "microsaccades_analysis.m": very initial script to look at electroocculograms. The main microsaccade isolation analysis is in the corresponding repository.
     
 
-## Comparison of adaptation between monocular and binocular stimulation: (BinocularAdaptationTrialSelection.m)
+## Comparison of adaptation between monocular and binocular stimulation:
+1) "BinocularAdaptationTrialSelection.m"
        -Data Location:- (some directories might need to be updated through inclusion of -daumail\ "OneDrive - Vanderbilt" \Documents-
        #### 1) Data used for pre-processing: (trial selection)
        #### "C:\Users\daumail\Documents\LGN_data\single_units\s_potentials_analysis\analysis\single_units_ns6_metadata.mat"
@@ -61,5 +62,12 @@
        "C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_orig_bs_zscore_trials"
        #### Interaction condition pvalues (from R analysis):
        "C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_pvals_anova_linearTrend.csv"
+       
+2) "adaptation_index.m": 
+       - calculates an adaptation index, in order to compare the binocular and monocular adaptation conditions.
+       - plots the data using gramm toolbox (https://github.com/piermorel/gramm)
+       - Perform ROC analysis to test on difference of distributions
+       - Performs other tests for difference between distributions (Qi square goodness of fit test...)
+
 
 
