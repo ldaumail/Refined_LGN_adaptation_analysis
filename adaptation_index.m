@@ -270,8 +270,33 @@ load 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\MATLAB\gramm-master\examp
 g=gramm('x',cars.Model_Year,'y',cars.MPG,'color',cars.Cylinders,'subset',cars.Cylinders~=3 & cars.Cylinders~=5);
 %%% 
 
-%% Tests of goodness of fit
+%% Tests difference between two distributions (monocular/binocular)
 
+%%All units of all cell classes combined
+cond1 = index(strcmp(condition, 'Monocular'));
+cond2 = index(strcmp(condition, 'Binocular'));
+%two sample Kolmogorov Smirnov test
+[h,p,ks2stat] = kstest2(cond1,cond2);
+
+%Qi square goodness of fit test
+[h1,p1,stats1] = chi2gof(cond1);
+[h2,p2,stats2] = chi2gof(cond2);
+%testing normality: 
+%Shapiro-Wilk
+[H1, pValue1, W1] = swtest(cond1, 0.05);
+[H2, pValue2, W2]= swtest(cond2, 0.05);
+
+
+%Look at M cells only 
+cond1 = index(strcmp(condition, 'Monocular') & strcmp(cellclass, 'M'));
+cond2 = index(strcmp(condition, 'Binocular') & strcmp(cellclass, 'M'));
+
+%Qi square goodness of fit test
+[h1,p1,stats1] = chi2gof(cond1);
+[h2,p2,stats2] = chi2gof(cond2);
+%%Shapiro-Wilk
+[H1, pValue1, W1] = swtest(cond1, 0.05);
+[H2, pValue2, W2]= swtest(cond2, 0.05);
 
 %{
 %% ROC analyis of distributions in the monocular versus binocular condition
