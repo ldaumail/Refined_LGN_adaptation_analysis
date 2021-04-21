@@ -1,7 +1,7 @@
 % This script intends to compute an adaptation index for every single unit
 % both in the monocular condition and the binocular condition and to plot both
 % monocular and binocular conditions
-% This script follows the processing steps of BinocularAdaptationTrialSelection.m
+% This script follows the processing steps of "BinocularAdaptationTrialSelection.m"
 
 % Developped by Loic Daumail, started 04-08-2021
 
@@ -281,6 +281,7 @@ cond2 = index(strcmp(condition, 'Binocular'));
 %Qi square goodness of fit test
 [h1,p1,stats1] = chi2gof(cond1);
 [h2,p2,stats2] = chi2gof(cond2);
+
 %testing normality: 
 %Shapiro-Wilk
 [H1, pValue1, W1] = swtest(cond1, 0.05);
@@ -297,6 +298,99 @@ cond2 = index(strcmp(condition, 'Binocular') & strcmp(cellclass, 'M'));
 %%Shapiro-Wilk
 [H1, pValue1, W1] = swtest(cond1, 0.05);
 [H2, pValue2, W2]= swtest(cond2, 0.05);
+
+
+%% Plot scatter plot of adapt index in mono vs bino condition to create clusters
+
+%all cells
+cond1 = index(strcmp(condition, 'Monocular'));
+cond2 = index(strcmp(condition, 'Binocular'));
+
+
+figure();
+for i = 1:length(cond1)
+    if cond2(i) < cond1(i)
+        scatter(cond1(i), cond2(i), 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r')
+        hold on
+    else
+        scatter(cond1(i), cond2(i), 'MarkerFaceColor', 'b', 'MarkerEdgeColor', 'b')
+        hold on
+    end
+    
+end
+hold on
+xf = [min(cond1), max(cond1)];
+plot(xf, polyval(polyfit(cond1,cond2,1), xf));
+
+xlim([-0.3 0.4])
+ylim([-0.3 0.4])
+xlabel('Monocular adaptation index')
+ylabel('Binocular adaptation index')
+title('All cells adaptation indices')
+
+%M cells
+cond1 = index(strcmp(condition, 'Monocular') & strcmp(cellclass, 'M'));
+cond2 = index(strcmp(condition, 'Binocular') & strcmp(cellclass, 'M'));
+
+figure();
+for i = 1:length(cond1)
+    if cond2(i) < cond1(i)
+        scatter(cond1(i), cond2(i), 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r')
+        hold on
+    else
+        scatter(cond1(i), cond2(i), 'MarkerFaceColor', 'b', 'MarkerEdgeColor', 'b')
+        hold on
+    end
+    
+end
+hold on
+xf = [min(cond1), max(cond1)];
+plot(xf, polyval(polyfit(cond1,cond2,1), xf));
+
+xlabel('Monocular adaptation index')
+ylabel('Binocular adaptation index')
+title('M cells adaptation indices')
+
+%P cells
+cond1 = index(strcmp(condition, 'Monocular') & strcmp(cellclass, 'P'));
+cond2 = index(strcmp(condition, 'Binocular') & strcmp(cellclass, 'P'));
+
+figure();
+for i = 1:length(cond1)
+    if cond2(i) < cond1(i)
+        scatter(cond1(i), cond2(i), 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r')
+        hold on
+    else
+        scatter(cond1(i), cond2(i), 'MarkerFaceColor', 'b', 'MarkerEdgeColor', 'b')
+    end
+    
+end
+hold on
+xf = [min(cond1), max(cond1)];
+plot(xf, polyval(polyfit(cond1,cond2,1), xf));
+
+xlabel('Monocular adaptation index')
+ylabel('Binocular adaptation index')
+title('P cells adaptation indices')
+
+
+%K cells
+cond1 = index(strcmp(condition, 'Monocular') & strcmp(cellclass, 'K'));
+cond2 = index(strcmp(condition, 'Binocular') & strcmp(cellclass, 'K'));
+
+figure();
+for i = 1:length(cond1)
+    if cond2(i) < cond1(i)
+        scatter(cond1(i), cond2(i), 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r')
+        hold on
+    else
+        scatter(cond1(i), cond2(i), 'MarkerFaceColor', 'b', 'MarkerEdgeColor', 'b')
+    end
+    
+end
+xlabel('Monocular adaptation index')
+ylabel('Binocular adaptation index')
+title('K cells adaptation indices')
 
 %{
 %% ROC analyis of distributions in the monocular versus binocular condition
