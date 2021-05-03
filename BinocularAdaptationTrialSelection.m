@@ -1,10 +1,10 @@
 %% First: use the list of single units file names that were selected in the adaptation analysis with
-%high contrast
-selectUnitsFilenames =load('C:\Users\daumail\Documents\LGN_data\single_units\s_potentials_analysis\analysis\single_units_ns6_metadata.mat');
+% high contrast
+selectUnitsFilenames =load('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\s_potentials_analysis\analysis\single_units_ns6_metadata.mat');
 filenames = selectUnitsFilenames.STIMFileName;
 
 
-unitsDir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\';
+unitsDir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\';
 unitsDataDir = [unitsDir 'refined_dataset']; 
 unitsData= load(unitsDataDir);
 
@@ -17,7 +17,8 @@ cellClass([1,46,55]) = [];
 
 %% SECOND: isolate peak locations of smoothed data ==> use code from %%"get_clean_peaks_and_data.m",
         % use multiple contrast levels
-        % select trials the same way..?
+        % select trials the same way as in the monocular adaptation
+        % analysis
  %% find peak locations of smoothed data, to further allow us to isolate peak values of unfiltered data in order to analyze them on R and fit a LMER
  %find the multiple contrast levels present in the data
  allContLevels =0;
@@ -47,10 +48,9 @@ for n = 1:length(contLims)
      for i = channum
         if ~isempty(filenames{i})
            filename = filenames(i);
-
-           blankcontrast = unitsData.new_data(i).channel_data.contrast ==  0 & unitsData.new_data(i).channel_data.fixedc ==  0;
+           blankcontrast = unitsData.new_data(i).channel_data.contrast ==  0 & unitsData.new_data(i).channel_data.fixedc ==  0; %get logicacal indices of trials with 0 contrast in both eyes
            if n == 1
-               contrastBin =unitsData.new_data(i).channel_data.contrast >=  0.5 & unitsData.new_data(i).channel_data.fixedc ==  0; 
+               contrastBin =unitsData.new_data(i).channel_data.contrast >=  0.5 & unitsData.new_data(i).channel_data.fixedc ==  0; %trials indices with 0 contrast in NDE, and contrast >0.5 in DE
                else
                if n>1
                    contrastBin = (unitsData.new_data(i).channel_data.fixedc >  contLims(n-1) & unitsData.new_data(i).channel_data.fixedc <= contLims(n))& unitsData.new_data(i).channel_data.contrast >=  0.5; 
@@ -61,7 +61,6 @@ for n = 1:length(contLims)
         filtBs = nan(length(xabs), length(trialidx));
         origin_data = nan(length(xabs)+401, length(trialidx));
         %all_norm_lpdSUA= nan(length(xabs),length(trialidx));
-
 
         powerstim = nan(length(trialidx),1025);
         freqstim = nan(length(trialidx),1025);
@@ -86,22 +85,22 @@ for n = 1:length(contLims)
 
                 filtBs(:,tridx) = lpdSUA;
                 %all_norm_lpdSUA(:,tridx) = (lpdSUA - min(lpdSUA))/(max(lpdSUA)- min(lpdSUA));
-                mean_wnd1(tridx) = mean(lpdSUA(201:480));
+                mean_wnd1(tridx) = mean(lpdSUA(201:480)); %compute mean spiking response over 280ms following stimulus onset. 250+30
 
                 %%% power
 
 
-                [powerstim(tridx,:), freqstim(tridx,:)] = calcFFT(all_data(200:1350));
+                [powerstim(tridx,:), freqstim(tridx,:)] = calcFFT(all_data(200:1350)); %fourrier transform
 
                 %find the index of the frequency vector closest to 4hz and point to the
                 %power value of this index for every trial, and store the value in
                 %fourhzpower
-                [val,index] = min(abs(4-freqstim(tridx,:)));
-                fourhzpowerstim(tridx,1) = powerstim(tridx,index);
+                [val,index] = min(abs(4-freqstim(tridx,:))); %find index closest to 4Hz
+                fourhzpowerstim(tridx,1) = powerstim(tridx,index); %get power at that index, assumed to be 4Hz
 
          end
 
-      %%%%%%%%%%% %reject trials below the 95%CI in the blank condition %%%%%%
+      %%%%%%%%%%% %reject trials below Mean + 1.96*STD in the blank condition %%%%%%
        %power related variables
        power0 = fourhzpowerstim(blankcontrast); %power of responses in blank condition
        powerDE = fourhzpowerstim(contrastBin); %power of responses with contrast stimulus >0 in DE and 0 contrast in NDE
@@ -113,12 +112,13 @@ for n = 1:length(contLims)
        origin_data_high = origin_data(:,contrastBin);
        origin_data_blank = origin_data(:,blankcontrast);
        bsl_origin_data_high = noFiltBs(:,contrastBin);
-       %first peak location related variables 
+       
        sua_bsl =  mean(filtered_dSUA_high(1:200,:),1);
        
 
        for tr = 1:length(powerDE)
-          if mean_wnd1_DE(tr) > mean(sua_bsl)+1.96*std(sua_bsl)/sqrt(length(sua_bsl))  && powerDE(tr) > mean(power0)+1.96*std(power0)/sqrt(length(power0)) %/sqrt(length(sua_bsl)) /sqrt(length(power0))
+          %if mean_wnd1_DE(tr) > mean(sua_bsl)+1.96*std(sua_bsl)/sqrt(length(sua_bsl))  && powerDE(tr) > mean(power0)+1.96*std(power0)/sqrt(length(power0)) %/sqrt(length(sua_bsl)) /sqrt(length(power0))
+           if mean_wnd1_DE(tr) > mean(sua_bsl)+1.96*std(sua_bsl)  && powerDE(tr) > mean(power0)+1.96*std(power0) %/sqrt(length(sua_bsl)) /sqrt(length(power0))
 
               filtered_dSUA_high(:,tr) = filtered_dSUA_high(:,tr);
               origin_data_high(:,tr) = origin_data_high(:,tr);
@@ -131,62 +131,61 @@ for n = 1:length(contLims)
            end
        end
 
-        %determine the first peak location for each trial of a given single
-        %unit
+        %%%%%%%%%%%determine the first peak location for each trial of a given single unit %%%%%%%%
         all_locsdSUA_trials = nan(6,length(filtered_dSUA_high(1,:)));
-       clear trial
+        clear trial
         for trial = 1:length(filtered_dSUA_high(1,:))
-
-             for ln = 1:550
-                 if filtered_dSUA_high(200+ln,trial) < filtered_dSUA_high(200+ln+1,trial) && ~all(isnan(filtered_dSUA_high(:,trial)))
-
-                 locsdSUA_trial = findpeaks(filtered_dSUA_high(200+ln:1499,trial));
-                 %if peak1 is too small, peak2 becomes peak1
-                         if filtered_dSUA_high(locsdSUA_trial.loc(1)+200+ln,trial) >= 0.4*filtered_dSUA_high(locsdSUA_trial.loc(2)+200+ln)
-                 %store first peak location 
-                         all_locsdSUA_trials(1:length(locsdSUA_trial.loc),trial) = locsdSUA_trial.loc(1:end)+200+ln;
-                         else
-                         all_locsdSUA_trials(1:length(locsdSUA_trial.loc(2:end)),trial) = locsdSUA_trial.loc(2:end)+200+ln;
-
-                         end
-
-                  break 
-                 end 
-             end
-
+            
+            for ln = 1:550
+                if filtered_dSUA_high(200+ln,trial) < filtered_dSUA_high(200+ln+1,trial) && ~all(isnan(filtered_dSUA_high(:,trial)))
+                    [~,locsdSUA_trial] = findpeaks(filtered_dSUA_high(200+ln:1499,trial));
+                     
+                    %if peak1 is too small, peak2 becomes peak1
+                    if filtered_dSUA_high(locsdSUA_trial(1)+200+ln,trial) >= 0.4*filtered_dSUA_high(locsdSUA_trial(2)+200+ln)
+                        %store first peak location
+                        all_locsdSUA_trials(1:length(locsdSUA_trial),trial) = locsdSUA_trial(1:end)+200+ln;
+                    else
+                        all_locsdSUA_trials(1:length(locsdSUA_trial(2:end)),trial) = locsdSUA_trial(2:end)+200+ln;
+                        
+                    end
+                    
+                    break
+                end
+            end
+            
             if nnz(~isnan(all_locsdSUA_trials(:,trial))) >= 4 && ~all(isnan(all_locsdSUA_trials(:,trial)))
-                 %adjust location to the first data point of lpsu (+ln),
-
+                %adjust location to the first data point of lpsu (+ln),
+                
                 all_pks(:,trial) = filtered_dSUA_high(all_locsdSUA_trials(1:4,trial), trial);
-                filtered_dSUA_high(:,trial) = filtered_dSUA_high(:,trial); 
-                all_locsdSUA_trials(:,trial) = all_locsdSUA_trials(:,trial);
-                origin_data_high(:,trial) = origin_data_high(:,trial);
-                bsl_origin_data_high(:,trial) = bsl_origin_data_high(:,trial);
-             else
-                filtered_dSUA_high(:,trial) = nan(length(filtered_dSUA_high(:,trial)),1);
-                all_locsdSUA_trials(:,trial) = nan(size(all_locsdSUA_trials(:,trial)));
-                origin_data_high(:,trial) =  nan(length(origin_data_high(:,trial)),1);
-                bsl_origin_data_high(:,trial) =  nan(length(bsl_origin_data_high(:,trial)),1);
-
-            end 
-
-            if ~all(isnan(all_locsdSUA_trials(:,trial))) && (all_locsdSUA_trials(4,trial) ~= 1500) %remove trials for which the pk4 is the last data point (= not a peak if this happens)
-                 %adjust location to the first data point of lpsu (+ln),
-
-                all_pks(:,trial) = filtered_dSUA_high(all_locsdSUA_trials(1:4,trial), trial);
-                filtered_dSUA_high(:,trial) = filtered_dSUA_high(:,trial); 
+                filtered_dSUA_high(:,trial) = filtered_dSUA_high(:,trial);
                 all_locsdSUA_trials(:,trial) = all_locsdSUA_trials(:,trial);
                 origin_data_high(:,trial) = origin_data_high(:,trial);
                 bsl_origin_data_high(:,trial) = bsl_origin_data_high(:,trial);
             else
-                all_pks(:,trial) = nan(length(all_pks(:,trial)),1);      
                 filtered_dSUA_high(:,trial) = nan(length(filtered_dSUA_high(:,trial)),1);
                 all_locsdSUA_trials(:,trial) = nan(size(all_locsdSUA_trials(:,trial)));
                 origin_data_high(:,trial) =  nan(length(origin_data_high(:,trial)),1);
                 bsl_origin_data_high(:,trial) =  nan(length(bsl_origin_data_high(:,trial)),1);
-
-
-            end 
+                
+            end
+            
+            if ~all(isnan(all_locsdSUA_trials(:,trial))) && (all_locsdSUA_trials(4,trial) ~= 1500) %remove trials for which the pk4 is the last data point (= not a peak if this happens)
+                %adjust location to the first data point of lpsu (+ln),
+                
+                all_pks(:,trial) = filtered_dSUA_high(all_locsdSUA_trials(1:4,trial), trial);
+                filtered_dSUA_high(:,trial) = filtered_dSUA_high(:,trial);
+                all_locsdSUA_trials(:,trial) = all_locsdSUA_trials(:,trial);
+                origin_data_high(:,trial) = origin_data_high(:,trial);
+                bsl_origin_data_high(:,trial) = bsl_origin_data_high(:,trial);
+            else
+                all_pks(:,trial) = nan(length(all_pks(:,trial)),1);
+                filtered_dSUA_high(:,trial) = nan(length(filtered_dSUA_high(:,trial)),1);
+                all_locsdSUA_trials(:,trial) = nan(size(all_locsdSUA_trials(:,trial)));
+                origin_data_high(:,trial) =  nan(length(origin_data_high(:,trial)),1);
+                bsl_origin_data_high(:,trial) =  nan(length(bsl_origin_data_high(:,trial)),1);
+                
+                
+            end
         end
         %{
         figure(); plot(-199:1300, filtered_dSUA_high(1:1500,:))
@@ -196,24 +195,29 @@ for n = 1:length(contLims)
         %}
         %%% reject outlier peaks and the corresponding trials in
         %%% filtered_dSUA_high
-
-
-       %reject if there is a peak 1 outlier, if the max peak value in the
-       %baseline is an outlier
-
-        % First find peaks before stimulus onset 
+        
+        
+        %%%%%%%%%%reject if there is a peak 1 outlier, if the max peak value in the baseline is an outlier %%%%%%%%%
+        
+        % First find peaks before stimulus onset
 
         bsl_peaks = nan(1, length(filtered_dSUA_high(1,:)));
         clear tr
         for tr = 1:length(filtered_dSUA_high(1,:))
-
-             for loc = 1:200
+            
+            for loc = 1:200
                 if filtered_dSUA_high(loc,tr) < filtered_dSUA_high(loc+1,tr) && ~all(isnan(filtered_dSUA_high(:,tr)))
-               bsl_peak_locs = findpeaks(filtered_dSUA_high(loc:200,tr));
-               bsl_peaks(1,tr) = max(filtered_dSUA_high(bsl_peak_locs.loc+loc,tr));
-              break
-                end 
-             end
+                    if length(filtered_dSUA_high(loc:200,tr)) >= 3
+                        if ~isempty(findpeaks(filtered_dSUA_high(loc:200,tr)))
+                            [~, bsl_peak_locs] = findpeaks(filtered_dSUA_high(loc:200,tr));
+                            bsl_peaks(1,tr) = max(filtered_dSUA_high(bsl_peak_locs+loc,tr));
+                        else
+                            bsl_peaks(1,tr) = NaN;
+                        end
+                    end
+                    break
+                end
+            end
         end
 
         out_bsl_peaks = isoutlier(bsl_peaks);
@@ -246,29 +250,40 @@ for n = 1:length(contLims)
        origin_data_high = origin_data_high(:,~all(isnan(origin_data_high)));
        bsl_origin_data_high = bsl_origin_data_high(:,~all(isnan(bsl_origin_data_high)));
 
-
-      % if length(filtered_dSUA_high(1,:)) >=10
-
-       %eval(['peakLocs.' num2str(i) '.bin' num2str(n) ' = all_locsdSUA_trials;'])
-      
        filename = sprintf('x%s',char(filename));
        binNb = sprintf('bin%d', n);
-       peakLocs.(filename).(binNb) = all_locsdSUA_trials; %create dynamical peak locations structures
-       FiltMultiContSUA.(filename).(binNb) =  filtered_dSUA_high;
-      % FiltMultiContSUA.(filename).bin0 =  filtered_dSUA_blank;
-       NoFiltMultiContSUA.(filename).(binNb) = origin_data_high;
-       BsNoFiltMultiContSUA.(filename).(binNb) = bsl_origin_data_high;
-       %NoFiltMultiContSUA.(filename).bin0 = origin_data_blank;
-       FiltMultiContSUA.(filename).cellclass = cellClass{i}; %get the cell class of selected units
-       NoFiltMultiContSUA.(filename).cellclass = cellClass{i};
-       BsNoFiltMultiContSUA.(filename).cellclass = cellClass{i};
-      % elseif length(filtered_dSUA_high(1,:)) <10  
-       % all_pks(:,:) = [];
-       % clean_high_SUA(i).namelist =  [];
-       % clean_origin_data(i).unit = [];
-       % eval(['peakLocs.unit' num2str(i) '.bin' num2str(n) '= [];']) 
-
-       %end
+       if n ==1 && length(filtered_dSUA_high(1,:)) >=10 %first bin == high contrast monocular condition will serve as an indicator of the minimum number of trials required for the analysis
+           
+           %eval(['peakLocs.' num2str(i) '.bin' num2str(n) ' = all_locsdSUA_trials;'])
+          
+           peakLocs.(filename).(binNb) = all_locsdSUA_trials; %create dynamical peak locations structures
+           FiltMultiContSUA.(filename).(binNb) =  filtered_dSUA_high;
+           % FiltMultiContSUA.(filename).bin0 =  filtered_dSUA_blank;
+           NoFiltMultiContSUA.(filename).(binNb) = origin_data_high;
+           BsNoFiltMultiContSUA.(filename).(binNb) = bsl_origin_data_high;
+           %NoFiltMultiContSUA.(filename).bin0 = origin_data_blank;
+           FiltMultiContSUA.(filename).cellclass = cellClass{i}; %get the cell class of selected units
+           NoFiltMultiContSUA.(filename).cellclass = cellClass{i};
+           BsNoFiltMultiContSUA.(filename).cellclass = cellClass{i};
+       elseif n == 1 && length(filtered_dSUA_high(1,:)) <10
+           
+           all_pks(:,:) = [];
+           FiltMultiContSUA.(filename).(binNb) =  [];
+           NoFiltMultiContSUA.(filename).(binNb) = [];
+           peakLocs.(filename).(binNb) = [];
+        
+       elseif n > 1
+           peakLocs.(filename).(binNb) = all_locsdSUA_trials; %create dynamical peak locations structures
+           FiltMultiContSUA.(filename).(binNb) =  filtered_dSUA_high;
+           % FiltMultiContSUA.(filename).bin0 =  filtered_dSUA_blank;
+           NoFiltMultiContSUA.(filename).(binNb) = origin_data_high;
+           BsNoFiltMultiContSUA.(filename).(binNb) = bsl_origin_data_high;
+           %NoFiltMultiContSUA.(filename).bin0 = origin_data_blank;
+           FiltMultiContSUA.(filename).cellclass = cellClass{i}; %get the cell class of selected units
+           NoFiltMultiContSUA.(filename).cellclass = cellClass{i};
+           BsNoFiltMultiContSUA.(filename).cellclass = cellClass{i};
+       end
+       
 
      %data_peaks(i).namelist = all_pks(:,~all(isnan(all_pks)));
      %all_pks = all_pks(:,~all(isnan(all_pks)));
@@ -277,24 +292,24 @@ for n = 1:length(contLims)
         end
      end
 end
-allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_locs_data_95CI';
+allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\all_locs_data_95CI_05022021';
 save(strcat(allfilename, '.mat'), 'peakLocs');
 
 
 %allfilename = [newdatadir 'su_peaks_03032020_corrected\all_units\all_data_peaks'];
  %save(strcat(allfilename, '.mat'), 'data_peaks');
- allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\FiltMultiContSUA';
+ allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\FiltMultiContSUA_05022021';
  save(strcat(allfilename, '.mat'), 'FiltMultiContSUA');
 % allfilename = [newdatadir 'su_peaks_03032020_corrected\all_units\clean_SUA_locs'];
 % save(strcat(allfilename, '.mat'), 'peaks_locs');
- allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\NoFiltMultiContSUA';
+ allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\NoFiltMultiContSUA_05022021';
  save(strcat(allfilename, '.mat'), 'NoFiltMultiContSUA');
  
- allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\BsNoFiltMultiContSUA';
+ allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\BsNoFiltMultiContSUA_05022021';
  save(strcat(allfilename, '.mat'), 'BsNoFiltMultiContSUA');
  
 
-%% Third: isolate peak values of the origin data ==> use the code from "get_origin_peaks.m"
+%% Third: isolate peak values and peak aligned trials of the origin data==> use the code from "get_origin_peaks.m"
 
 %following the script get_clean_peaks_and_data.m (data cleaning and
 %selection pipeline)
@@ -307,12 +322,12 @@ save(strcat(allfilename, '.mat'), 'peakLocs');
 
 clear all
 
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
-channelfilename = [newdatadir 'NoFiltMultiContSUA']; 
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
+channelfilename = [newdatadir 'NoFiltMultiContSUA_05022021']; 
 NoFiltMultiContSUA = load(channelfilename);
-channelfilename = [newdatadir 'FiltMultiContSUA']; 
+channelfilename = [newdatadir 'FiltMultiContSUA_05022021']; 
 FiltMultiContSUA = load(channelfilename);
-locsfilename = [newdatadir 'all_locs_data_95CI'];
+locsfilename = [newdatadir 'all_locs_data_95CI_05022021'];
 all_locsdSUA = load(locsfilename);
 
 %gendatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\';
@@ -338,111 +353,113 @@ up_dist = nan(1, length(channum),4);
 max_low_dist = struct();
 all_locsdSUA_filtered = nan(1,length(channum),4);
 %filenames = cell(length(channum),2);
-contLims = [0,0.1,0.3,0.5,0.7,1];  
+contLims = [0,0.1,0.3,0.5,0.7,1];
 filenames = fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA);
-for i = channum  
+for i = channum
     for n = 1:length(contLims)
         
-         binNb = sprintf('bin%d', n);
-        filename = filenames{i};
-        if ~isempty(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb))
-            trialidx = 1:length(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(1,:));
-            origin_dSUA = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:1900,:); %- mean(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:600,:),1);
-            bs_origin_dSUA = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:1900,:)- mean(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:600,:),1);
-           
-            %origin_dSUA = NoFiltMultiContSUA.BsNoFiltMultiContSUA.(filename).(binNb)(1:end,:);
-            %create zscore origin trials data to plot average peaks for each unit with R
-            
-            zscore_unit = nan(size(origin_dSUA));
-            clear tr
-            for tr =trialidx
+        if n ==1 || n ==6 %if we only wanna save the monocular and binocular condition
+            binNb = sprintf('bin%d', n);
+            filename = filenames{i};
+            if ~isempty(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb))
+                
+                trialidx = 1:length(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(1,:));
+                origin_dSUA = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:1900,:); %- mean(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:600,:),1);
+                bs_origin_dSUA = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:1900,:)- mean(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).(binNb)(401:600,:),1);
+                
+                %origin_dSUA = NoFiltMultiContSUA.BsNoFiltMultiContSUA.(filename).(binNb)(1:end,:);
+                %create zscore origin trials data to plot average peaks for each unit with R
+                
+                zscore_unit = nan(size(origin_dSUA));
+                clear tr
+                for tr =trialidx
                     
-                   zscore_unit(:,tr) = (origin_dSUA(:,tr)-mean(origin_dSUA(:,tr)))./(std(origin_dSUA(:,tr)));
+                    zscore_unit(:,tr) = (origin_dSUA(:,tr)-mean(origin_dSUA(:,tr)))./(std(origin_dSUA(:,tr)));
+                end
+                
+                
+                filtered_dSUA = FiltMultiContSUA.FiltMultiContSUA.(filename).(binNb);
+                
+                
+                %determine the peak location of interest for each trial of a given single
+                %unit
+                all_locsdSUA_trials = all_locsdSUA.peakLocs.(filename).(binNb);
+                
+                up_dist_trials = nan(4,length(trialidx));
+                clear pn
+                for pn = 1:4
+                    locs_peak = all_locsdSUA_trials(pn, :);
+                    up_dist_trials(pn,:)= length(xabs)- locs_peak;
+                end
+                %get the max distance between the peakalign and the stimulus onset
+                max_low_dist_unit = max(all_locsdSUA_trials,[],'all');
+                %create new matrix with the length(max(d)+max(xabs - d))
+                new_dist_unit = max_low_dist_unit + max(up_dist_trials,[],'all');
+                fp_locked_trials = nan(new_dist_unit,length(origin_dSUA(1,:)),4);
+                bs_fp_locked_trials = nan(new_dist_unit,length(origin_dSUA(1,:)),4);
+                zscore_fp_locked_trials = nan(new_dist_unit,length(origin_dSUA(1,:)),4);
+                %filtered_fp_locked_trials = nan(new_dist_unit,length(filtered_dSUA(1,:)),4);
+                clear n pn
+                for pn =1:4
+                    for n =trialidx
+                        lower_unit_bound =max_low_dist_unit-all_locsdSUA_trials(pn,n)+1;
+                        upper_unit_bound =max_low_dist_unit-all_locsdSUA_trials(pn,n)+length(xabs);
+                        
+                        %origin data of the statistical analysis
+                        fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = origin_dSUA(:,n);
+                        %baseline corrected data
+                        bs_fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = bs_origin_dSUA(:,n);
+                        %zscore transformed data for the plotting
+                        zscore_fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = zscore_unit(:,n);
+                        
+                        %filtered_fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = filtered_dSUA(:,n);
+                    end
+                    
+                end
+                %get the aligned data if it exists for the unit
+                suas_aligned_trials.(filename).origin.(binNb)= fp_locked_trials;
+                suas_aligned_trials.(filename).bsorigin.(binNb)= bs_fp_locked_trials;
+                suas_aligned_trials.(filename).zscore.(binNb)= zscore_fp_locked_trials;
+                
+                max_low_dist.(filename).(binNb) = max_low_dist_unit;
+                
+                clear pn
+                for pn = 1:4
+                    %peak data for the stats
+                    peak_vals.(filename).(binNb)(pn,:)= max(suas_aligned_trials.(filename).origin.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn), [],1);
+                    zscore_peak_vals.(filename).(binNb)(pn,:)= max(suas_aligned_trials.(filename).zscore.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn), [],1);
+                    
+                    
+                    %peak aligne trials
+                    pkNb = sprintf('pk%d', pn);
+                    peak_aligned_trials.(filename).origin.(binNb).(pkNb) = suas_aligned_trials.(filename).origin.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn);
+                    peak_aligned_trials.(filename).bsorigin.(binNb).(pkNb) = suas_aligned_trials.(filename).bsorigin.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn);
+                    peak_aligned_trials.(filename).zscore.(binNb).(pkNb) = suas_aligned_trials.(filename).zscore.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn);
+                    peak_aligned_trials.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
+                    
+                    
+                end
+                
+                %mean peaks for the R plots
+                mean_peaks.(filename).(binNb) = mean(peak_vals.(filename).(binNb),2);
+                
+                mean_peaks.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
+                
+                %median
+                median_peaks.(filename).(binNb) = median(peak_vals.(filename).(binNb),2);
+                
+                median_peaks.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
+                %zscore
+                %zscore.(filename).(binNb) = (peak_vals.(filename).(binNb)-repmat(mean(peak_vals.(filename).(binNb),2), 1,length(peak_vals.(filename).(binNb)(1,:))))./repmat(std(peak_vals.(filename).(binNb),0,2),1,length(peak_vals.(filename).(binNb)(1,:)));
+                
+                zscore_peak_vals.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
             end
-            
-             
-            filtered_dSUA = FiltMultiContSUA.FiltMultiContSUA.(filename).(binNb);
-
-
-            %determine the peak location of interest for each trial of a given single
-            %unit
-            all_locsdSUA_trials = all_locsdSUA.peakLocs.(filename).(binNb);
-
-            up_dist_trials = nan(4,length(trialidx));
-            clear pn
-            for pn = 1:4
-                locs_peak = all_locsdSUA_trials(pn, :);
-                up_dist_trials(pn,:)= length(xabs)- locs_peak;
-            end
-            %get the max distance between the peakalign and the stimulus onset
-            max_low_dist_unit = max(all_locsdSUA_trials,[],'all');
-            %create new matrix with the length(max(d)+max(xabs - d))
-            new_dist_unit = max_low_dist_unit + max(up_dist_trials,[],'all'); 
-            fp_locked_trials = nan(new_dist_unit,length(origin_dSUA(1,:)),4);
-            bs_fp_locked_trials = nan(new_dist_unit,length(origin_dSUA(1,:)),4);
-            zscore_fp_locked_trials = nan(new_dist_unit,length(origin_dSUA(1,:)),4);
-            %filtered_fp_locked_trials = nan(new_dist_unit,length(filtered_dSUA(1,:)),4);
-             clear n pn
-             for pn =1:4
-                   for n =trialidx
-                          lower_unit_bound =max_low_dist_unit-all_locsdSUA_trials(pn,n)+1;
-                          upper_unit_bound =max_low_dist_unit-all_locsdSUA_trials(pn,n)+length(xabs);
-
-                          %origin data of the statistical analysis
-                          fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = origin_dSUA(:,n);
-                          %baseline corrected data
-                          bs_fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = bs_origin_dSUA(:,n);
-                          %zscore transformed data for the plotting
-                          zscore_fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = zscore_unit(:,n);
-
-                          %filtered_fp_locked_trials(lower_unit_bound:upper_unit_bound,n,pn) = filtered_dSUA(:,n);
-                   end
-
-             end
-            %get the aligned data if it exists for the unit 
-            suas_aligned_trials.(filename).origin.(binNb)= fp_locked_trials;
-            suas_aligned_trials.(filename).bsorigin.(binNb)= bs_fp_locked_trials;
-            suas_aligned_trials.(filename).zscore.(binNb)= zscore_fp_locked_trials;
-             
-            max_low_dist.(filename).(binNb) = max_low_dist_unit;
-
-            clear pn
-               for pn = 1:4
-                   %peak data for the stats
-                  peak_vals.(filename).(binNb)(pn,:)= max(suas_aligned_trials.(filename).origin.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn), [],1);
-                  zscore_peak_vals.(filename).(binNb)(pn,:)= max(suas_aligned_trials.(filename).zscore.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn), [],1);
-            
-                  
-                  %peak aligne trials
-                pkNb = sprintf('pk%d', pn);
-                peak_aligned_trials.(filename).origin.(binNb).(pkNb) = suas_aligned_trials.(filename).origin.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn);
-                peak_aligned_trials.(filename).bsorigin.(binNb).(pkNb) = suas_aligned_trials.(filename).bsorigin.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn);
-                peak_aligned_trials.(filename).zscore.(binNb).(pkNb) = suas_aligned_trials.(filename).zscore.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn);
-                peak_aligned_trials.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
-
-
-               end
-               
-               %mean peaks for the R plots 
-               mean_peaks.(filename).(binNb) = mean(peak_vals.(filename).(binNb),2);
-
-               mean_peaks.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
-               
-               %median
-               median_peaks.(filename).(binNb) = median(peak_vals.(filename).(binNb),2);
-
-               median_peaks.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
-               %zscore
-               %zscore.(filename).(binNb) = (peak_vals.(filename).(binNb)-repmat(mean(peak_vals.(filename).(binNb),2), 1,length(peak_vals.(filename).(binNb)(1,:))))./repmat(std(peak_vals.(filename).(binNb),0,2),1,length(peak_vals.(filename).(binNb)(1,:)));
-             
-               zscore_peak_vals.(filename).cellclass = NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass;
-   
         end
-     end
-
-end  
+    end
+    
+end
  %mean_peak_vals.peak = mean_peaks;
- allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_unfiltered_bsdata_peaks';
+ allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\all_unfiltered_data_peaks_05022021';
  save(strcat(allfilename, '.mat'), 'mean_peaks');
  %allfilename = [gendatadir 'su_peaks_03032020_corrected\orig_peak_values\all_units\all_raw_mean_data_peaks'];
  %save(strcat(allfilename, '.mat'), 'mean_peaks');
@@ -455,7 +472,7 @@ end
  allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_unfiltered_zscore_peaks';
  save(strcat(allfilename, '.mat'), 'zscore_peak_vals');
  
- allfilename = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\all_orig_bs_zscore_trials';
+ allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\all_orig_bs_zscore_trials_05022021_mono_bino';
  save(strcat(allfilename, '.mat'), 'peak_aligned_trials');
 
  % post peak isolation count
@@ -1172,7 +1189,7 @@ end
 %% Figures for the paper: scatter plot of each peak comparing binocular vs monocular
 
 
-newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
 
 trialsTraces =load([newdatadir 'all_orig_bs_zscore_trials']);
 filenames = fieldnames(trialsTraces.peak_aligned_trials);
@@ -1184,8 +1201,8 @@ filenames = fieldnames(trialsTraces.peak_aligned_trials);
 %pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_contrast_aov.csv',',',1,1)';
 %pvalues = dlmread('C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\interaction_contrast_indepSampleTtest.csv',',',1,1)';
 
-pvalues = dlmread('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_pvals_anova_linearTrend.csv',',',1,1)';
-r2 = dlmread('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\binocular_adaptation\all_units\mixedmodel_r2_anova_linearTrend.csv',',',1,1)';
+pvalues = dlmread('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\mixedmodel_pvals_anova_linearTrend.csv',',',1,1)';
+r2 = dlmread('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\mixedmodel_r2_anova_linearTrend.csv',',',1,1)';
 
 
  class ={'M','P','K'};
