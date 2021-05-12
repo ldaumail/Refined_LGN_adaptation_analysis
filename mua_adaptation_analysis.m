@@ -227,14 +227,25 @@ end
  end
  %}
  
-[peakLocs, NoFiltMultiContMUA] = peakLocsTrialSelection(channelsdir, filenames);
-allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\all_locs_data_05112021';
+[peakLocs, NoFiltMultiContMUA] = peakLocsMUATrialSelection(channelsdir, filenames);
+allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\all_locs_data_05122021';
 save(strcat(allfilename, '.mat'), 'peakLocs');
-allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\NoFiltMultiContMUA_05112021';
+allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\NoFiltMultiContMUA_05122021';
 save(strcat(allfilename, '.mat'), 'NoFiltMultiContMUA');
  
 %3) Store Peaks and peak-triggered trials
 [peak_vals, peak_aligned_trials] = peaksAndPeakTrigResps(peakLocs, NoFiltMultiContMUA);
+allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\all_orig_bs_zscore_trials_05122021_mono_bino';
+save(strcat(allfilename, '.mat'), 'peak_aligned_trials');
+allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\all_peak_vals_05122021_mono_bino';
+save(strcat(allfilename, '.mat'), 'peak_vals');
+
+%at this stage we can already assess adaptation in both monocular and
+%binocular condition. By slightly changing the peaksAndPeakTrigResps, we
+%can get peak values for multiple contrast levels in the monocular
+%condition, so we can create a new function for this as we will need those
+%values for step (4).
 
 %4) Label channels based on CRFs
+
 %5) Assess adaptation per multiunit class
