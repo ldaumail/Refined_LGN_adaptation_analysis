@@ -206,7 +206,7 @@ end
     %powerfilename = [powerdir strcat('power',STIMBRdatafile)];
     %save(powerfilename, 'power');
    
-%2)Detect peaks and select the corresponding trials and the peaks
+%% 2)Detect peaks and select the corresponding trials and the peaks
 %% Smooth data, and find peak locations, to further allow us to isolate peak values of unfiltered data in order to analyze them on R and fit a LMER
  
  clear all
@@ -227,6 +227,7 @@ end
  end
  %}
  
+%select trials with at least 4 peak values, of convenient quality. Keep peak locations and trial responses: 
 [peakLocs, NoFiltMultiContMUA] = peakLocsMUATrialSelection(channelsdir, filenames);
 allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\all_locs_data_05122021';
 save(strcat(allfilename, '.mat'), 'peakLocs');
@@ -241,11 +242,96 @@ allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\
 save(strcat(allfilename, '.mat'), 'peak_vals');
 
 %at this stage we can already assess adaptation in both monocular and
-%binocular condition. By slightly changing the peaksAndPeakTrigResps, we
+%binocular condition. 
+
+%% Trial selection/ peak alignment quality check: Lets plot all the mean peak responses for each unit
+
+dir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\all_orig_bs_zscore_trials_05122021_mono_bino.mat';
+data = load(dir);
+peak_aligned_trials = data.peak_aligned_trials;
+
+filenames = fieldnames(peak_aligned_trials);
+
+for i = 1:length(fieldnames(peak_aligned_trials))
+    filename = filenames{i};
+    if isfield(peak_aligned_trials.(filename).origin, 'bin1')
+        
+        figure();
+        % mean_unit = squeeze(nanmean(suas_trials(i).aligned(max_low_dist(i)-1-124:max_low_dist(i)-1+125,:,:),2));
+        % stdev = squeeze(std(suas_trials(i).aligned(max_low_dist(i)-1-124:max_low_dist(i)-1+125,:,:),[],2));
+        for pn =1:4
+            pkn = sprintf('pk%d',pn);
+            h = subplot(1,4,pn);
+            plot(-125:124, peak_aligned_trials.(filename).origin. bin1.(pkn));
+            hold on
+            % h1= ciplot( mean_unit(:,pn)+ 1.96*stdev(:,pn)/sqrt(14), mean_unit(:,pn)-1.96*stdev(:,pn)/sqrt(14),[-125:124],[40/255 40/255 40/255],0.1);
+            %set(h1, 'edgecolor','none')
+            set(h,'position',get(h,'position').*[1 1 1.15 1])
+            ylim([0 400])
+            xlim([-125 125])
+            set(gca,'box','off')
+            set(gca, 'linewidth',2)
+            ylabel({'\fontsize{14}Spike Rate (spikes/s)'});
+            if pn > 1
+                ax1 = gca;
+                ax1.YAxis.Visible = 'off';
+            end
+        end
+        sgtitle({'Multiunit trials'}, 'Interpreter', 'none')
+        xlabel('Resolution (ms)')
+        set(gcf,'Units','inches')
+        filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\plots\', filename, 'mono_peak_triggered_responses_trials');
+        %saveas(gcf, strcat(filename, '.png'));
+        %saveas(gcf, strcat(filename, '.svg')); 
+ 
+
+    end
+    
+end
+
+%% check for stability of the responses with the running average across trials
+%check that mean is roughly the same (movmean, 20 trials) across file for stablity
+dir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\NoFiltMultiContMUA_05122021.mat';
+data = load(dir);
+origin_trials = data.NoFiltMultiContMUA;
+filenames = fieldnames(origin_trials);
+%
+%cnt = 0;
+for i = 1:length(filenames)
+    filename = filenames{i};
+    if isfield(origin_trials.(filename),'bin1') && ~isempty(origin_trials.(filename).bin1)
+        %mean(data,1) where 1st dimension is samples over time. then movmean across trials
+        travg = mean(origin_trials.(filename).bin1(401:1900,:),1);
+        runavg.(filename) = movmean(travg, 20);
+        %plot mean firing rate (1 value per trial) across trials for each multiunit.
+        %inspect visually for abrupt changes
+        figure()
+        %plot(runavg.(filename))
+        %cnt = cnt+1;
+        %use findchangepts() to identify abrupt changes in signal (avg firing rate over trials
+        findchangepts( runavg.(filename))
+    end
+end
+
+
+%%
+
+%4) Label channels based on CRFs
+%By slightly changing the peaksAndPeakTrigResps, we
 %can get peak values for multiple contrast levels in the monocular
 %condition, so we can create a new function for this as we will need those
 %values for step (4).
 
-%4) Label channels based on CRFs
+%Location of multiunits data isolated in the previous section
+ channelsdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\selected_channels\';
+ filenames = dir(strcat(channelsdir, '*_DE*')); %only include the DE files, as contrast range differs between eayes stimulated. If we use the CRFs to label channels, we will need a wide range of contrasts ==> "DE' files
 
+%get peak locs and trial responses in the monocular condition for multiple
+%contrast levels
+[peakLocs, NoFiltMultiContMUA] = peakLocsMUATrialSelectionCRFs(channelsdir, filenames);
+allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\all_locs_mono_crfs_data_05132021';
+save(strcat(allfilename, '.mat'), 'peakLocs');
+allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\NoFiltMultiContMUA_mono_crfs_05132021';
+save(strcat(allfilename, '.mat'), 'NoFiltMultiContMUA');
+ 
 %5) Assess adaptation per multiunit class
