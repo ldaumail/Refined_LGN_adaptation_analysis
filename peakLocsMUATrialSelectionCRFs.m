@@ -27,13 +27,13 @@ for i = channum
     blankcontrast = MUA_datafile.channel_data.contrast ==  0 & MUA_datafile.channel_data.fixedc ==  0; %get logical indices of trials with 0 contrast in both eyes
     filename = erase(sprintf('x%s',char(filename)),'.mat');
     for n = 1:length(contLims)
-        if n == 1
-            contrastBin = MUA_datafile.channel_data.contrast >=  0.5 & MUA_datafile.channel_data.fixedc ==  0; %trials indices with 0 contrast in NDE, and contrast >0.5 in DE
-        else
-            if n>1
-                contrastBin = (MUA_datafile.channel_data.contrast >  contLims(n-1) & MUA_datafile.channel_data.contrast <= contLims(n))& MUA_datafile.channel_data.fixedc ==  0;
-            end
-        end
+        %if n == 1
+        %    contrastBin = MUA_datafile.channel_data.contrast >=  0.5 & MUA_datafile.channel_data.fixedc ==  0; %trials indices with 0 contrast in NDE, and contrast >0.5 in DE
+        %else
+        if n < length(contLims)
+                contrastBin = (MUA_datafile.channel_data.contrast >  contLims(n) & MUA_datafile.channel_data.contrast <= contLims(n+1))& MUA_datafile.channel_data.fixedc ==  0;
+        %    end
+        %end
         trialidx = 1:length(MUA_datafile.channel_data.sdftr_chan(1,:)); %trial number of each trial for a given unit
         origin_data = nan(length(xabs)+401, length(trialidx));
         noFiltBs = nan(length(xabs), length(trialidx)); %to store the baseline corrected unfiltered data
@@ -228,20 +228,20 @@ for i = channum
         %bsl_origin_data_high = bsl_origin_data_high(:,~all(isnan(bsl_origin_data_high)));
         
         
-        if n > 1
-        binNb = sprintf('bin%d', n-1);
+       % if n > 1
+        binNb = sprintf('bin%d', n);
         %if n ==1 && length(origin_data_high(1,:)) >=10 %first bin == high contrast monocular condition will serve as an indicator of the minimum number of trials required for the analysis
             
             NoFiltMultiContMUA.(filename).(binNb) = origin_data_high;
             peakLocs.(filename).(binNb) = all_locsdMUA_trials; %create dynamical peak locations structures
             %FiltMultiContMUA.(filename).(binNb) =  filtered_dMUA_high;
             %BsNoFiltMultiContMUA.(filename).(binNb) = bsl_origin_data_high;
-        elseif n ==1
-             binNb = sprintf('bin%d', n+length(contLims)-1);
-             NoFiltMultiContMUA.(filename).(binNb) = origin_data_high;
-            peakLocs.(filename).(binNb) = all_locsdMUA_trials; %create dynamical peak locations structures
+        %elseif n ==1
+        %     binNb = sprintf('bin%d', n+length(contLims)-1);
+        %     NoFiltMultiContMUA.(filename).(binNb) = origin_data_high;
+        %    peakLocs.(filename).(binNb) = all_locsdMUA_trials; %create dynamical peak locations structures
           
-        end
+       % end
         %elseif n == 1 && length(origin_data_high(1,:)) <10
          %   NoFiltMultiContMUA.(filename).(binNb) = [];
           %  peakLocs.(filename).(binNb) = [];
@@ -265,6 +265,6 @@ for i = channum
         %all_pks = all_pks(:,~all(isnan(all_pks)));
         %channelfilename = [unitsDir 'su_peaks_03032020_corrected\individual_units\' filename 'multiContrast'];
         %save(strcat(channelfilename, '.mat'), 'peakLocs');
-        
+        end
     end
 end

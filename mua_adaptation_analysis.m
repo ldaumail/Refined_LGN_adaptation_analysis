@@ -329,9 +329,57 @@ end
 %get peak locs and trial responses in the monocular condition for multiple
 %contrast levels
 [peakLocs, NoFiltMultiContMUA] = peakLocsMUATrialSelectionCRFs(channelsdir, filenames);
-allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\all_locs_mono_crfs_data_05132021';
+allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\all_locs_mono_crfs_data_05172021';
 save(strcat(allfilename, '.mat'), 'peakLocs');
-allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\NoFiltMultiContMUA_mono_crfs_05132021';
+allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\NoFiltMultiContMUA_mono_crfs_05172021';
 save(strcat(allfilename, '.mat'), 'NoFiltMultiContMUA');
- 
+%get origin peaks
+peak_vals = peaksCRFs(peakLocs, NoFiltMultiContMUA);
+allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\all_peak_vals_05172021_mono_crfs';
+save(strcat(allfilename, '.mat'), 'peak_vals');
+
+%Plot CRF of each unit
+dir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\all_peak_vals_05172021_mono_crfs.mat';
+data = load(dir); %load crf peak values
+peak_vals = data.peak_vals; %crf peak values
+
+%get filenames of multiunits selected in trial selection process
+dir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\all_peak_vals_05122021_mono_bino.mat';
+data = load(dir); %load crf peak values
+select_peak_vals = data.peak_vals; %crf peak values
+
+%Compute mean peak value across trials for each peak1 (or across peaks..?)
+%first try plotting crfs with mean peak1
+
+filenames = fieldnames(select_peak_vals);
+x = [0.05, 0.2,0.4,0.6,0.85];
+for i = 1: length(filenames)
+    filename = filenames{i};
+    mean_peaks = nan(5,4);
+    for b = 1:5
+        binNb = sprintf('bin%d', b);
+        if isfield(peak_vals.(filename), binNb) 
+            mean_peaks(b,:) = mean(peak_vals.(filename).(binNb),2);
+        end
+    end
+    figure();
+    for pn = 1:4
+    plot(x(isfinite(mean_peaks(:,pn))), mean_peaks(isfinite(mean_peaks(:,pn)), pn))
+    hold on
+    end
+    xlabel('Contrast Level')
+    ylabel('Mean Pk1 response')
+    title({'Channel contrast response curve of', filename},'Interpreter', 'none')
+    legend('Pk1','Pk2','Pk3','Pk4', 'location', 'bestoutside')
+     filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\plots\', filename, 'mono_peak_contrast_responses_curve');
+     saveas(gcf, strcat(filename, '.png'));
+        %saveas(gcf, strcat(filename, '.svg')); 
+end
+
+matFileNames = cell2mat(filenames);
+%save filenames to associate labels
+%csvwrite('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\selected_filenames_05132021.csv', filenames)
+xlswrite('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\selected_filenames_05132021.csv', filenames);
+
+
 %5) Assess adaptation per multiunit class
