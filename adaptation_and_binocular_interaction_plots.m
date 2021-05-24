@@ -26,7 +26,7 @@ for i = 1: length(filenames)
                  mean_peaks(:,p,b,i) = mean(peak_aligned_trials.peak_aligned_trials.(filename).origin.(binN).(pkN),2);
              end
      %normalize in relation to all mean peaks in the monocular condition
-         norm_aligned_resps(:,:,b,i) = (mean_peaks(:,:,b,i) - min(mean_peaks(:,:,1,i),[], 'all'))./(max(mean_peaks(:,:,1,i), [], 'all') - min(mean_peaks(:,:,1,i),[], 'all'));
+         norm_aligned_resps(:,:,b,i) = (mean_peaks(:,:,b,i) - min(mean_peaks(:,1,1,i),[], 'all'))./(max(mean_peaks(:,1,1,i), [], 'all') - min(mean_peaks(:,1,1,i),[], 'all'));
         end
     end
 end
@@ -85,32 +85,88 @@ linPeakVals = reshape(peakvals, [2*length(peakvals(:,1)),1]);
 condition = [repmat({'Monocular'},length(peakvals(:,1)),1); repmat({'Binocular'},length(peakvals(:,1)),1)];
 unit = repmat(1:length(peaks(1,1,:)),1,8)';
 peakLabel = repmat([repmat({'Pk1'}, length(peaks(1,1,:)),1);repmat({'Pk2'}, length(peaks(1,1,:)),1);repmat({'Pk3'}, length(peaks(1,1,:)),1);repmat({'Pk4'}, length(peaks(1,1,:)),1)],2,1);
+%col(1,:) =[86/255 86/255 86/255] ; %--dark grey 
+%col(2,:) = [251/255 154/255 153/255]; % -- red
+%col(3,:) = [146/255 197/255 222/255]; % -- blue
 
 
 clear g
 figure('Position',[100 100 1400 600]);
 g(1,1)=gramm('x',linPeakVals, 'color',condition);
-g(1,1).facet_grid([],peakLabel); %Provide facets
-g(1,1).stat_bin('dodge',0); %Histogram (we set dodge to zero as facet_grid makes it useless)
 g(1,1).set_names('x','Spiking activity (Normalized)', 'column', '');
-%g(1,1).stat_bin('fill','all'); %histogram
-g(1,1).stat_density();
+g(1,1).facet_grid([],peakLabel); %Provide facets
+g(1,1).geom_jitter('width',0,'height',0.2);
+%g(1,1).stat_bin('fill','transparent'); 
+g(1,1).stat_bin('geom','overlaid_bar');%Histogram
+g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
 %g(1,1).set_color_options('chroma',0,'lightness',75); %We make it light grey
 g(1,1).set_title('Population peak responses in the binocular and monocular conditions');
-g(1,1).axe_property('ylim',[-2 22]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,1).axe_property('xlim',[0.4 1.8],'ylim',[-2 15]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
 
 %Set global axe properties
-g.axe_property('TickDir','out','XGrid','on','Ygrid','on','GridColor',[0.5 0.5 0.5]);
+g.axe_property('TickDir','out');
 g.coord_flip();
 %g.set_title({'Adaptation index distribution across all cells in the monocular and binocular conditions'});
 g.draw();
 
 %set(f,'position',get(f,'position').*[1 1 1.15 1])
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_sdf_mono_bino_allcells_combined_and_M_taller_05022021');
-%saveas(gcf,strcat(plotdir, '.png'));
-%saveas(gcf,strcat(plotdir, '.svg'));
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\hist_mono_bino_allcells_peaks');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
+%% Plot jitter scatter plot + horizontal histogram on the side for each peak
+%{
+
+clear g
+figure('Position',[100 100 1400 600]);
+for p =1:4
+%Create a scatter plot
+g(1,2*(n-1)+1)=gramm('x',linPeakVals,'color',condition);
+g(1,2*(n-1)+1).set_names('x','Spiking activity (Normalized)','column','');
+g(1,2*(n-1)+1).geom_jitter('width',0.4,'height',0.3); %Scatter plot
+g(1,2*(n-1)+1).axe_property('Ygrid','on', 'ylim',[0.3 1.7],'YTickLabel','','YTick',''); 
+g(1,2*(n-1)+1).coord_flip();
+g(1,2*(n-1)+1).draw();
+
+%Create y data histogram on the right
+g(1,2*(n-1)+2)=gramm('x',linPeakVals,'color',condition);
+%g(2,1).set_layout_options('Position',[0.8 0 0.2 0.8],...
+%    'legend',false,...
+%    'margin_height',[0.1 0.02],...
+%    'margin_width',[0.02 0.05],...
+%    'redraw',false);
+g(1,2*(n-1)+2).set_names('x','');
+g(1,2*(n-1)+2).stat_bin('geom','stacked_bar','fill','transparent','nbins',15); %histogram
+g(1,2*(n-1)+2).coord_flip();
+g(1,2*(n-1)+2).draw();
+
+end
+
+%Set global axe properties
+g.axe_property('TickDir','out','XGrid','on','GridColor',[0.5 0.5 0.5]);
+g.set_title('Population peak responses in the binocular and monocular conditions');
+g.set_color_options('map','d3_10');
+g.draw();
+
+
+%% violin plot with jitter
+
+clear g
+figure('Position',[100 100 1400 600]);
+g(1,1)=gramm('x',unit ,'y',linPeakVals,'color',condition);
+%g(1,1).facet_grid([],peakLabel); %Provide facets
+%g(1,1).geom_jitter('width',0.4,'height',0.3); %Scatter plot
+g(1,1).stat_violin('fill','transparent');
+g(1,1).set_names('y','Spiking activity (Normalized)','column','');
+%g.axe_property('TickDir','out','XGrid','on','GridColor',[0.5 0.5 0.5]);
+g.set_title('Population peak responses in the binocular and monocular conditions');
+%g.set_color_options('map','d3_10');
+g.draw();
 
 
 
+%%
 %2) Only plot significantly modulated units that show adaptation in the
 %monocular condition
+
+%}
