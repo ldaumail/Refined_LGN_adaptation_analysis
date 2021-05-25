@@ -9,10 +9,10 @@
 %1) Get mean peak response values for all units in both mono vs bino
 %conditions ===> cf binocular adaptation analysis
 newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
-channelfilename = [newdatadir 'NoFiltMultiContSUA']; 
+channelfilename = [newdatadir 'NoFiltMultiContSUA_05022021']; 
 NoFiltMultiContSUA = load(channelfilename);
 filenames = fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA);
-meanPks = load([newdatadir 'all_unfiltered_data_peaks']); %peak values obtained with BinocularAdaptationTrialSelection.m
+meanPks = load([newdatadir 'all_unfiltered_data_peaks_05022021']); %peak values obtained with BinocularAdaptationTrialSelection.m
 
 
 NdeAvgCont = [0,0.85];
@@ -164,6 +164,14 @@ for n = 1:length(condition)
     end
 end
 
+%% Create a table to store data
+FileName = [filenames; filenames];
+
+T = table(FileName, unit, cellclass, condition, index, 'VariableNames',{'File Name','Unit Number','Cell Class','Condition', 'Adaptation Index'}); 
+allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\data\AdaptationIndexData_05022021';
+writetable(T,strcat(allfilename, '.csv'));
+
+
 %% Raster + Histogram + density function
 %(1) subplots for individual cell classes
 clear g
@@ -193,9 +201,9 @@ g(1,3).set_names('x','Adaptation Index','color','Legend','row','','y','Count');
 f = figure('Position',[100 100 1400 550]);
 g.draw();
 set(f,'position',get(f,'position').*[1 1 1.15 1])
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_rast_sdf_mono_bino_cells');
-%saveas(gcf,strcat(plotdir, '.png'));
-%saveas(gcf,strcat(plotdir, '.svg'));
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_rast_sdf_mono_bino_cells_05022021');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
 
 
 
@@ -244,10 +252,11 @@ g(1,1).stat_density();
 g(1,1).set_names('x','Adaptation Index','color','Legend','row','','y','Count');
 g(1,1).set_title({'Adaptation index distribution across all cells in the monocular and binocular conditions'});
 
+
 g(2,1).stat_bin('nbins',15);
 g(2,1).stat_density();
 g(2,1).set_names('x','Adaptation Index','color','Legend','row','','y','Count');
-g(2,1).set_color_options('hue_range',[-100 100],'chroma',60);%,'legend','separate');
+%g(2,1).set_color_options('hue_range',[-100 100],'chroma',60);%,'legend','separate');
 %g(2,1).set_color_options('hue_range',[-40 40],'chroma',30,'lightness',90);
 g(2,1).set_title({'Adaptation index distribution of M cells, in the monocular and binocular conditions'});
 
@@ -256,9 +265,33 @@ f = figure('Position',[100 100 800 1400]);
 %g.set_title({'Adaptation index distribution across all cells in the monocular and binocular conditions'});
 g.draw();
 set(f,'position',get(f,'position').*[1 1 1.15 1])
-%plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_sdf_mono_bino_allcells_combined_and_M_taller');
-%saveas(gcf,strcat(plotdir, '.png'));
-%saveas(gcf,strcat(plotdir, '.svg'));
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_sdf_mono_bino_allcells_combined_and_M_taller_05022021');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
+
+%% SAME  plot, only including the whole population
+clear g
+g(1,1)=gramm('x',index,'y',unit,'color',condition);
+
+g(1,1).stat_bin('nbins',25,'geom','overlaid_bar');
+g(1,1).stat_density();
+g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+g(1,1).set_names('x','Adaptation Index','color','Legend','row','','y','Count');
+g(1,1).set_title({'Adaptation index distribution across all cells in the monocular and binocular conditions'});
+
+
+f = figure('Position',[100 100 800 1000]);
+%g.set_title({'Adaptation index distribution across all cells in the monocular and binocular conditions'});
+g.draw();
+set(f,'position',get(f,'position').*[1 1 1.15 1])
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_sdf_mono_bino_allcells_adaptindex_05242021');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
+
+%% Mean adaptation index for significantly modulated neurons
+
 
 
 %%
