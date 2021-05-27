@@ -56,38 +56,6 @@ col(1,:) =[86/255 86/255 86/255] ; %--dark grey
 col(2,:) = [251/255 154/255 153/255]; % -- red
 col(3,:) = [146/255 197/255 222/255]; % -- blue
 
-%% Plots of mon/bin distributions of indices
-nbins = [15, 20; 15, 15; 15, 3];
-xlims = [-0.2 0.4;-0.25 0.3;0 0.4];
-for c =1:3
- f = figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);;
- subplot(1,2,1)
- histogram(adapt_idx(:,1,c),nbins(c,1), 'EdgeColor', 'none', 'FaceColor',col(c,:));
- xlim(xlims(c,:))
- ylim([0 6])
- set(gca, 'Box', 'off')
- set(gca, 'linewidth',2)
- set(gca, 'fontsize', 24)
- title({'Adaptation index distribution of',sprintf('the %s cell class in the monocular condition',char(class(c)))},'FontSize', 24)
-
- hold on
- subplot(1,2,2)
-  h = histogram(adapt_idx(:,2,c),nbins(c,2), 'EdgeColor', 'none', 'FaceColor', [180/255 180/255 180/255]);
- %alpha(h,1)
-
- xlim(xlims(c,:))
- ylim([0 6])
- set(gca, 'Box', 'off')
- set(gca, 'linewidth',2)
- set(gca, 'fontsize', 24)
-title({'Adaptation index distribution of',sprintf('the %s cell class in the binocular condition',char(class(c)))},'FontSize', 24)
-set(f,'position',get(f,'position').*[1 1 1.15 1])
-%plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\',strcat(sprintf('mono_bino_%s_cell',class{c})));
-%saveas(gcf,strcat(plotdir, '.png'));
-%saveas(gcf,strcat(plotdir, '.svg'));
-
-                
-end
  
 %% overlay mono/bino histograms in same axes
 
@@ -292,6 +260,38 @@ saveas(gcf,strcat(plotdir, '.svg'));
 
 %% Mean adaptation index for significantly modulated neurons
 
+%% Plots of mon/bin distributions of indices
+nbins = [15, 20; 15, 15; 15, 3];
+xlims = [-0.2 0.4;-0.25 0.3;0 0.4];
+for c =1:3
+ f = figure('Renderer', 'painters', 'Position', [10 10 2000 1200]);;
+ subplot(1,2,1)
+ histogram(adapt_idx(:,1,c),nbins(c,1), 'EdgeColor', 'none', 'FaceColor',col(c,:));
+ xlim(xlims(c,:))
+ ylim([0 6])
+ set(gca, 'Box', 'off')
+ set(gca, 'linewidth',2)
+ set(gca, 'fontsize', 24)
+ title({'Adaptation index distribution of',sprintf('the %s cell class in the monocular condition',char(class(c)))},'FontSize', 24)
+
+ hold on
+ subplot(1,2,2)
+  h = histogram(adapt_idx(:,2,c),nbins(c,2), 'EdgeColor', 'none', 'FaceColor', [180/255 180/255 180/255]);
+ %alpha(h,1)
+
+ xlim(xlims(c,:))
+ ylim([0 6])
+ set(gca, 'Box', 'off')
+ set(gca, 'linewidth',2)
+ set(gca, 'fontsize', 24)
+title({'Adaptation index distribution of',sprintf('the %s cell class in the binocular condition',char(class(c)))},'FontSize', 24)
+set(f,'position',get(f,'position').*[1 1 1.15 1])
+%plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\',strcat(sprintf('mono_bino_%s_cell',class{c})));
+%saveas(gcf,strcat(plotdir, '.png'));
+%saveas(gcf,strcat(plotdir, '.svg'));
+
+                
+end
 
 
 %%

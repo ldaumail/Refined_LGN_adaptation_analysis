@@ -1,12 +1,12 @@
 %This script is developped following trial selection with
 %"BinocularAdaptationTrialSelection.m" and adaptation and binocular interaction analysis 
-% with "lmer_peaks_binocular_adaptation.R"
+% with "mua_lmer_peaks_binocular_adaptation.R"
 %Last edited on 05-25-2021 by Loic Daumail
 
 %% Part 1 : Single Units Analysis (Part 2 for MUA in other script in MUA section)
 
-newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
-channelfilename = [newdatadir 'all_orig_bs_zscore_trials_05022021_mono_bino']; 
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\';
+channelfilename = [newdatadir 'all_orig_bs_zscore_trials_05122021_mono_bino']; 
 peak_aligned_trials = load(channelfilename);
 
 %1) Plot all normalized data in mono vs bino condition
@@ -100,25 +100,23 @@ g(1,1).facet_grid([],peakLabel); %Provide facets
 g(1,1).geom_jitter('width',0,'height',0.2);
 %g(1,1).stat_bin('fill','transparent'); 
 g(1,1).stat_bin('geom','overlaid_bar');%Histogram
-
 g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+%g(1,1).set_color_options('chroma',0,'lightness',75); %We make it light grey
 g(1,1).set_title('Population peak responses in the binocular and monocular conditions');
-g(1,1).axe_property('xlim',[0.4 1.8],'ylim',[-2 15]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,1).axe_property('xlim',[0.4 1.5],'ylim',[-2 15]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
 
 %Set global axe properties
 g.axe_property('TickDir','out');
 g.coord_flip();
 %g.set_title({'Adaptation index distribution across all cells in the monocular and binocular conditions'});
 g.draw();
-%plot(g.results.stat_bin().child_axe_handle,[-2 -2],[0 50],'k:','LineWidth',2)
 
 %set(f,'position',get(f,'position').*[1 1 1.15 1])
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\hist_mono_bino_allcells_peaks');
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\plots\mua_hist_mono_bino_allcells_peaks');
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
 %% Plot jitter scatter plot + horizontal histogram on the side for each peak
-
 
 clear g
 figure('Position',[100 100 1400 600]);
@@ -134,7 +132,7 @@ g(1,2*(p-1)+1).geom_vline('xintercept', meanpMono, 'style', '-k');
 g(1,2*(p-1)+1).geom_vline('xintercept', meanpBino, 'style', '-p');
 
 %g(1,2*(p-1)+1).axe_property('Ygrid','on', 'ylim',[0.3 1.7],'YTickLabel','','YTick',''); 
-g(1,2*(p-1)+1).axe_property('xlim', [0.6 1.3], 'ylim',[0.3 1.7]); 
+g(1,2*(p-1)+1).axe_property('xlim', [0.4 1.5], 'ylim',[0.3 1.7]); 
 g(1,2*(p-1)+1).no_legend();
 
 %Create y data histogram on the right
@@ -149,31 +147,30 @@ g(1,2*(p-1)+2).geom_vline('xintercept', meanpBino, 'style', '-p');
 
 g(1,2*(p-1)+2).set_names('x','');
 g(1,2*(p-1)+2).stat_bin('geom','overlaid_bar'); %histogram
-g(1,2*(p-1)+2).axe_property('xlim',[0.3 1.7],'ylim',[-2 15],'XTickLabel','','XTick',''); 
+g(1,2*(p-1)+2).axe_property('xlim',[0.4 1.5],'ylim',[-2 15],'XTickLabel','','XTick',''); 
 g(1,2*(p-1)+2).no_legend();
 
 end
 %Set global axe properties
 g.axe_property('TickDir','out','XGrid','on','GridColor',[0.5 0.5 0.5]);
-g.axe_property('xlim',[0.4 1.8]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+%g.axe_property('xlim',[0.4 1.8]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
 g.coord_flip();
 g.set_title('Population peak responses in the binocular and monocular conditions');
-%g.set_color_options('map','d3_10');
 g.set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+%g.set_color_options('map','d3_10');
 g.draw();
-%set(findobj(gcf, 'type','axes'), 'Visible','off')
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\jitter_hist_mono_bino_allcells_peaks');
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\plots\mua_jitter_hist_mono_bino_allcells_peaks');
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
-%}
+
 %%
 %2) Only plot significantly modulated units that show adaptation in the
 %monocular condition
 %% Box plot with jitter of significant binocularly modulated units that show suppressive adaptation
-%select data of those specific units  using the table created in "lmer_peaks_binocular_adaptation.R"
+%select data of those specific units using the table created in "mua_lmer_peaks_binocular_adaptation.R"
 
-newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\';
 filename = 'summary_table_pvalues_normmono_meanpks_mono_bino';
 T = readtable(strcat(newdatadir, filename, '.csv'));
 
@@ -184,7 +181,7 @@ goodrows = T.Wpvalue < 0.05; %keep units with significant binocular modulation (
 sigBinoT = T(goodrows,:);
 
 %modify Var1
-sigBinoT.Var1 = repmat(1:4, 1,2)';
+sigBinoT.Var1 = repmat(1:5, 1,2)';
 stackSigBinoT = stack(sigBinoT,{'Pk1','Pk2','Pk3','Pk4'},'NewDataVariableName','PeakResp');
 
 %plot
@@ -209,10 +206,7 @@ g.set_title({'Peak responses in the binocular and monocular conditions of','bino
 g.axe_property('TickDir','out');
 %g.coord_flip();
 g.draw();
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\box_mono_bino_modadaptcells_peaks');
-saveas(gcf,strcat(plotdir, '.png'));
-saveas(gcf,strcat(plotdir, '.svg'));
-
-
-
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\plots\mua_box_mono_bino_modadaptcells_peaks');
+%saveas(gcf,strcat(plotdir, '.png'));
+%saveas(gcf,strcat(plotdir, '.svg'));
 
