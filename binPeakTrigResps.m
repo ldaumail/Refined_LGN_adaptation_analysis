@@ -1,4 +1,4 @@
-function [wind_peak_vals, peak_aligned_trials] = binPeakTrigResps(peakLocs,binSpkTrials, NoFiltMultiContSUA)
+function [wind_peak_vals, peak_aligned_trials] = binPeakTrigResps(peakLocs,NoFiltMultiContSUA,binSpkTrials)
 %This script is inspired from "get_origin_peaks.m". It isolates windows of binary spikes around peak
 %locations. The script also retriggers binary trial responses to each serial cycle peak location
 %Code developped and last edited on 05/11/2021
@@ -79,17 +79,6 @@ for i = channum
                         peak_aligned_trials.(filename).binarySUA.(binNb).(pkNb) = bin_suas_aligned_trials.(filename).binarySUA.(binNb)(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn);
 
                     end
-
-                    %mean peaks for the R plots
-                    %mean_peaks.(filename).(binNb) = mean(wind_peak_vals.(filename).(binNb),2);
-
-                    %median
-                    %median_peaks.(filename).(binNb) = median(wind_peak_vals.(filename).(binNb),2);
-
-
-                    %zscore
-                    %zscore.(filename).(binNb) = (peak_vals.(filename).(binNb)-repmat(mean(peak_vals.(filename).(binNb),2), 1,length(peak_vals.(filename).(binNb)(1,:))))./repmat(std(peak_vals.(filename).(binNb),0,2),1,length(peak_vals.(filename).(binNb)(1,:)));
-
 
                 end
             end
