@@ -163,6 +163,51 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_0420
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
+%% Plot jitter scatter plot + horizontal histogram on the side for each mono peak - bino peak difference
+diffLinPeakVals = linPeakVals(strcmp(condition, 'Monocular')) - linPeakVals(strcmp(condition, 'Binocular'));
+diffPeakLabel = peakLabel(1:length(peakLabel)/2);
+
+clear g
+figure('Position',[100 100 1400 600]);
+for p =1:4
+%Create a scatter plot
+meanpDiff = nanmean(diffLinPeakVals(strcmp(diffPeakLabel, sprintf('Pk%d',p)))); %compute difference between monocular and binocular condition
+
+g(1,2*(p-1)+1)=gramm('x',diffLinPeakVals,'subset', strcmp(diffPeakLabel,sprintf('Pk%d',p)));
+g(1,2*(p-1)+1).set_names('x','Spiking activity difference (Normalized)','column','');
+g(1,2*(p-1)+1).geom_jitter('width',0,'height',0.2); %Scatter plot
+g(1,2*(p-1)+1).geom_vline('xintercept', meanpDiff, 'style', '-k');
+
+%g(1,2*(p-1)+1).axe_property('Ygrid','on', 'ylim',[0.3 1.7],'YTickLabel','','YTick',''); 
+g(1,2*(p-1)+1).axe_property('ylim',[0.3 1.7]); 
+g(1,2*(p-1)+1).no_legend();
+
+%Create y data histogram on the right
+g(1,2*(p-1)+2)=gramm('x',diffLinPeakVals,'subset', strcmp(diffPeakLabel,sprintf('Pk%d',p)));
+%g(2,1).set_layout_options('Position',[0.8 0 0.2 0.8],...
+%    'legend',false,...
+%    'margin_height',[0.1 0.02],...
+%    'margin_width',[0.02 0.05],...
+%    'redraw',false);
+g(1,2*(p-1)+2).geom_vline('xintercept', meanpDiff, 'style', '-k');
+
+g(1,2*(p-1)+2).set_names('x','');
+g(1,2*(p-1)+2).stat_bin('geom','overlaid_bar', 'nbins', round(std(diffLinPeakVals(strcmp(diffPeakLabel, sprintf('Pk%d',p))),'omitnan')*100)); %histogram
+%g(1,2*(p-1)+2).axe_property('xlim',[0 0.5],'ylim',[-2 15],'XTickLabel','','XTick',''); 
+g(1,2*(p-1)+2).no_legend();
+
+end
+%Set global axe properties
+g.axe_property('TickDir','out','XGrid','on','GridColor',[0.5 0.5 0.5]);
+g.axe_property('xlim',[-0.4 0.45]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g.coord_flip();
+g.set_title('Population peak response of monocular - binocular conditions differences');
+g.set_color_options('map','d3_10');
+%g.set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+g.draw();
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\plots\mua_jitter_hist_mono_bino_allcells_peakdiffs');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
 
 %%
 %2) Only plot significantly modulated units that show adaptation in the
@@ -210,3 +255,56 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_0420
 %saveas(gcf,strcat(plotdir, '.png'));
 %saveas(gcf,strcat(plotdir, '.svg'));
 
+%% Quick stats to compare the mean distributions of each peak between conditions
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\';
+channelfilename = [newdatadir 'all_orig_bs_zscore_trials_05122021_mono_bino']; 
+peak_aligned_trials = load(channelfilename);
+
+%1) Plot all normalized data in mono vs bino condition
+
+%We first need to normalize all mean responses. Since trials are stored 4 times as each time is triggered to one peak,  
+filenames = fieldnames(peak_aligned_trials.peak_aligned_trials);
+bins = [1,6];
+norm_aligned_resps = nan(250, 4, 2,length(filenames) );
+mean_peaks = nan(250, 4, 2,length(filenames) );
+for i = 1: length(filenames)
+    filename = filenames{i};
+    if length(fieldnames(peak_aligned_trials.peak_aligned_trials.(filename).origin)) == 2
+        for b = 1:2
+            binN = sprintf('bin%d',bins(b));
+             %compute mean peak responses
+             for p = 1:4
+                 pkN = sprintf('pk%d',p);
+                 mean_peaks(:,p,b,i) = mean(peak_aligned_trials.peak_aligned_trials.(filename).origin.(binN).(pkN),2);
+             end
+     %normalize in relation to all mean peaks in the monocular condition
+         norm_aligned_resps(:,:,b,i) = (mean_peaks(:,:,b,i) - min(mean_peaks(:,:,1,i),[], 'all'))./(max(mean_peaks(:,:,1,i), [], 'all') - min(mean_peaks(:,:,1,i),[], 'all'));
+         
+        end
+    end
+end
+%store norm peak values
+ peaks = nan(4,2,length(filenames));
+for i = 1:length(filenames)
+    for b = 1:2
+        for p = 1:4
+            peaks(p,b,i) = max(norm_aligned_resps(:,p,b,i));
+        end
+    end
+end
+%%find a way to melt matrix in
+%%p1p1p1p1....p2p2p2p2....p3p3p3p3....p4p4p4p4p4 fashion
+peakvals = [squeeze(peaks(1,:,:))';squeeze(peaks(2,:,:))';squeeze(peaks(3,:,:))';squeeze(peaks(4,:,:))'];
+%peakvals = reshape(peaks, [length(peaks(:,1,1))*length(peaks(1,1,:)), length(peaks(1,:,1))]);
+linPeakVals = reshape(peakvals, [2*length(peakvals(:,1)),1]); 
+condition = [repmat({'Monocular'},length(peakvals(:,1)),1); repmat({'Binocular'},length(peakvals(:,1)),1)];
+unit = repmat(1:length(peaks(1,1,:)),1,8)';
+peakLabel = repmat([repmat({'Pk1'}, length(peaks(1,1,:)),1);repmat({'Pk2'}, length(peaks(1,1,:)),1);repmat({'Pk3'}, length(peaks(1,1,:)),1);repmat({'Pk4'}, length(peaks(1,1,:)),1)],2,1);
+
+
+for p =1:4
+    meansMono =linPeakVals(strcmp(condition, 'Monocular')& strcmp(peakLabel,sprintf('Pk%d',p)));
+    meansBino =linPeakVals(strcmp(condition, 'Binocular')& strcmp(peakLabel,sprintf('Pk%d',p))); 
+    ttestRes(p) = ttest(meansMono,meansBino);
+    
+end
