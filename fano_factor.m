@@ -82,6 +82,16 @@ peakLabel = repmat([repmat({'Pk1'}, length(mean_winds(1,1,:)),1);repmat({'Pk2'},
 
 %compute fano factor for each peak
 %Fano factor = variance/ mean
+for p =1:4
+%Create a scatter plot
+meanpMono(p) = nanmean(linPeakVals( strcmp(condition, 'Monocular') & strcmp(peakLabel,sprintf('Pk%d',p))));
+meanpBino(p) = nanmean(linPeakVals( strcmp(condition, 'Binocular') & strcmp(peakLabel,sprintf('Pk%d',p))));
 
+varpMono(p) = var(linPeakVals( strcmp(condition, 'Monocular') & strcmp(peakLabel,sprintf('Pk%d',p))),'omitnan');
+varpBino(p) = var(linPeakVals( strcmp(condition, 'Binocular') & strcmp(peakLabel,sprintf('Pk%d',p))),'omitnan');
+
+fanofMono(p) = varpMono(p)/meanpMono(p);
+fanofBino(p) = varpBino(p)/meanpBino(p);
+end
 
 
