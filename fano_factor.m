@@ -159,20 +159,27 @@ wsz = [20,30,50,70,100]; %window size
 %set fanof in matrix format
 filenames = fieldnames(slide_win_fanof);
 bins = [1,6];
-all_fanofs = nan(length(-125:10:125-wsz(1)),4,2,length(wsz),length(filenames));
+all_fanofs = nan(length(-125:10:125-wsz(1)),5,2,length(wsz),length(filenames)); %5 = 4 pks +1 resting state
 len = nan(length(wsz),1);
 for i =1:length(filenames)
     filename = filenames{i};
     if length(fieldnames(slide_win_fanof.(filename).fanof)) == 2 
         for b =1:2
             binN = sprintf('bin%d',bins(b));
+            %fill up matrix with FF of peaks
             for p =1:4
                 for w =1:length(wsz)
                     windSz = sprintf('wsz%d',wsz(w));
-                    len(w) = length(slide_win_fanof.(filename).fanof.(binN).(windSz)(p,:));
-                all_fanofs(1:len(w),p,b,w,i) =  slide_win_fanof.(filename).fanof.(binN).(windSz)(p,:);
+                    len(w) = length(slide_win_fanof.(filename).fanof.(binN).(windSz).peaks(p,:));
+                    all_fanofs(1:len(w),p+1,b,w,i) =  slide_win_fanof.(filename).fanof.(binN).(windSz).peaks(p,:);
                 end
             end
+            %fill up first  matrix column with FF of resting state 
+              for w =1:length(wsz)
+                    windSz = sprintf('wsz%d',wsz(w));
+                    len(w) = length(slide_win_fanof.(filename).fanof.(binN).(windSz).rs(:));
+                    all_fanofs(1:len(w),1,b,w,i) =  slide_win_fanof.(filename).fanof.(binN).(windSz).rs(:);
+              end
         end
     end
     
@@ -188,8 +195,8 @@ col(2,:) = [253/255 174/255 97/255]; % -- orange
 figure();
 
 mean_fanof =nanmean(all_fanofs,4);
-for p = 1:4
-    h =subplot(1,4,p);
+for p = 1:5
+    h =subplot(1,5,p);
     for w =1:length(wsz)
         %ci_low = mean_fanof(:,p,w) - 1.96*std(squeeze(all_fanofs(:,p,w,:)),0,2, 'omitnan')./sqrt(length(find(~isnan(all_fanofs(1,p,w,:)))));
         %ci_high = mean_fanof(:,p,w) + 1.96*std(squeeze(all_fanofs(:,p,w,:)),0,2, 'omitnan')./sqrt(length(find(~isnan(all_fanofs(1,p,w,:)))));
@@ -216,7 +223,7 @@ for p = 1:4
         ax1 = gca;
         ax1.YAxis.Visible = 'off';
     end
-    if p ==4
+    if p ==5
         
         legend('wsz = 20ms', 'wsz = 30ms','wsz = 50ms', 'wsz = 70ms', 'wsz = 100ms')
     end
@@ -466,6 +473,42 @@ for p =1:4
 end
 sgtitle('Fano Factor as a function of spike count variance across trials of single units')
 plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\scatter_plot_spkcvar_vs_spkcmean_regression');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
+
+%% Variance only
+
+
+figure('Position',[100 100 1400 800]);
+
+for p =1:4
+    h =subplot(1,4,p);
+    y =squeeze(mvar_vals(p,3,:));
+    boxplot(y,'Color',col(1,:))
+    hold on
+    set(gca,'box','off')
+    ylim([0 4])
+    set(gca, 'linewidth',2)
+    set(gca,'box','off')
+    
+        xlabel(sprintf('Peak %d', p))
+    if p ==1
+        ylabel('Spike Count Variance')
+    end
+    title(sprintf('Peak %d', p))
+    if p >1
+        ax1 = gca;
+        ax1.YAxis.Visible = 'off';
+        
+    end
+    plot(nanmean(y), 'dg')
+    hold off
+    text(1,nanmean(y), sprintf('<y> = %.2f', nanmean(y)));
+  
+end
+sgtitle('Spike count variance of single units across trials')
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\boxplot_spkcvar');
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
