@@ -258,74 +258,100 @@ end
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
 
- %% Fano Factor as a function of peak in a box plot
+ %% Fano Factor as a function of peak in a point/box plot with 95% CI
  
- %remove boxes and only plot variance?
-figure();
-
-halflen = round(len./2);
 %data for plot
+halflen = round(len./2);
 plot_dat = nan(size(all_fanofs,4),size(all_fanofs,3),length(halflen));
 for w = 1:length(halflen)
    plot_dat(:,:,w) = squeeze(all_fanofs(halflen(w),:,w,:))'; 
 end
 %make data ready for gramm
 
-unit = repmat(1:length(all_fanofs(1,1,1,:)),1,size(all_fanofs,2)*size(all_fanofs,3))';
-peakLabel = repmat([repmat({'Resting State'}, size(all_fanofs,4),1);repmat({'Pk1'}, size(all_fanofs,4),1);repmat({'Pk2'}, size(all_fanofs,4),1);repmat({'Pk3'}, size(all_fanofs,4),1);repmat({'Pk4'}, size(all_fanofs,4),1)],5,1);
-windowsz = [repmat({'20ms'}, size(all_fanofs,4)*size(all_fanofs,3),1);repmat({'30ms'}, size(all_fanofs,4)*size(all_fanofs,3),1);repmat({'50ms'}, size(all_fanofs,4)*size(all_fanofs,3),1);repmat({'70ms'}, size(all_fanofs,4)*size(all_fanofs,3),1);repmat({'100ms'}, size(all_fanofs,4)*size(all_fanofs,3),1)];
 
-%points and error bars
-g(1,2)=gramm('x',categorical(cars_summary.Cylinders),'y',cars_summary.hp_mean,...
-    'ymin',cars_summary.hp_ci(:,1),'ymax',cars_summary.hp_ci(:,2),'color',cars_summary.Origin_Region);
-g(1,2).set_names('color','Origin','y','Horsepower','x','# Cylinders');
-g(1,3)=copy(g(1,2));
-g(1,2).set_color_options('map','matlab');
+meanFanofs = reshape(nanmean(plot_dat,1),[size(plot_dat,2)*size(plot_dat,3),1]);
+stdFanofs = reshape(std(plot_dat,[],1,'omitnan'),[size(plot_dat,2)*size(plot_dat,3),1]);
+ci_high = meanFanofs + 1.96*stdFanofs/sqrt(size(plot_dat,1));
+ci_low = meanFanofs - 1.96*stdFanofs/sqrt(size(plot_dat,1));
+peakLabel = repmat({'Baseline State'; 'Pk1';'Pk2';'Pk3';'Pk4'},size(plot_dat,3),1);
+windowSz = [repmat({'20ms'}, size(plot_dat,2),1);repmat({'30ms'}, size(plot_dat,2),1);repmat({'50ms'}, size(plot_dat,2),1);repmat({'70ms'}, size(plot_dat,2),1);repmat({'x100ms'}, size(plot_dat,2),1)];
 
-g(1,2).geom_point('dodge',0.2);
-g(1,2).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(1).map) ;
+colormap(cmap);
 
-for p = 1:5
-    h =subplot(1,5,p);
-    %cmap = flip(cmaps(2).map) ;
-    %cmap = cmaps(2).map ;
-    %colormap(cmap);
-    
+%points and error bars plot
+clear g
 
-            boxplot(squeeze(plot_dat(:,p,:)))%'LineWidth',2, 'col',cmap(w,:))%'Color',[40/255 40/255 40/255] )
-            hold on
-    
-       
-        
- end
-    ylim([0.2 1.8])
-    
-    set(gca, 'linewidth',2)
-    set(gca,'box','off')
-    %set(gca, 'linewidth',2)
-    %hold on
-    %plot([0 0], ylim,'k')
-    if p ==1
-        ylabel({'\fontsize{14}Fano Factor'})
-    end
-    if p >1
-        ax1 = gca;
-       ax1.YAxis.Visible = 'off';
-    end
-    if p ==5
-        
-        legend('wsz = 20ms', 'wsz = 30ms','wsz = 50ms', 'wsz = 70ms', 'wsz = 100ms')
-    end
-end
+g(1,1)=gramm('x',categorical(peakLabel),'y',meanFanofs,...
+    'ymin',ci_low,'ymax',ci_high,'color',windowSz);
+g(1,1).set_names('color','Window Size','y','Fano Factor','x','Peak #');
+g(1,1).set_color_options('map',cmap);
+g(1,1).geom_point('dodge',0.2);
+g(1,1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+g(1,1).set_title('Mean Sliding Window (10 ms steps) Fano Factor');
+%g(1,1).axe_property('ylim',[0.2 1.8]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
 
- sgtitle('Mean Sliding Window (10 ms steps) Fano Factor', 'FontSize', 20)
- set(gcf,'Units','inches')
- set(gcf,'position',[1 1 15 11])
- plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('all_sliding_window_mean_fanof_rsstimonset_right_plusminus50ms'));
+figure('Position',[100 100 800 450]);
+g.draw();
+
+ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('all_sliding_window_mean_fanof_rsstimonset_point_ci'));
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
 
- 
+%% Variance point plot 
+%{
+unit = repmat(1:length(all_fanofs(1,1,1,:)),1,size(all_fanofs,2)*size(all_fanofs,3))';
+peakLabel = repmat([repmat({'Resting State'}, size(all_fanofs,4),1);repmat({'Pk1'}, size(all_fanofs,4),1);repmat({'Pk2'}, size(all_fanofs,4),1);repmat({'Pk3'}, size(all_fanofs,4),1);repmat({'Pk4'}, size(all_fanofs,4),1)],5,1);
+windowsz = [repmat({'20ms'}, size(all_fanofs,4)*size(all_fanofs,3),1);repmat({'30ms'}, size(all_fanofs,4)*size(all_fanofs,3),1);repmat({'50ms'}, size(all_fanofs,4)*size(all_fanofs,3),1);repmat({'70ms'}, size(all_fanofs,4)*size(all_fanofs,3),1);repmat({'100ms'}, size(all_fanofs,4)*size(all_fanofs,3),1)];
+linFanofs = reshape(reshape(plot_dat, [size(plot_dat,1)*size(plot_dat,2), size(plot_dat,3)]), [size(plot_dat,1)*size(plot_dat,2)*size(plot_dat,3),1]); 
+%}
+%Load peakLocs, NoFiltMultiContSUA, binSpkTrials
+datadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
+peakLocs = load(strcat(datadir, 'peak_locs_data_06022021'));
+peakLocs = peakLocs.peakLocs;
+NoFiltMultiContSUA = load(strcat(datadir,'origin_trials_data_06022021'));
+NoFiltMultiContSUA = NoFiltMultiContSUA.NoFiltMultiContSUA;
+binSpkTrials = load(strcat(datadir,'binary_trials_data_06022021'));
+binSpkTrials = binSpkTrials.binSpkTrials;
+
+wsz = [20,30,50,70,100]; %window size
+
+%align binary trials to peak locations for each peak
+[slide_win_fanof, peak_aligned_trials] = peakTrigFano(peakLocs, NoFiltMultiContSUA, binSpkTrials, wsz);
+
+%set fanof in matrix format and get peak values
+filenames = fieldnames(slide_win_fanof); 
+bins = [1,6];
+%all_fanofs = nan(length(-125:10:125-wsz(1)), 4,2,length(wsz),length(filenames));
+%peak_vals = nan(4,2,length(wsz),length(filenames));
+var_vals = nan(4,2,length(wsz),length(filenames));
+%peak_fanofs = nan(4,2,length(wsz),length(filenames));
+
+for i =1:length(filenames)
+    filename = filenames{i};
+    if length(fieldnames(slide_win_fanof.(filename).fanof)) == 2
+        for b =1:2
+            binN = sprintf('bin%d',bins(b));
+            for p =1:4
+                for w =1:length(wsz)
+                    windSz = sprintf('wsz%d',wsz(w));
+                    len(w) = length(slide_win_fanof.(filename).fanof.(binN).(windSz).peaks(p,:));
+                    var_vals(p,b,w,i) = slide_win_fanof.(filename).varspkc.(binN).(windSz).peaks(p,round(len(w)/2));
+                end
+            end
+        end
+    end
+end
+
+%merge mono and bino since they are not different
+mvar_vals = squeeze(nanmean(var_vals,2));              
+
  
 %% %%%%%%%% raster plot of example single unit %%%%
  %raster plot of trials binary spikesaligned to each peak
