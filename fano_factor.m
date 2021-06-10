@@ -305,12 +305,7 @@ g.draw();
  saveas(gcf,strcat(plotdir, '.svg'));
 
 %% Variance point plot 
-%{
-unit = repmat(1:length(all_fanofs(1,1,1,:)),1,size(all_fanofs,2)*size(all_fanofs,3))';
-peakLabel = repmat([repmat({'Resting State'}, size(all_fanofs,4),1);repmat({'Pk1'}, size(all_fanofs,4),1);repmat({'Pk2'}, size(all_fanofs,4),1);repmat({'Pk3'}, size(all_fanofs,4),1);repmat({'Pk4'}, size(all_fanofs,4),1)],5,1);
-windowsz = [repmat({'20ms'}, size(all_fanofs,4)*size(all_fanofs,3),1);repmat({'30ms'}, size(all_fanofs,4)*size(all_fanofs,3),1);repmat({'50ms'}, size(all_fanofs,4)*size(all_fanofs,3),1);repmat({'70ms'}, size(all_fanofs,4)*size(all_fanofs,3),1);repmat({'100ms'}, size(all_fanofs,4)*size(all_fanofs,3),1)];
-linFanofs = reshape(reshape(plot_dat, [size(plot_dat,1)*size(plot_dat,2), size(plot_dat,3)]), [size(plot_dat,1)*size(plot_dat,2)*size(plot_dat,3),1]); 
-%}
+
 %Load peakLocs, NoFiltMultiContSUA, binSpkTrials
 datadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
 peakLocs = load(strcat(datadir, 'peak_locs_data_06022021'));
@@ -330,7 +325,7 @@ filenames = fieldnames(slide_win_fanof);
 bins = [1,6];
 %all_fanofs = nan(length(-125:10:125-wsz(1)), 4,2,length(wsz),length(filenames));
 %peak_vals = nan(4,2,length(wsz),length(filenames));
-var_vals = nan(4,2,length(wsz),length(filenames));
+var_vals = nan(5,2,length(wsz),length(filenames));
 %peak_fanofs = nan(4,2,length(wsz),length(filenames));
 
 for i =1:length(filenames)
@@ -342,15 +337,72 @@ for i =1:length(filenames)
                 for w =1:length(wsz)
                     windSz = sprintf('wsz%d',wsz(w));
                     len(w) = length(slide_win_fanof.(filename).fanof.(binN).(windSz).peaks(p,:));
-                    var_vals(p,b,w,i) = slide_win_fanof.(filename).varspkc.(binN).(windSz).peaks(p,round(len(w)/2));
+                    var_vals(p+1,b,w,i) = slide_win_fanof.(filename).varspkc.(binN).(windSz).peaks(p,round(len(w)/2));
                 end
             end
+            %fill up first  matrix column with FF of resting state 
+              for w =1:length(wsz)
+                    windSz = sprintf('wsz%d',wsz(w));
+                    len(w) = length(slide_win_fanof.(filename).varspkc.(binN).(windSz).rs(:));
+                    var_vals(1,b,w,i) = slide_win_fanof.(filename).varspkc.(binN).(windSz).rs(round(len(w)/2));
+   
+              end
         end
     end
 end
 
 %merge mono and bino since they are not different
 mvar_vals = squeeze(nanmean(var_vals,2));              
+%prepare data for gramm
+%prepare data for bar/point
+meanVars = reshape(nanmean(mvar_vals,3),[size(mvar_vals,1)*size(mvar_vals,2),1]);
+stdVars = reshape(std(mvar_vals,[],3,'omitnan'),[size(mvar_vals,1)*size(mvar_vals,2),1]);
+ci_high = meanVars + 1.96*stdVars/sqrt(size(mvar_vals,3));
+ci_low = meanVars - 1.96*stdVars/sqrt(size(mvar_vals,3));
+peakLabel = repmat({'Baseline State'; 'Pk1';'Pk2';'Pk3';'Pk4'},size(mvar_vals,2),1);
+windowSz = [repmat({'20ms'}, size(mvar_vals,1),1);repmat({'30ms'}, size(mvar_vals,1),1);repmat({'50ms'}, size(mvar_vals,1),1);repmat({'70ms'}, size(mvar_vals,1),1);repmat({'x100ms'}, size(mvar_vals,1),1)];
+
+%prepare data for jitter
+longPeakLabel = repmat(repmat({'Baseline State';'Pk1';'Pk2';'Pk3';'Pk4'}, size(mvar_vals,2),1),size(mvar_vals,3),1);
+longWindowSz = repmat([repmat({'20ms'}, size(mvar_vals,1),1);repmat({'30ms'}, size(mvar_vals,1),1);repmat({'50ms'}, size(mvar_vals,1),1);repmat({'70ms'}, size(mvar_vals,1),1);repmat({'x100ms'}, size(mvar_vals,1),1)], size(mvar_vals,3),1);
+linVars = reshape(reshape(mvar_vals, [size(mvar_vals,1)*size(mvar_vals,2), size(mvar_vals,3)]), [size(mvar_vals,1)*size(mvar_vals,2)*size(mvar_vals,3),1]); 
+
+
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('Blues', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
+%points and error bars plot
+clear g
+
+%jitter
+
+g(1,1) = gramm('x',categorical(longPeakLabel),'y',linVars, 'subset',strcmp(longWindowSz, '50ms') );
+g(1,1).geom_jitter('width',0,'height',0.2);
+g(1,1).set_names('color','Window Size','y','Mean Variance','x','Peak #');
+g(1,1).axe_property('ylim',[0 10]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,1).set_color_options('map',cmap(4,:));
+g(1,1).set_title('Mean 50 ms Sliding Window (10 ms steps) Variance');
+
+%point bar plot
+g(1,1).update('x',categorical(peakLabel),'y',meanVars,...
+    'ymin',ci_low,'ymax',ci_high,'subset',strcmp(windowSz, '50ms'));
+g(1,1).set_color_options('map',cmaps(1).map(4,:));
+g(1,1).geom_point('dodge',0.2);
+g(1,1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+g(1,1).axe_property('ylim',[0 10]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+
+
+figure('Position',[100 100 800 450]);
+g.draw();
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('all_sliding_window_mean_variance_rsstimonset_jitter_point_ci'));
+ saveas(gcf,strcat(plotdir, '.png'));
+ saveas(gcf,strcat(plotdir, '.svg'));
 
  
 %% %%%%%%%% raster plot of example single unit %%%%
