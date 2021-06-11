@@ -264,7 +264,8 @@ end
 halflen = round(len./2);
 plot_dat = nan(size(all_fanofs,4),size(all_fanofs,3),length(halflen));
 for w = 1:length(halflen)
-   plot_dat(:,:,w) = squeeze(all_fanofs(halflen(w),:,w,:))'; 
+  % plot_dat(:,:,w) = squeeze(all_fanofs(halflen(w),:,w,:))'; 
+   plot_dat(:,:,w) = squeeze(mfanofs(:,w,:))';
 end
 %make data ready for gramm
 
@@ -300,7 +301,7 @@ g(1,1).set_title('Mean Sliding Window (10 ms steps) Fano Factor');
 figure('Position',[100 100 800 450]);
 g.draw();
 
- plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('all_sliding_window_mean_fanof_rsstimonset_point_ci'));
+ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('all_sliding_window_mean_fanof_rsstimonset_point_ci_excludeVarOutliers'));
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
 
@@ -324,7 +325,7 @@ wsz = [20,30,50,70,100]; %window size
 filenames = fieldnames(slide_win_fanof); 
 bins = [1,6];
 %all_fanofs = nan(length(-125:10:125-wsz(1)), 4,2,length(wsz),length(filenames));
-%peak_vals = nan(4,2,length(wsz),length(filenames));
+peak_vals = nan(4,2,length(wsz),length(filenames));
 var_vals = nan(5,2,length(wsz),length(filenames));
 %peak_fanofs = nan(4,2,length(wsz),length(filenames));
 
@@ -338,6 +339,8 @@ for i =1:length(filenames)
                     windSz = sprintf('wsz%d',wsz(w));
                     len(w) = length(slide_win_fanof.(filename).fanof.(binN).(windSz).peaks(p,:));
                     var_vals(p+1,b,w,i) = slide_win_fanof.(filename).varspkc.(binN).(windSz).peaks(p,round(len(w)/2));
+                    peak_vals(p+1,b,w,i) = slide_win_fanof.(filename).meanspkc.(binN).(windSz).peaks(p,round(len(w)/2));
+                  
                 end
             end
             %fill up first  matrix column with FF of resting state 
@@ -345,14 +348,17 @@ for i =1:length(filenames)
                     windSz = sprintf('wsz%d',wsz(w));
                     len(w) = length(slide_win_fanof.(filename).varspkc.(binN).(windSz).rs(:));
                     var_vals(1,b,w,i) = slide_win_fanof.(filename).varspkc.(binN).(windSz).rs(round(len(w)/2));
-   
+                    peak_vals(1,b,w,i) = slide_win_fanof.(filename).meanspkc.(binN).(windSz).rs(round(len(w)/2));
+                  
               end
         end
     end
 end
 
 %merge mono and bino since they are not different
-mvar_vals = squeeze(nanmean(var_vals,2));              
+mvar_vals = squeeze(nanmean(var_vals,2));
+mpeak_vals = squeeze(nanmean(peak_vals,2));    
+
 %prepare data for gramm
 %prepare data for bar/point
 meanVars = reshape(nanmean(mvar_vals,3),[size(mvar_vals,1)*size(mvar_vals,2),1]);
@@ -404,7 +410,7 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_0420
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
 
-%% Plot variance taking outliers into account
+%% Variance and Fano Factor plots taking outliers into account
 %merge mono and bino since they are not different
 mvar_vals = squeeze(nanmean(var_vals,2));       
 
@@ -419,8 +425,9 @@ end
 select_mvar = mvar_vals.*outliers; %zero out outliers
 select_mvar(select_mvar == 0) = NaN; %replace zeros by nans
  
+% use variables below in plot code above to replot them
 mvar_vals = select_mvar;
-
+mfanofs = mvar_vals./mpeak_vals;
 
 %% %%%%%%%% raster plot of example single unit %%%%
  %raster plot of trials binary spikesaligned to each peak
