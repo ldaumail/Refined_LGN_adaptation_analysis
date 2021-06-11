@@ -166,6 +166,68 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_0420
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
+
+%% %% Plot jitter scatter plot + point bar +-std plot on the side for each peak
+
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
+%plot
+clear g
+figure('Position',[100 100 1400 600]);
+for p =1:4
+%Create a scatter plot
+meanpMono = nanmean(linPeakVals( strcmp(condition, 'Monocular') & strcmp(peakLabel,sprintf('Pk%d',p))));
+meanpBino = nanmean(linPeakVals( strcmp(condition, 'Binocular') & strcmp(peakLabel,sprintf('Pk%d',p))));
+g(1,2*(p-1)+1)=gramm('x',linPeakVals,'color',condition,'subset', strcmp(peakLabel,sprintf('Pk%d',p)));
+g(1,2*(p-1)+1).set_names('x','Spiking activity (Normalized)','column','');
+g(1,2*(p-1)+1).geom_jitter('width',0,'height',0.2); %Scatter plot
+%g(1,2*(p-1)+1).geom_vline('xintercept', meanpMono, 'style', '-k');
+%g(1,2*(p-1)+1).geom_vline('xintercept', meanpBino, 'style', '-p');
+%g(1,2*(p-1)+1).axe_property('Ygrid','on', 'ylim',[0.3 1.7],'YTickLabel','','YTick',''); 
+%g(1,2*(p-1)+1).axe_property('xlim', [0.6 1.3], 'ylim',[0.3 1.7]); 
+g(1,2*(p-1)+1).no_legend();
+g(1,2*(p-1)+1).axe_property('xlim',[0.4 1.8],'ylim',[0.6 1.3],'YTickLabel','','YTick',''); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,2*(p-1)+1).coord_flip();
+%Create point box plot on the right
+
+shortCondition = {'Monocular', 'Binocular'};
+meanPks = [meanpMono, meanpBino];
+stdMonoPks = std(linPeakVals( strcmp(condition, 'Monocular') & strcmp(peakLabel,sprintf('Pk%d',p))), 'omitnan');
+stdBinoPks = std(linPeakVals( strcmp(condition, 'Binocular') & strcmp(peakLabel,sprintf('Pk%d',p))), 'omitnan');
+stdPks = [stdMonoPks, stdBinoPks];
+
+ci_low = meanPks - stdPks;
+ci_high = meanPks + stdPks;
+
+g(1,2*(p-1)+2)=gramm('x', shortCondition, 'y',meanPks,...
+    'ymin',ci_low,'ymax',ci_high,'color',shortCondition);
+g(1,2*(p-1)+2).set_names('color','Condition','y','Mean Peak spike rate (Normalized)');
+%g(1,2*(p-1)+2).set_color_options('map',cmap);
+g(1,2*(p-1)+2).geom_point('dodge',0.2);
+g(1,2*(p-1)+2).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+g(1,2*(p-1)+2).axe_property('ylim',[0.4 1.8],'XTickLabel','','XTick',''); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,2*(p-1)+2).no_legend();
+
+end
+%Set global axe properties
+g.axe_property('TickDir','out','XGrid','on','GridColor',[0.5 0.5 0.5]);
+
+g.set_title('Population peak responses in the binocular and monocular conditions');
+g.set_color_options('map',[cmap(3,:);251/255 154/255 153/255]);
+g.draw();
+%set(findobj(gcf, 'type','axes'), 'Visible','off')
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\jitter_boxpointbar_mono_bino_allcells_peaks_std');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
+
 %% 
 %% Plot jitter scatter plot + horizontal histogram on the side for each mono peak - bino peak difference
 diffLinPeakVals = linPeakVals(strcmp(condition, 'Monocular')) - linPeakVals(strcmp(condition, 'Binocular'));
@@ -261,6 +323,47 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_0420
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
+%% 
+%% Box plot with jitter of significant binocularly modulated units that show suppressive adaptation
+%select data of those specific units  using the table created in "lmer_peaks_binocular_adaptation.R"
+
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
+filename = 'summary_table_pvalues_normmono_meanpks_mono_bino';
+T = readtable(strcat(newdatadir, filename, '.csv'));
+
+T(ismember(T.Wpvalue,'NA'),:)=[]; %remove rows with NAs
+%T(T.c4>T.c1,:)=[];
+T.Wpvalue = str2double(T.Wpvalue);
+
+
+stackT = stack(T,{'Pk1','Pk2','Pk3','Pk4'},'NewDataVariableName','PeakResp');
+
+%plot
+clear g
+figure('Position',[100 100 1000 600]);
+g(1,1)=gramm('x',stackT.PeakResp_Indicator ,'y',str2double(stackT.PeakResp),'color',stackT.Condition);
+%g(1,1)=gramm('x',str2double(stackSigBinoT.PeakResp),'color',stackSigBinoT.Condition);
+
+g(1,1).set_names('y','Spiking activity (Normalized)', 'column', '');
+%g(1,1).facet_grid([],grp2idx(stackSigBinoT.PeakResp_Indicator)); %Provide facets
+
+g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+%g(1,1).set_color_options('chroma',0,'lightness',75); %We make it light grey
+
+g(1,1).geom_jitter('width',0,'height',0); %Scatter plot
+g(1,1).stat_boxplot();
+%g(1,1).stat_density();
+%g(1,1).stat_violin('fill','transparent');
+%g(1,1).axe_property('xlim',[0.4 1.8],'ylim',[-2 15]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g.set_title({'Peak responses in the binocular and monocular conditions of','single units population'});
+%Set global axe properties
+g.axe_property('TickDir','out');
+%g.coord_flip();
+g.draw();
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\box_mono_bino_allcells_peaks');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
 
 
 %% Quick stats to compare the mean distributions of each peak between conditions
@@ -315,9 +418,3 @@ for p =1:4
     WtestRes(p) = signrank(meansMono,meansBino);
 end
 
-%% Fano factor for the variance across peaks
-
-%%Compute Fano factors
-
-%Variance of number of spikes/bin devided by the mean number of spikes per
-%bin. 
