@@ -385,7 +385,7 @@ clear g
 g(1,1) = gramm('x',categorical(longPeakLabel),'y',linVars, 'subset',strcmp(longWindowSz, '50ms') );
 g(1,1).geom_jitter('width',0,'height',0.2);
 g(1,1).set_names('color','Window Size','y','Mean Variance','x','Peak #');
-g(1,1).axe_property('ylim',[0 10]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,1).axe_property('ylim',[0 4.5]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
 g(1,1).set_color_options('map',cmap(4,:));
 g(1,1).set_title('Mean 50 ms Sliding Window (10 ms steps) Variance');
 
@@ -395,16 +395,33 @@ g(1,1).update('x',categorical(peakLabel),'y',meanVars,...
 g(1,1).set_color_options('map',cmaps(1).map(4,:));
 g(1,1).geom_point('dodge',0.2);
 g(1,1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
-g(1,1).axe_property('ylim',[0 10]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,1).axe_property('ylim',[0 4.5]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
 
 
 figure('Position',[100 100 800 450]);
 g.draw();
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('all_sliding_window_mean_variance_rsstimonset_jitter_point_ci'));
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('all_sliding_window_mean_variance_rsstimonset_jitter_point_ci_no_outlier'));
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
 
+%% Plot variance taking outliers into account
+%merge mono and bino since they are not different
+mvar_vals = squeeze(nanmean(var_vals,2));       
+
+
+outliers = nan(size(mvar_vals));
+for p = 1:size(mvar_vals,1)
+    for w =1:size(mvar_vals,2)
+        outliers(p,w,:) = ~isoutlier(mvar_vals(p,w,:));
+    end
+end
+
+select_mvar = mvar_vals.*outliers; %zero out outliers
+select_mvar(select_mvar == 0) = NaN; %replace zeros by nans
  
+mvar_vals = select_mvar;
+
+
 %% %%%%%%%% raster plot of example single unit %%%%
  %raster plot of trials binary spikesaligned to each peak
  %for i =1:length(filenames)
