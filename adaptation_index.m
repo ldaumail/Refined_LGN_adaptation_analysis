@@ -239,12 +239,22 @@ saveas(gcf,strcat(plotdir, '.svg'));
 
 
 %% SAME  plot, only including the whole population
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
 clear g
 g(1,1)=gramm('x',index,'y',unit,'color',condition);
 
 g(1,1).stat_bin('nbins',25,'geom','overlaid_bar');
 g(1,1).stat_density();
-g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+%g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+g(1,1).set_color_options('map',[cmap(3,:);cmaps(1).map(4,:)]); 
 g(1,1).set_names('x','Adaptation Index','color','Legend','row','','y','Count');
 g(1,1).set_title({'Adaptation index distribution across all cells in the monocular and binocular conditions'});
 
@@ -253,7 +263,7 @@ f = figure('Position',[100 100 800 1000]);
 %g.set_title({'Adaptation index distribution across all cells in the monocular and binocular conditions'});
 g.draw();
 set(f,'position',get(f,'position').*[1 1 1.15 1])
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_sdf_mono_bino_allcells_adaptindex_05242021');
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_sdf_mono_bino_allcells_adaptindex_purpOr');
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
