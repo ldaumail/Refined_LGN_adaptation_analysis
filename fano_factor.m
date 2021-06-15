@@ -160,6 +160,9 @@ wsz = [20,30,50,70,100]; %window size
 filenames = fieldnames(slide_win_fanof);
 bins = [1,6];
 all_fanofs = nan(length(-125:10:125-wsz(1)),5,2,length(wsz),length(filenames)); %5 = 4 pks +1 resting state
+peak_vals = nan(4,2,length(wsz),length(filenames)); %get mean peak spike counts
+var_vals = nan(5,2,length(wsz),length(filenames)); %get trial-to-trial variance
+
 len = nan(length(wsz),1);
 for i =1:length(filenames)
     filename = filenames{i};
@@ -172,6 +175,9 @@ for i =1:length(filenames)
                     windSz = sprintf('wsz%d',wsz(w));
                     len(w) = length(slide_win_fanof.(filename).fanof.(binN).(windSz).peaks(p,:));
                     all_fanofs(1:len(w),p+1,b,w,i) =  slide_win_fanof.(filename).fanof.(binN).(windSz).peaks(p,:);
+                    var_vals(p+1,b,w,i) = slide_win_fanof.(filename).varspkc.(binN).(windSz).peaks(p,round(len(w)/2));
+                    peak_vals(p+1,b,w,i) = slide_win_fanof.(filename).meanspkc.(binN).(windSz).peaks(p,round(len(w)/2));
+                   
                 end
             end
             %fill up first  matrix column with FF of resting state 
@@ -179,6 +185,9 @@ for i =1:length(filenames)
                     windSz = sprintf('wsz%d',wsz(w));
                     len(w) = length(slide_win_fanof.(filename).fanof.(binN).(windSz).rs(:));
                     all_fanofs(1:len(w),1,b,w,i) =  slide_win_fanof.(filename).fanof.(binN).(windSz).rs(:);
+                    var_vals(1,b,w,i) = slide_win_fanof.(filename).varspkc.(binN).(windSz).rs(round(len(w)/2));
+                    peak_vals(1,b,w,i) = slide_win_fanof.(filename).meanspkc.(binN).(windSz).rs(round(len(w)/2));
+                  
               end
         end
     end
@@ -186,7 +195,25 @@ for i =1:length(filenames)
     
 end
 
+%merge mono and bino since they are not different
 all_fanofs = squeeze(nanmean(all_fanofs(:,:,:,:,:),3)); %computing the mean of between mono and binocular to reduce error size
+mvar_vals = squeeze(nanmean(var_vals,2));
+mpeak_vals = squeeze(nanmean(peak_vals,2));    
+
+
+outliers = nan(size(mvar_vals));
+for p = 1:size(mvar_vals,1)
+    for w =1:size(mvar_vals,2)
+        outliers(p,w,:) = ~isoutlier(mvar_vals(p,w,:));
+    end
+end
+
+select_mvar = mvar_vals.*outliers; %zero out outliers
+select_mvar(select_mvar == 0) = NaN; %replace zeros by nans
+ 
+% use variables below in plot code above to replot them
+mvar_vals = select_mvar;
+mfanofs = mvar_vals./mpeak_vals;
 
 col(1,:) =[146/255 197/255 222/255] ; %--blue 
 col(2,:) = [251/255 154/255 153/255]; % -- red
@@ -247,7 +274,7 @@ for p = 1:5
     end
     if p ==5
         
-        legend('wsz = 20ms', 'wsz = 30ms','wsz = 50ms', 'wsz = 70ms', 'wsz = 100ms')
+        legend('wsz = 20ms', 'wsz = 30ms','wsz = 50ms', 'wsz = 70ms', 'wsz = 100ms', 'wsz = 200ms')
     end
 end
 
@@ -258,14 +285,14 @@ end
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
 
- %% Fano Factor as a function of peak in a point/box plot with 95% CI
+ %% Fano Factor as a function of peak in a point/box plot with mean and 95% CI
  
 %data for plot
 halflen = round(len./2);
 plot_dat = nan(size(all_fanofs,4),size(all_fanofs,3),length(halflen));
 for w = 1:length(halflen)
   % plot_dat(:,:,w) = squeeze(all_fanofs(halflen(w),:,w,:))'; 
-   plot_dat(:,:,w) = squeeze(mfanofs(:,w,:))';
+   plot_dat(:,:,w) = squeeze(mfanofs(:,w,:))'; %for plotting data without the variance outliers
 end
 %make data ready for gramm
 
@@ -304,9 +331,24 @@ g.draw();
  plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('all_sliding_window_mean_fanof_rsstimonset_point_ci_excludeVarOutliers'));
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
+ 
+%% Perform stats on fano factor distributions: multiple pair-wise comparisons
+
+w =3; %for window size = 50 ms
+stat_dat = squeeze(mfanofs(:,w,:))'; %data without the variance outliers %data dimensions dim 1 = units, dim 2 = peaks, dim 3 = window  
+
+%make pairwise comparisons corrected for multiple comparisons
+
+
+%% Plot linear regressions of mean versus trial-to-trial variance comparing peaks with resting state
+%window size = 50ms
+
+
+
+
 
 %% Variance point plot 
-
+%{
 %Load peakLocs, NoFiltMultiContSUA, binSpkTrials
 datadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
 peakLocs = load(strcat(datadir, 'peak_locs_data_06022021'));
@@ -358,7 +400,7 @@ end
 %merge mono and bino since they are not different
 mvar_vals = squeeze(nanmean(var_vals,2));
 mpeak_vals = squeeze(nanmean(peak_vals,2));    
-
+%}
 %prepare data for gramm
 %prepare data for bar/point
 meanVars = reshape(nanmean(mvar_vals,3),[size(mvar_vals,1)*size(mvar_vals,2),1]);
