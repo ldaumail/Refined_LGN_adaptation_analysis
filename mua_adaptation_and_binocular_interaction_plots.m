@@ -118,6 +118,15 @@ saveas(gcf,strcat(plotdir, '.svg'));
 
 %% Plot jitter scatter plot + horizontal histogram on the side for each peak
 
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
 clear g
 figure('Position',[100 100 1400 600]);
 for p =1:4
@@ -128,8 +137,8 @@ meanpBino = nanmean(linPeakVals( strcmp(condition, 'Binocular') & strcmp(peakLab
 g(1,2*(p-1)+1)=gramm('x',linPeakVals,'color',condition,'subset', strcmp(peakLabel,sprintf('Pk%d',p)));
 g(1,2*(p-1)+1).set_names('x','Spiking activity (Normalized)','column','');
 g(1,2*(p-1)+1).geom_jitter('width',0,'height',0.2); %Scatter plot
-g(1,2*(p-1)+1).geom_vline('xintercept', meanpMono, 'style', '-k');
-g(1,2*(p-1)+1).geom_vline('xintercept', meanpBino, 'style', '-p');
+g(1,2*(p-1)+1).geom_vline('xintercept', meanpMono, 'style', '-or');
+g(1,2*(p-1)+1).geom_vline('xintercept', meanpBino, 'style', '-b');
 
 %g(1,2*(p-1)+1).axe_property('Ygrid','on', 'ylim',[0.3 1.7],'YTickLabel','','YTick',''); 
 g(1,2*(p-1)+1).axe_property('xlim', [0.4 1.5], 'ylim',[0.3 1.7]); 
@@ -142,8 +151,8 @@ g(1,2*(p-1)+2)=gramm('x',linPeakVals,'color',condition, 'subset', strcmp(peakLab
 %    'margin_height',[0.1 0.02],...
 %    'margin_width',[0.02 0.05],...
 %    'redraw',false);
-g(1,2*(p-1)+2).geom_vline('xintercept', meanpMono, 'style', '-k');
-g(1,2*(p-1)+2).geom_vline('xintercept', meanpBino, 'style', '-p');
+g(1,2*(p-1)+2).geom_vline('xintercept', meanpMono, 'style', '-or');
+g(1,2*(p-1)+2).geom_vline('xintercept', meanpBino, 'style', '-b');
 
 g(1,2*(p-1)+2).set_names('x','');
 g(1,2*(p-1)+2).stat_bin('geom','overlaid_bar'); %histogram
@@ -156,10 +165,11 @@ g.axe_property('TickDir','out','XGrid','on','GridColor',[0.5 0.5 0.5]);
 %g.axe_property('xlim',[0.4 1.8]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
 g.coord_flip();
 g.set_title('Population peak responses in the binocular and monocular conditions');
-g.set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+%g.set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+g.set_color_options('map',[cmap(3,:);cmaps(1).map(4,:)]); 
 %g.set_color_options('map','d3_10');
 g.draw();
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\plots\mua_jitter_hist_mono_bino_allcells_peaks');
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\plots\mua_jitter_hist_mono_bino_allcells_peaks_purpOr');
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
@@ -237,8 +247,8 @@ g(1,1)=gramm('x',stackSigBinoT.PeakResp_Indicator ,'y',str2double(stackSigBinoT.
 
 g(1,1).set_names('x','Spiking activity (Normalized)', 'column', '');
 %g(1,1).facet_grid([],grp2idx(stackSigBinoT.PeakResp_Indicator)); %Provide facets
-
-g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+g(1,1).set_color_options('map',[cmap(3,:);cmaps(1).map(4,:)]); 
+%g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
 %g(1,1).set_color_options('chroma',0,'lightness',75); %We make it light grey
 
 g(1,1).geom_jitter('width',0,'height',0); %Scatter plot
@@ -251,9 +261,9 @@ g.set_title({'Peak responses in the binocular and monocular conditions of','bino
 g.axe_property('TickDir','out');
 %g.coord_flip();
 g.draw();
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\plots\mua_box_mono_bino_modadaptcells_peaks');
-%saveas(gcf,strcat(plotdir, '.png'));
-%saveas(gcf,strcat(plotdir, '.svg'));
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\plots\mua_box_mono_bino_modadaptcells_peaks_purpOr');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
 
 %% Quick stats to compare the mean distributions of each peak between conditions
 newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\';
