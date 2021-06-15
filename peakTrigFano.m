@@ -80,8 +80,21 @@ for i = channum
                             %peak data for the stats
                             [~,pnloc]= max(fp_locked_trials(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn), [],1);
                             %wind_peak_vals.(filename).(binNb)(pn,:,:)= bin_fp_locked_trials(max_low_dist.(filename).(binNb)+pnloc-1-30:max_low_dist.(filename).(binNb)+pnloc-1+30,:,pn);
-                            %figure(); plot(fp_locked_trials(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn));
-                           % figure(); scatter(pnloc,max(fp_locked_trials(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn), [],1));
+                            
+                            %{
+                        %Compute fano factors in a 50 ms sliding window,
+                        %with 10 ms steps around each peak
+                        fanof = nan(length(-125:10:75),1);
+                        meanspkc = nan(length(-125:10:75),1);
+                        varspkc = nan(length(-125:10:75),1);
+                        for w = 1:length(-125:10:75)
+                            wind_vals = bin_fp_locked_trials(max_low_dist.(filename).(binNb)+pnloc-125+10*(w-1):max_low_dist.(filename).(binNb)+pnloc-125+10*(w-1)+50,:,pn);
+                            count = sum(wind_vals,1);
+                            meanspkc(w) = nanmean(count);
+                            varspkc(w) = var(count, 'omitnan');
+                            fanof(w) = varspkc(w)/meanspkc(w);
+                        end
+                            %}
                             %Compute fano factors around peaks in a range of different sliding window sizes,
                             %with 10 ms steps around each peak
                             
@@ -89,20 +102,12 @@ for i = channum
                             meanspkc = nan(length(-125:10:125-wsz(w)),1);
                             varspkc = nan(length(-125:10:125-wsz(w)),1);
                             for t = 1:length(-125:10:125-wsz(w))
-                               % wind_vals = bin_fp_locked_trials(max_low_dist.(filename).(binNb)+pnloc-125+10*(t-1):max_low_dist.(filename).(binNb)+pnloc-125+10*(t-1)+wsz(w),:,pn);
-                               wind_vals = bin_fp_locked_trials(max_low_dist.(filename).(binNb)+(-125+pnloc)-125+10*(t-1):max_low_dist.(filename).(binNb)+(-125+pnloc)-125+10*(t-1)+wsz(w),:,pn);
-                                %wind_vals = bin_fp_locked_trials(max_low_dist.(filename).(binNb)-125+10*(t-1):max_low_dist.(filename).(binNb)-125+10*(t-1)+wsz(w),:,pn);
-                              
+                                wind_vals = bin_fp_locked_trials(max_low_dist.(filename).(binNb)+pnloc-125+10*(t-1):max_low_dist.(filename).(binNb)+pnloc-125+10*(t-1)+wsz(w),:,pn);
                                 count = sum(wind_vals,1);
                                 meanspkc(t) = nanmean(count);
                                 varspkc(t) = var(count, 'omitnan');
                                 fanof(t) = varspkc(t)/meanspkc(t);
                             end
-                            %figure(); plot(-125:10:125-wsz(w),fanof);
-                            %hold on
-                           % plot(-250:125,bin_fp_locked_trials(max_low_dist.(filename).(binNb)+(-125+pnloc)-250:max_low_dist.(filename).(binNb)+(-125+pnloc)+125,:,pn))
-                          %  figure();plot(-250:125,bin_fp_locked_trials(max_low_dist.(filename).(binNb)-250:max_low_dist.(filename).(binNb)+125,:,pn))
-                           
                             windSz = sprintf('wsz%d',wsz(w));
                             slide_win_fanof.(filename).fanof.(binNb).(windSz).peaks(pn,:) = fanof;
                             slide_win_fanof.(filename).meanspkc.(binNb).(windSz).peaks(pn,:) = meanspkc;

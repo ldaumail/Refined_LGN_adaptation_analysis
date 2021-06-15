@@ -167,7 +167,7 @@ saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
 
-%% %% Plot jitter scatter plot + point bar +-std plot on the side for each peak
+%% %% Plot jitter scatter plot + point bar +-1.96sem plot on the side for each peak
 
 %colors
 nlines = 7;
@@ -199,12 +199,12 @@ g(1,2*(p-1)+1).coord_flip();
 
 shortCondition = {'Monocular', 'Binocular'};
 meanPks = [meanpMono, meanpBino];
-stdMonoPks = std(linPeakVals( strcmp(condition, 'Monocular') & strcmp(peakLabel,sprintf('Pk%d',p))), 'omitnan');
-stdBinoPks = std(linPeakVals( strcmp(condition, 'Binocular') & strcmp(peakLabel,sprintf('Pk%d',p))), 'omitnan');
-stdPks = [stdMonoPks, stdBinoPks];
+semMonoPks = std(linPeakVals( strcmp(condition, 'Monocular') & strcmp(peakLabel,sprintf('Pk%d',p))), 'omitnan')/sqrt(length(linPeakVals( strcmp(condition, 'Monocular') & strcmp(peakLabel,sprintf('Pk%d',p)))));
+semBinoPks = std(linPeakVals( strcmp(condition, 'Binocular') & strcmp(peakLabel,sprintf('Pk%d',p))), 'omitnan')/sqrt(length(linPeakVals( strcmp(condition, 'Binocular') & strcmp(peakLabel,sprintf('Pk%d',p)))));
+semPks = [semMonoPks, semBinoPks];
 
-ci_low = meanPks - stdPks;
-ci_high = meanPks + stdPks;
+ci_low = meanPks - 1.96*semPks;
+ci_high = meanPks + 1.96*semPks;
 
 g(1,2*(p-1)+2)=gramm('x', shortCondition, 'y',meanPks,...
     'ymin',ci_low,'ymax',ci_high,'color',shortCondition);
@@ -220,10 +220,70 @@ end
 g.axe_property('TickDir','out','XGrid','on','GridColor',[0.5 0.5 0.5]);
 
 g.set_title('Population peak responses in the binocular and monocular conditions');
-g.set_color_options('map',[cmap(3,:);251/255 154/255 153/255]);
+g.set_color_options('map',[cmap(3,:);160/255 160/255 160/255]);
 g.draw();
 %set(findobj(gcf, 'type','axes'), 'Visible','off')
 plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\jitter_boxpointbar_mono_bino_allcells_peaks_std');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
+%% %% Plot jitter scatter plot + point bar +-1.96sem plot on above for each peak
+
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
+%plot
+clear g
+figure('Position',[100 100 800 800]);
+for p =1:4
+%Create a scatter plot
+meanpMono = nanmean(linPeakVals( strcmp(condition, 'Monocular') & strcmp(peakLabel,sprintf('Pk%d',p))));
+meanpBino = nanmean(linPeakVals( strcmp(condition, 'Binocular') & strcmp(peakLabel,sprintf('Pk%d',p))));
+g(1,p)=gramm('x',linPeakVals,'color',condition,'subset', strcmp(peakLabel,sprintf('Pk%d',p)));
+g(1,p).set_names('x','Spiking activity (Normalized)','column','');
+g(1,p).geom_jitter('width',0,'height',0.1); %Scatter plot
+%g(1,2*(p-1)+1).geom_vline('xintercept', meanpMono, 'style', '-k');
+%g(1,2*(p-1)+1).geom_vline('xintercept', meanpBino, 'style', '-p');
+%g(1,2*(p-1)+1).axe_property('Ygrid','on', 'ylim',[0.3 1.7],'YTickLabel','','YTick',''); 
+%g(1,2*(p-1)+1).axe_property('xlim', [0.6 1.3], 'ylim',[0.3 1.7]); 
+g(1,p).no_legend();
+g(1,p).axe_property('xlim',[0.4 1.8],'ylim',[0.6 1.3],'YTickLabel','','YTick',''); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,p).coord_flip();
+%Create point box plot on the right
+
+shortCondition = {'Monocular', 'Binocular'};
+meanPks = [meanpMono, meanpBino];
+semMonoPks = std(linPeakVals( strcmp(condition, 'Monocular') & strcmp(peakLabel,sprintf('Pk%d',p))), 'omitnan')/sqrt(length(linPeakVals( strcmp(condition, 'Monocular') & strcmp(peakLabel,sprintf('Pk%d',p)))));
+semBinoPks = std(linPeakVals( strcmp(condition, 'Binocular') & strcmp(peakLabel,sprintf('Pk%d',p))), 'omitnan')/sqrt(length(linPeakVals( strcmp(condition, 'Binocular') & strcmp(peakLabel,sprintf('Pk%d',p)))));
+semPks = [semMonoPks, semBinoPks];
+
+ci_low = meanPks - 1.96*semPks;
+ci_high = meanPks + 1.96*semPks;
+
+g(2,p)=gramm('x', shortCondition, 'y',meanPks,...
+    'ymin',ci_low,'ymax',ci_high,'color',shortCondition);
+g(2,p).set_names('color','Condition','y','Mean Peak spike rate (Normalized)');
+%g(1,2*(p-1)+2).set_color_options('map',cmap);
+g(2,p).geom_point('dodge',0.2);
+g(2,p).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+g(2,p).axe_property('ylim',[0.85 1.1],'XTickLabel','','XTick',''); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(2,p).no_legend();
+
+end
+%Set global axe properties
+g.axe_property('TickDir','out','XGrid','on','GridColor',[0.5 0.5 0.5]);
+
+g.set_title('Population peak responses in the binocular and monocular conditions');
+g.set_color_options('map',[cmap(3,:);251/255 154/255 153/255]);
+g.draw();
+%set(findobj(gcf, 'type','axes'), 'Visible','off')
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\jitter_boxpointbar_mono_bino_allcells_peaks_95ci');
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
