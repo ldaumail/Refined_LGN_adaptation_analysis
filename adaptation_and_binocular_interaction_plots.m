@@ -118,6 +118,14 @@ saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
 %% Plot jitter scatter plot + horizontal histogram on the side for each peak
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
 
 
 clear g
@@ -126,13 +134,11 @@ for p =1:4
 %Create a scatter plot
 meanpMono = nanmean(linPeakVals( strcmp(condition, 'Monocular') & strcmp(peakLabel,sprintf('Pk%d',p))));
 meanpBino = nanmean(linPeakVals( strcmp(condition, 'Binocular') & strcmp(peakLabel,sprintf('Pk%d',p))));
-
 g(1,2*(p-1)+1)=gramm('x',linPeakVals,'color',condition,'subset', strcmp(peakLabel,sprintf('Pk%d',p)));
 g(1,2*(p-1)+1).set_names('x','Spiking activity (Normalized)','column','');
 g(1,2*(p-1)+1).geom_jitter('width',0,'height',0.2); %Scatter plot
-g(1,2*(p-1)+1).geom_vline('xintercept', meanpMono, 'style', '-k');
-g(1,2*(p-1)+1).geom_vline('xintercept', meanpBino, 'style', '-p');
-
+g(1,2*(p-1)+1).geom_vline('xintercept', meanpMono, 'style', '-or');
+g(1,2*(p-1)+1).geom_vline('xintercept', meanpBino, 'style', '-b');
 %g(1,2*(p-1)+1).axe_property('Ygrid','on', 'ylim',[0.3 1.7],'YTickLabel','','YTick',''); 
 g(1,2*(p-1)+1).axe_property('xlim', [0.6 1.3], 'ylim',[0.3 1.7]); 
 g(1,2*(p-1)+1).no_legend();
@@ -144,9 +150,8 @@ g(1,2*(p-1)+2)=gramm('x',linPeakVals,'color',condition, 'subset', strcmp(peakLab
 %    'margin_height',[0.1 0.02],...
 %    'margin_width',[0.02 0.05],...
 %    'redraw',false);
-g(1,2*(p-1)+2).geom_vline('xintercept', meanpMono, 'style', '-k');
-g(1,2*(p-1)+2).geom_vline('xintercept', meanpBino, 'style', '-p');
-
+g(1,2*(p-1)+2).geom_vline('xintercept', meanpMono, 'style', '-or');
+g(1,2*(p-1)+2).geom_vline('xintercept', meanpBino, 'style', '-b');
 g(1,2*(p-1)+2).set_names('x','');
 g(1,2*(p-1)+2).stat_bin('geom','overlaid_bar'); %histogram
 g(1,2*(p-1)+2).axe_property('xlim',[0.3 1.7],'ylim',[-2 15],'XTickLabel','','XTick',''); 
@@ -158,11 +163,11 @@ g.axe_property('TickDir','out','XGrid','on','GridColor',[0.5 0.5 0.5]);
 g.axe_property('xlim',[0.4 1.8]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
 g.coord_flip();
 g.set_title('Population peak responses in the binocular and monocular conditions');
-%g.set_color_options('map','d3_10');
-g.set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+g.set_color_options('map',[cmap(3,:);cmaps(1).map(4,:)]);
+%g.set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
 g.draw();
 %set(findobj(gcf, 'type','axes'), 'Visible','off')
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\jitter_hist_mono_bino_allcells_peaks');
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\jitter_hist_mono_bino_allcells_peaks_purpOr');
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
@@ -280,7 +285,7 @@ end
 g.axe_property('TickDir','out','XGrid','on','GridColor',[0.5 0.5 0.5]);
 
 g.set_title('Population peak responses in the binocular and monocular conditions');
-g.set_color_options('map',[cmap(3,:);251/255 154/255 153/255]);
+g.set_color_options('map',[cmap(3,:);cmaps(1).map(4,:)]);
 g.draw();
 %set(findobj(gcf, 'type','axes'), 'Visible','off')
 plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\jitter_boxpointbar_mono_bino_allcells_peaks_95ci');
@@ -288,7 +293,32 @@ saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
 
-%% 
+%% Stats on variance
+peaks = nan(2,4,length(filenames));
+for i = 1:length(filenames)
+    for b = 1:2
+        for p = 1:4
+            peaks(b,p,i) = max(mean_peaks(:,p,b,i));
+        end
+    end
+end
+
+norm_peaks = nan(2,4,length(filenames));
+for i = 1:length(filenames)
+    for b = 1:2
+        for p = 1:4
+            %norm_peaks(b,p,i) = (peaks(b,p,i) - min(peaks(b,:,i)))/(max(peaks(b,:,i))-min(peaks(b,:,i)));
+            norm_peaks(b,p,i) = peaks(b,p,i)/peaks(1,1,i);
+
+        end
+    end
+end
+%first try to test variance on peaks in the monocular condition
+%set each peak as a columns
+monoPeaks = squeeze(norm_peaks(1,:,:))';
+binoPeaks = squeeze(norm_peaks(2,:,:))';
+[pval,stats] = vartestn(binoPeaks);
+
 %% Plot jitter scatter plot + horizontal histogram on the side for each mono peak - bino peak difference
 diffLinPeakVals = linPeakVals(strcmp(condition, 'Monocular')) - linPeakVals(strcmp(condition, 'Binocular'));
 diffPeakLabel = peakLabel(1:length(peakLabel)/2);
@@ -365,9 +395,8 @@ g(1,1)=gramm('x',stackSigBinoT.PeakResp_Indicator ,'y',str2double(stackSigBinoT.
 
 g(1,1).set_names('x','Spiking activity (Normalized)', 'column', '');
 %g(1,1).facet_grid([],grp2idx(stackSigBinoT.PeakResp_Indicator)); %Provide facets
-
-g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
-%g(1,1).set_color_options('chroma',0,'lightness',75); %We make it light grey
+%g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+g(1,1).set_color_options('map',[cmap(3,:);cmaps(1).map(4,:)]); %We make it light grey
 
 g(1,1).geom_jitter('width',0,'height',0); %Scatter plot
 g(1,1).stat_boxplot();
@@ -379,7 +408,7 @@ g.set_title({'Peak responses in the binocular and monocular conditions of','bino
 g.axe_property('TickDir','out');
 %g.coord_flip();
 g.draw();
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\box_mono_bino_modadaptcells_peaks');
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\box_mono_bino_modadaptcells_peaks_purpOr');
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
