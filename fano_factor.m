@@ -274,7 +274,7 @@ for p = 1:5
     end
     if p ==5
         
-        legend('wsz = 20ms', 'wsz = 30ms','wsz = 50ms', 'wsz = 70ms', 'wsz = 100ms', 'wsz = 200ms')
+        legend('wsz = 20ms', 'wsz = 30ms','wsz = 50ms', 'wsz = 70ms', 'wsz = 100ms')
     end
 end
 
@@ -345,51 +345,70 @@ stat_dat = squeeze(mfanofs(:,w,:))'; %data without the variance outliers %data d
 longPeakLabel = repmat(repmat({'Baseline State';'Pk1';'Pk2';'Pk3';'Pk4'}, size(mvar_vals,2),1),size(mvar_vals,3),1);
 longWindowSz = repmat([repmat({'20ms'}, size(mvar_vals,1),1);repmat({'30ms'}, size(mvar_vals,1),1);repmat({'50ms'}, size(mvar_vals,1),1);repmat({'70ms'}, size(mvar_vals,1),1);repmat({'x100ms'}, size(mvar_vals,1),1)], size(mvar_vals,3),1);
 linVars = reshape(reshape(mvar_vals, [size(mvar_vals,1)*size(mvar_vals,2), size(mvar_vals,3)]), [size(mvar_vals,1)*size(mvar_vals,2)*size(mvar_vals,3),1]); 
+linMeans = reshape(reshape(mpeak_vals, [size(mpeak_vals,1)*size(mpeak_vals,2), size(mpeak_vals,3)]), [size(mpeak_vals,1)*size(mpeak_vals,2)*size(mpeak_vals,3),1]);
+
+nlines = 7;
+cmap =flip(cbrewer2('Blues', nlines));
+colormap(cmap);
+
 
 figure('Position',[100 100 800 400],'Color',[1 1 1]);
-
 % Define groups
-%cyl = [4 6 8]; % Manually
-peakLab = unique(peakLabel); % Based on data
+peakLab = unique(longPeakLabel); % Based on data
 
 % Loop over groups
-for oi = 1:length(peakLab) % External loop on the axes
-
+for p = 2:length(peakLab) % External loop on the axes
+    
     % Axes creation
-    ax = subplot(1,length(peakLab),oi);
+    ax = subplot(1,length(peakLab)-1,p-1);
     hold on
-
-    %for ci = 1:length(cyl) %Internal loop on the colors
-
-        % Data selection
-        sel = strcmp(cars.Origin_Region,orig{oi}) & ...
-            cars.Cylinders==cyl(ci) & ...
-            ~isnan(cars.Model_Year) & ~isnan(cars.MPG);
-
-        % Plotting of raw data
-        plot(cars.Model_Year(sel),cars.MPG(sel),'.', ...
-            'MarkerSize',15);
-
-        % Keep the same color for the statistics
-        ax.ColorOrderIndex = ax.ColorOrderIndex - 1;
-
-        % Statistics (linear fit and plotting)
-        b = [ones(sum(sel),1) cars.Model_Year(sel)] \ ...
-			cars.MPG(sel);
-        x_fit = [min(cars.Model_Year(sel)) ...
-			max(cars.Model_Year(sel))];
+    % Pre-stimulation Data selection
+    sel = strcmp(longPeakLabel,peakLab{1}) &...
+        ~isnan(linVars);
+    x1 = linMeans(sel);
+    y1 = linVars(sel);
+    % Plotting of raw data
+    %linear regression
+    coeffs1 = polyfit(x1(isfinite(x1) & isfinite(y1)),y1(isfinite(x1) & isfinite(y1)),1);
+    f1 = polyval(coeffs1,x1);
+    plot(x1, y1,'o',x1, f1,'-','Color',[160/255 160/255 160/255],'MarkerSize',2, 'MarkerFaceColor',[160/255 160/255 160/255],'linewidth',2)
+    xlim([0 15])
+    ylim([0 7])
+    % Peak Data selection
+    sel = strcmp(longPeakLabel,peakLab{p}) &...
+        ~isnan(linVars);
+    x = linMeans(sel);
+    y = linVars(sel);
+    % Plotting of raw data
+    % Keep the same color for the statistics
+    coeffs = polyfit(x(isfinite(x) & isfinite(y)),y(isfinite(x) & isfinite(y)),1);
+    f = polyval(coeffs,x);
+    plot(x, y,'o',x, f,'-','Color',cmap(4,:),'MarkerSize',2, 'MarkerFaceColor',cmap(4,:),'linewidth',2)
+    xlim([0 15])
+    ylim([0 7])
+    hold on
+    %format short
+    %text(max(x)/12,max(y)/2, sprintf('y = %.2f + %.2f*x', round(coeffs(2),2), round(coeffs(1),2)));
+    %ax.ColorOrderIndex = ax.ColorOrderIndex - 1;
+    set(gca, 'linewidth',2)
+    set(gca,'box','off')
+    % Statistics (linear fit and plotting)
+    %{
+        b = [ones(sum(sel),1) linMeans(sel)] \ ...
+			linVars(sel);
+        x_fit = [min(linMeans(sel)) ...
+			max(linVars(sel))];
         plot(x_fit, x_fit * b(2) + b(1),'LineWidth',1.5);
-    %end
-
+    %}
     % Axes legends
-    title(['Label: ' orig{oi}]);
+    title(['Label: ' peakLab{p}]);
     xlabel('Mean spike count');
     ylabel('Spike count variance');
 end
-% Ugly color legend
-%l = legend('4','','6','','8','','Location','southeast');
-%title(l,'#Cyl');
 
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('scatter_linreg_sliding_window_mean_vs_variance_rsstimonset_excludeVarOutliers'));
+ saveas(gcf,strcat(plotdir, '.png'));
+ saveas(gcf,strcat(plotdir, '.svg'));
 
 
 
@@ -500,24 +519,7 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_0420
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
 
-%% Variance and Fano Factor plots taking outliers into account
-%merge mono and bino since they are not different
-mvar_vals = squeeze(nanmean(var_vals,2));       
 
-
-outliers = nan(size(mvar_vals));
-for p = 1:size(mvar_vals,1)
-    for w =1:size(mvar_vals,2)
-        outliers(p,w,:) = ~isoutlier(mvar_vals(p,w,:));
-    end
-end
-
-select_mvar = mvar_vals.*outliers; %zero out outliers
-select_mvar(select_mvar == 0) = NaN; %replace zeros by nans
- 
-% use variables below in plot code above to replot them
-mvar_vals = select_mvar;
-mfanofs = mvar_vals./mpeak_vals;
 
 %% %%%%%%%% raster plot of example single unit %%%%
  %raster plot of trials binary spikesaligned to each peak
