@@ -342,6 +342,54 @@ stat_dat = squeeze(mfanofs(:,w,:))'; %data without the variance outliers %data d
 
 %% Plot linear regressions of mean versus trial-to-trial variance comparing peaks with resting state
 %window size = 50ms
+longPeakLabel = repmat(repmat({'Baseline State';'Pk1';'Pk2';'Pk3';'Pk4'}, size(mvar_vals,2),1),size(mvar_vals,3),1);
+longWindowSz = repmat([repmat({'20ms'}, size(mvar_vals,1),1);repmat({'30ms'}, size(mvar_vals,1),1);repmat({'50ms'}, size(mvar_vals,1),1);repmat({'70ms'}, size(mvar_vals,1),1);repmat({'x100ms'}, size(mvar_vals,1),1)], size(mvar_vals,3),1);
+linVars = reshape(reshape(mvar_vals, [size(mvar_vals,1)*size(mvar_vals,2), size(mvar_vals,3)]), [size(mvar_vals,1)*size(mvar_vals,2)*size(mvar_vals,3),1]); 
+
+figure('Position',[100 100 800 400],'Color',[1 1 1]);
+
+% Define groups
+%cyl = [4 6 8]; % Manually
+peakLab = unique(peakLabel); % Based on data
+
+% Loop over groups
+for oi = 1:length(peakLab) % External loop on the axes
+
+    % Axes creation
+    ax = subplot(1,length(peakLab),oi);
+    hold on
+
+    %for ci = 1:length(cyl) %Internal loop on the colors
+
+        % Data selection
+        sel = strcmp(cars.Origin_Region,orig{oi}) & ...
+            cars.Cylinders==cyl(ci) & ...
+            ~isnan(cars.Model_Year) & ~isnan(cars.MPG);
+
+        % Plotting of raw data
+        plot(cars.Model_Year(sel),cars.MPG(sel),'.', ...
+            'MarkerSize',15);
+
+        % Keep the same color for the statistics
+        ax.ColorOrderIndex = ax.ColorOrderIndex - 1;
+
+        % Statistics (linear fit and plotting)
+        b = [ones(sum(sel),1) cars.Model_Year(sel)] \ ...
+			cars.MPG(sel);
+        x_fit = [min(cars.Model_Year(sel)) ...
+			max(cars.Model_Year(sel))];
+        plot(x_fit, x_fit * b(2) + b(1),'LineWidth',1.5);
+    %end
+
+    % Axes legends
+    title(['Label: ' orig{oi}]);
+    xlabel('Mean spike count');
+    ylabel('Spike count variance');
+end
+% Ugly color legend
+%l = legend('4','','6','','8','','Location','southeast');
+%title(l,'#Cyl');
+
 
 
 
