@@ -213,6 +213,7 @@ select_mvar(select_mvar == 0) = NaN; %replace zeros by nans
  
 % use variables below in plot code above to replot them
 mvar_vals = select_mvar;
+
 mfanofs = mvar_vals./mpeak_vals;
 
 col(1,:) =[146/255 197/255 222/255] ; %--blue 
@@ -337,15 +338,54 @@ g.draw();
 w =3; %for window size = 50 ms
 stat_dat = squeeze(mfanofs(:,w,:))'; %data without the variance outliers %data dimensions dim 1 = units, dim 2 = peaks, dim 3 = window  
 
+%test for normality
+
+%(1) Just take a look at the data if we can se any non-normality in the
+%distributions
+%prepare data for jitter
+peakLabel = [repmat({'Baseline State'}, size(stat_dat,1),1);repmat({'Pk1'}, size(stat_dat,1),1);repmat({'Pk2'}, size(stat_dat,1),1);repmat({'Pk3'}, size(stat_dat,1),1);repmat({'Pk4'}, size(stat_dat,1),1)];
+linFfs = reshape(stat_dat, size(stat_dat,1)*size(stat_dat,2), 1); 
+
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('Blues', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
+%points and error bars plot
+clear g
+
+%jitter
+
+g(1,1) = gramm('x',categorical(peakLabel),'y',linFfs);
+g(1,1).geom_jitter('width',0,'height',0.2);
+g(1,1).set_names('y','Fano Factor','x','Peak #');
+g(1,1).axe_property('ylim',[0 2]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,1).set_color_options('map',cmap(4,:));
+g(1,1).set_title('Fano Factor distributions across peaks');
+
+figure('Position',[100 100 800 450]);
+g.draw();
+
+%(2) Use Shapiro-Wilk test to test for normality on each peak
+labs = unique(peakLabel);
+alpha = 0.05;
+for i = 1:length(unique(peakLabel))
+    pkN = labs{i};
+    x = linFfs(strcmp(peakLabel, pkN));
+[H(i), pValue(i), W(i)] = swtest(x, alpha);
+end
 %make pairwise comparisons corrected for multiple comparisons
 
 
 %% Plot linear regressions of mean versus trial-to-trial variance comparing peaks with resting state
 %window size = 50ms
-longPeakLabel = repmat(repmat({'Baseline State';'Pk1';'Pk2';'Pk3';'Pk4'}, size(mvar_vals,2),1),size(mvar_vals,3),1);
-longWindowSz = repmat([repmat({'20ms'}, size(mvar_vals,1),1);repmat({'30ms'}, size(mvar_vals,1),1);repmat({'50ms'}, size(mvar_vals,1),1);repmat({'70ms'}, size(mvar_vals,1),1);repmat({'x100ms'}, size(mvar_vals,1),1)], size(mvar_vals,3),1);
-linVars = reshape(reshape(mvar_vals, [size(mvar_vals,1)*size(mvar_vals,2), size(mvar_vals,3)]), [size(mvar_vals,1)*size(mvar_vals,2)*size(mvar_vals,3),1]); 
-linMeans = reshape(reshape(mpeak_vals, [size(mpeak_vals,1)*size(mpeak_vals,2), size(mpeak_vals,3)]), [size(mpeak_vals,1)*size(mpeak_vals,2)*size(mpeak_vals,3),1]);
+peakLabel = repmat({'Baseline State';'Pk1';'Pk2';'Pk3';'Pk4'}, size(mvar_vals,3),1);
+linVars = reshape(squeeze(mvar_vals(:,3,:)), size(mvar_vals,1)*size(mvar_vals,3), 1); 
+linMeans = reshape(mpeak_vals(:,3,:), size(mpeak_vals,1)*size(mpeak_vals,3), 1);
 
 nlines = 7;
 cmap =flip(cbrewer2('Blues', nlines));
@@ -354,7 +394,7 @@ colormap(cmap);
 
 figure('Position',[100 100 800 400],'Color',[1 1 1]);
 % Define groups
-peakLab = unique(longPeakLabel); % Based on data
+peakLab = unique(peakLabel); % Based on data
 
 % Loop over groups
 for p = 2:length(peakLab) % External loop on the axes
@@ -363,7 +403,7 @@ for p = 2:length(peakLab) % External loop on the axes
     ax = subplot(1,length(peakLab)-1,p-1);
     hold on
     % Pre-stimulation Data selection
-    sel = strcmp(longPeakLabel,peakLab{1}) &...
+    sel = strcmp(peakLabel,peakLab{1}) &...
         ~isnan(linVars);
     x1 = linMeans(sel);
     y1 = linVars(sel);
@@ -372,10 +412,10 @@ for p = 2:length(peakLab) % External loop on the axes
     coeffs1 = polyfit(x1(isfinite(x1) & isfinite(y1)),y1(isfinite(x1) & isfinite(y1)),1);
     f1 = polyval(coeffs1,x1);
     plot(x1, y1,'o',x1, f1,'-','Color',[160/255 160/255 160/255],'MarkerSize',2, 'MarkerFaceColor',[160/255 160/255 160/255],'linewidth',2)
-    xlim([0 15])
-    ylim([0 7])
+    xlim([0 10])
+    ylim([0 4.5])
     % Peak Data selection
-    sel = strcmp(longPeakLabel,peakLab{p}) &...
+    sel = strcmp(peakLabel,peakLab{p}) &...
         ~isnan(linVars);
     x = linMeans(sel);
     y = linVars(sel);
@@ -384,8 +424,8 @@ for p = 2:length(peakLab) % External loop on the axes
     coeffs = polyfit(x(isfinite(x) & isfinite(y)),y(isfinite(x) & isfinite(y)),1);
     f = polyval(coeffs,x);
     plot(x, y,'o',x, f,'-','Color',cmap(4,:),'MarkerSize',2, 'MarkerFaceColor',cmap(4,:),'linewidth',2)
-    xlim([0 15])
-    ylim([0 7])
+    xlim([0 10])
+    ylim([0 4.5])
     hold on
     %format short
     %text(max(x)/12,max(y)/2, sprintf('y = %.2f + %.2f*x', round(coeffs(2),2), round(coeffs(1),2)));
@@ -406,7 +446,7 @@ for p = 2:length(peakLab) % External loop on the axes
     ylabel('Spike count variance');
 end
 
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('scatter_linreg_sliding_window_mean_vs_variance_rsstimonset_excludeVarOutliers'));
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('scatter_linreg_50ms_window_mean_vs_variance_rsstimonset_excludeVarOutliers'));
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
 
@@ -500,7 +540,7 @@ clear g
 g(1,1) = gramm('x',categorical(longPeakLabel),'y',linVars, 'subset',strcmp(longWindowSz, '50ms') );
 g(1,1).geom_jitter('width',0,'height',0.2);
 g(1,1).set_names('color','Window Size','y','Mean Variance','x','Peak #');
-g(1,1).axe_property('ylim',[0 4.5]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,1).axe_property('ylim',[0 7]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
 g(1,1).set_color_options('map',cmap(4,:));
 g(1,1).set_title('Mean 50 ms Sliding Window (10 ms steps) Variance');
 
@@ -510,7 +550,7 @@ g(1,1).update('x',categorical(peakLabel),'y',meanVars,...
 g(1,1).set_color_options('map',cmaps(1).map(4,:));
 g(1,1).geom_point('dodge',0.2);
 g(1,1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
-g(1,1).axe_property('ylim',[0 4.5]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,1).axe_property('ylim',[0 7]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
 
 
 figure('Position',[100 100 800 450]);
