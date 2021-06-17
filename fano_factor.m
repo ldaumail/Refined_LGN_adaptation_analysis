@@ -378,7 +378,41 @@ for i = 1:length(unique(peakLabel))
     x = linFfs(strcmp(peakLabel, pkN));
 [H(i), pValue(i), W(i)] = swtest(x, alpha);
 end
-%make pairwise comparisons corrected for multiple comparisons
+
+%(3) Perform pairwise comparisons corrected for FWER = 0.05
+%since distributions aren't all normally distributed, lets use Wilcoxon
+%signed rank tests
+%here we want to perform 7 two-sided tests, with Holm's method for
+%correction for multiple comparisons
+
+%(1) Prestim vs Pk1
+x = stat_dat(:,1);
+y = stat_dat(:,2);
+p1 = signrank(x,y);
+%(2) Prestim vs Pk4
+x = stat_dat(:,1);
+y = stat_dat(:,5);
+p2 = signrank(x,y);
+%(3) Pk1 vs Pk2
+x = stat_dat(:,2);
+y = stat_dat(:,3);
+p3 = signrank(x,y);
+%(4) Pk1 vs Pk3
+x = stat_dat(:,2);
+y = stat_dat(:,4);
+p4 = signrank(x,y);
+%(5) Pk1 vs Pk4
+x = stat_dat(:,2);
+y = stat_dat(:,5);
+p5 = signrank(x,y);
+%(6) Pk2 vs Pk3
+x = stat_dat(:,3);
+y = stat_dat(:,4);
+p6 = signrank(x,y);
+%(7) Pk3 vs Pk4
+x = stat_dat(:,4);
+y = stat_dat(:,5);
+p7 = signrank(x,y);
 
 
 %% Plot linear regressions of mean versus trial-to-trial variance comparing peaks with resting state
