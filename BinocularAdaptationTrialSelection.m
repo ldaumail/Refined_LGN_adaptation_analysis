@@ -108,11 +108,12 @@ for n = 1:length(contLims)
        %spiking activity related variables
        mean_wnd1_DE =mean_wnd1(contrastBin);
        filtered_dSUA_high = filtBs(:,contrastBin);
-       filtered_dSUA_blank = filtBs(:,blankcontrast);
+       %filtered_dSUA_blank = filtBs(:,blankcontrast);
        origin_data_high = origin_data(:,contrastBin);
-       origin_data_blank = origin_data(:,blankcontrast);
+       %origin_data_blank = origin_data(:,blankcontrast);
        bsl_origin_data_high = noFiltBs(:,contrastBin);
-       
+       trials = unitsData.new_data(i).channel_data.trial(contrastBin);
+  
        sua_bsl =  mean(filtered_dSUA_high(1:200,:),1);
        
 
@@ -244,12 +245,14 @@ for n = 1:length(contLims)
 
             end
         end
-       filtered_dSUA_high = filtered_dSUA_high(:,~all(isnan(filtered_dSUA_high))); % for nan - cols
-       all_locsdSUA_trials =  all_locsdSUA_trials(:,~all(isnan(all_locsdSUA_trials)));
+       all_locsdSUA_trials =  all_locsdSUA_trials(:,~all(isnan(all_locsdSUA_trials))); % remove nan - cols
        all_pks = all_pks(:, ~all(isnan(all_pks)));
+       selTrials = trials(~all(isnan(origin_data_high)));
+      
+       filtered_dSUA_high = filtered_dSUA_high(:,~all(isnan(filtered_dSUA_high))); 
        origin_data_high = origin_data_high(:,~all(isnan(origin_data_high)));
        bsl_origin_data_high = bsl_origin_data_high(:,~all(isnan(bsl_origin_data_high)));
-
+        
        filename = sprintf('x%s',char(filename));
        binNb = sprintf('bin%d', n);
        if n ==1 && length(filtered_dSUA_high(1,:)) >=10 %first bin == high contrast monocular condition will serve as an indicator of the minimum number of trials required for the analysis
@@ -258,13 +261,16 @@ for n = 1:length(contLims)
           
            peakLocs.(filename).(binNb) = all_locsdSUA_trials; %create dynamical peak locations structures
            FiltMultiContSUA.(filename).(binNb) =  filtered_dSUA_high;
-           % FiltMultiContSUA.(filename).bin0 =  filtered_dSUA_blank;
-           NoFiltMultiContSUA.(filename).(binNb) = origin_data_high;
+           NoFiltMultiContSUA.(filename).(binNb).neuralDat = origin_data_high;
            BsNoFiltMultiContSUA.(filename).(binNb) = bsl_origin_data_high;
-           %NoFiltMultiContSUA.(filename).bin0 = origin_data_blank;
+           
+           NoFiltMultiContSUA.(filename).(binNb). trials = selTrials; %save trial indices
+           NoFiltMultiContSUA.(filename).(binNb). peaklocs =all_locsdSUA_trials;
+           
            FiltMultiContSUA.(filename).cellclass = cellClass{i}; %get the cell class of selected units
            NoFiltMultiContSUA.(filename).cellclass = cellClass{i};
            BsNoFiltMultiContSUA.(filename).cellclass = cellClass{i};
+           
        elseif n == 1 && length(filtered_dSUA_high(1,:)) <10
            
            all_pks(:,:) = [];
@@ -272,12 +278,15 @@ for n = 1:length(contLims)
            NoFiltMultiContSUA.(filename).(binNb) = [];
            peakLocs.(filename).(binNb) = [];
         
-       elseif n > 1
+       elseif n > 1 && length(filtered_dSUA_high(1,:)) >=10 
            peakLocs.(filename).(binNb) = all_locsdSUA_trials; %create dynamical peak locations structures
            FiltMultiContSUA.(filename).(binNb) =  filtered_dSUA_high;
            % FiltMultiContSUA.(filename).bin0 =  filtered_dSUA_blank;
-           NoFiltMultiContSUA.(filename).(binNb) = origin_data_high;
+           NoFiltMultiContSUA.(filename).(binNb).neuralDat = origin_data_high;
            BsNoFiltMultiContSUA.(filename).(binNb) = bsl_origin_data_high;
+           
+           NoFiltMultiContSUA.(filename).(binNb). trials = selTrials;
+           NoFiltMultiContSUA.(filename).(binNb). peaklocs =all_locsdSUA_trials;
            %NoFiltMultiContSUA.(filename).bin0 = origin_data_blank;
            FiltMultiContSUA.(filename).cellclass = cellClass{i}; %get the cell class of selected units
            NoFiltMultiContSUA.(filename).cellclass = cellClass{i};
@@ -302,7 +311,7 @@ save(strcat(allfilename, '.mat'), 'peakLocs');
  save(strcat(allfilename, '.mat'), 'FiltMultiContSUA');
 % allfilename = [newdatadir 'su_peaks_03032020_corrected\all_units\clean_SUA_locs'];
 % save(strcat(allfilename, '.mat'), 'peaks_locs');
- allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\NoFiltMultiContSUA_05022021';
+ allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\NoFiltMultiContSUA_06212021';
  save(strcat(allfilename, '.mat'), 'NoFiltMultiContSUA');
  
  allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\BsNoFiltMultiContSUA_05022021';
@@ -510,7 +519,7 @@ end
  NdeAvgCont = [0,0.85];
  %realAvgCont =  need to compute it from the actual contrast values
  
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\binocular_adaptation\all_units\';
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
 channelfilename = [newdatadir 'NoFiltMultiContSUA']; 
 NoFiltMultiContSUA = load(channelfilename);
 filenames = fieldnames(NoFiltMultiContSUA.NoFiltMultiContSUA);
