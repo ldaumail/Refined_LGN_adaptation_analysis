@@ -59,7 +59,11 @@ for i = channum
                         [~,pnloc]= max(fp_locked_trials(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn), [],1);
                         %peak triggered trials
                         pkNb = sprintf('pk%d', pn);
-                        peak_aligned_trials.(filename).originSUA.(binNb).(pkNb) = fp_locked_trials(max_low_dist.(filename).(binNb)+(pnloc-125)-1-124:max_low_dist.(filename).(binNb)+(pnloc-125)-1+125,:,pn);
+                        %peak_aligned_trials.(filename).originSUA.(binNb).(pkNb)
+                        %=
+                        %fp_locked_trials(max_low_dist.(filename).(binNb)+(pnloc-125)-1-124:max_low_dist.(filename).(binNb)+(pnloc-125)-1+125,:,pn);
+                        %%this one works better for binary data
+                        peak_aligned_trials.(filename).originSUA.(binNb).(pkNb) = fp_locked_trials(max_low_dist.(filename).(binNb)-1-124:max_low_dist.(filename).(binNb)-1+125,:,pn); %this one works better for convolved data
                         
                     end
                     

@@ -269,7 +269,7 @@ cnt = 0;
 eyeMovData = struct();
 
 
-for i=27:length(xfilenames)
+for i=26:length(xfilenames)
     try
         xcluster = xfilenames{i};
         cluster = xcluster(2:end);
@@ -328,17 +328,17 @@ for i=27:length(xfilenames)
                     for s =1:length(saccades(:,enum.startIndex)) %loop through all microssaccades/ saccades found in one trial
                         if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- times(codes == 23)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
                             excludeTrials(tr) = excludeTrials(tr)+1;
-                            excluSaccs(s,tr) = saccades(s,enum.startIndex); 
+                            excluSaccs(s,tr) = saccades(s,enum.startIndex);
                         else
                             if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < 0 || saccades(s,enum.startIndex) > times(codes == 24)- times(codes == 23))
-                             sparedSaccs(s,tr) = saccades(s,enum.startIndex); 
+                                sparedSaccs(s,tr) = saccades(s,enum.startIndex);
                             end
                         end
                     end
                     %{
                  % Plots a main sequence
                 ampl = [ampl; saccades(:,enum.amplitude)];
-                veloc = [veloc; saccades(:,enum.peakVelocity)];   
+                veloc = [veloc; saccades(:,enum.peakVelocity)];
                 eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).stats = stats;
                 eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).saccades = saccades;
                 eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).enum = enum;
@@ -351,8 +351,8 @@ for i=27:length(xfilenames)
             end
         end
         %eyeMovData.(xcluster).cellclass = trialsTraces.NoFiltMultiContSUA.(xcluster).cellclass;
-        %end 
-       
+        %end
+        
         %plot mean response accross all trials above (subplot 1) and mean response with selected trials below (subplot
         %2)
         xabs = -125:124;
@@ -368,22 +368,28 @@ for i=27:length(xfilenames)
             
             subplot(2,4,p)
             meanAll = nanmean(allTrialsTraces,2);
-            ci_high = meanAll + 1.96*std(allTrialsTraces,[],2)./sqrt(length(allTrialsTraces(1,:)));
-            ci_low = meanAll - 1.96*std(allTrialsTraces,[],2)./sqrt(length(allTrialsTraces(1,:)));
+            ci_high = meanAll + 1.96*std(allTrialsTraces,[],2,'omitnan')./sqrt(length(allTrialsTraces(1,:)));
+            ci_low = meanAll - 1.96*std(allTrialsTraces,[],2,'omitnan')./sqrt(length(allTrialsTraces(1,:)));
             plot(xabs, meanAll,'linewidth',1)
             title(strcat(sprintf(' Mean response including all trials: %d trials',length(allTrialsTraces(1,:)))),'Interpreter', 'none')
             hold on
             h1= ciplot( ci_high, ci_low,[-125:124],[40/255 40/255 40/255],0.1);
             set(h1, 'edgecolor','none')
-            if p> 1
-                ax1 = gca;
-                ax1.YAxis.Visible = 'off';
+            if p == 1
+                yl = get(gca, 'ylim');
             end
+            if p> 1
+               ax1 = gca;
+               % ax1.YAxis.Visible = 'off';
+                ylim(yl);
+            end
+            
+            
             %ylim([0 120])
             subplot(2,4,p+4)
             meanSel = nanmean(selectedTrialsTraces,2);
-            ci_high = meanSel + 1.96*std(selectedTrialsTraces,[],2)./sqrt(length(selectedTrialsTraces(1,:)));
-            ci_low = meanSel - 1.96*std(selectedTrialsTraces,[],2)./sqrt(length(selectedTrialsTraces(1,:)));
+            ci_high = meanSel + 1.96*std(selectedTrialsTraces,[],2,'omitnan')./sqrt(length(selectedTrialsTraces(1,:)));
+            ci_low = meanSel - 1.96*std(selectedTrialsTraces,[],2,'omitnan')./sqrt(length(selectedTrialsTraces(1,:)));
             plot(xabs, meanSel, 'Color', 'r', 'linewidth',1)
             hold on
             h1= ciplot( ci_high, ci_low,[-125:124],[40/255 40/255 40/255],0.1);
@@ -391,18 +397,22 @@ for i=27:length(xfilenames)
             title(strcat(sprintf('Mean response excluding trials with msaccs %d trials',length(selectedTrialsTraces(1,:)))),'Interpreter', 'none')
             xlabel('Time from stimulus onset (ms)')
             ylabel('Spike rate (spikes/s)')
+            if p == 1
+                yl = get(gca, 'ylim');
+            end
             if p> 1
                 ax1 = gca;
-                ax1.YAxis.Visible = 'off';
+              %  ax1.YAxis.Visible = 'off';
+                ylim(yl);
             end
-             %ylim([0 120])
+            
         end
         %saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\mean_response_accounting_msaccs_',xcluster,'.png'));
         
     catch
         cnt = cnt+1;
-       disp(xBRdatafile)
+        disp(xBRdatafile)
     end
     
-
+    
 end
