@@ -13,7 +13,7 @@ cnt = 0;
 eyeMovData = struct();
 
 
-for i=27:length(xfilenames)
+for i=1:length(xfilenames)
     try
         xcluster = xfilenames{i};
         cluster = xcluster(2:end);
@@ -46,6 +46,7 @@ for i=27:length(xfilenames)
         veloc = [];
         ntr =0; %number of trials in which microsaccades were detected
         excludeTrials = zeros(length(trialindex),1);
+        nprocTrials = zeros(length(trialindex),1);
         excluSaccs = nan(20,length(trialindex),1);
         sparedSaccs = nan(20,length(trialindex),1);
         
@@ -66,6 +67,7 @@ for i=27:length(xfilenames)
                     recording = ClusterDetection.EyeMovRecording.Create(directory, session, samples, blinks, samplerate);
                     
                     % Runs the saccade detection
+                    try
                     [saccades, stats] = recording.FindSaccades();
                     enum = ClusterDetection.SaccadeDetector.GetEnum;
                     
@@ -78,6 +80,10 @@ for i=27:length(xfilenames)
                              sparedSaccs(s,tr) = saccades(s,enum.startIndex); 
                             end
                         end
+                    end
+                    catch
+                        nprocTrials(tr) =nprocTrials(tr)+1;
+                        disp(strcat({'Bad Trial',xBRdatafile}))
                     end
                     %{
                  % Plots a main sequence
@@ -96,11 +102,12 @@ for i=27:length(xfilenames)
         end
         %eyeMovData.(xcluster).cellclass = trialsTraces.NoFiltMultiContSUA.(xcluster).cellclass;
         %end 
-        %selected trials neural data
-        selectedTrialsTraces =trialsTraces.NoFiltMultiContSUA.(xcluster).bin1.neuralDat(:,~excludeTrials);
-        %all traces
-        allTrialsTraces =trialsTraces.NoFiltMultiContSUA.(xcluster).bin1.neuralDat;
-        
+         %all traces without ones unprocessed by algorithm
+        allTrialsTraces =trialsTraces.NoFiltMultiContSUA.(xcluster).bin1.neuralDat(:,~nprocTrials);
+         %selected trials neural data excluding unprocessed ones and ones
+         %with msaccs during stimulation
+        selectedTrialsTraces =trialsTraces.NoFiltMultiContSUA.(xcluster).bin1.neuralDat(:,~(excludeTrials+nprocTrials));
+      
         %plot mean response accross all trials above (subplot 1) and mean response with selected trials below (subplot
         %2)
         xabs = -199:1300;
@@ -151,8 +158,8 @@ for i=27:length(xfilenames)
         saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\mean_response_accounting_msaccs_',xcluster,'.png'));
   
     catch
-        cnt = cnt+1;
-       disp(xBRdatafile)
+       cnt = cnt+1;
+       disp(strcat({'missing data ' xBRdatafile}))
     end
     
     %{
@@ -269,7 +276,7 @@ cnt = 0;
 eyeMovData = struct();
 
 
-for i=26:length(xfilenames)
+for i=1:length(xfilenames)
     try
         xcluster = xfilenames{i};
         cluster = xcluster(2:end);
@@ -302,6 +309,7 @@ for i=26:length(xfilenames)
         veloc = [];
         ntr =0; %number of trials in which microsaccades were detected
         excludeTrials = zeros(length(trialindex),1);
+        nprocTrials = zeros(length(trialindex),1);
         excluSaccs = nan(20,length(trialindex),1);
         sparedSaccs = nan(20,length(trialindex),1);
         
@@ -313,6 +321,7 @@ for i=26:length(xfilenames)
             if nnz(find( codes == 23))
                 samples = [];
                 samples(:,1) = (-1*times(codes == 23)+1) : 1 : 0 : (length(all_analogData{trialindex(tr)}.EyeSignal(:,1)) - times(codes == 23)); %23 = trial onset time %24 = trial offset time
+                %samples(:,1) = 1:length(all_analogData{trialindex(tr)}.EyeSignal(:,1));
                 if ~isempty(samples)
                     samples(:,2) = all_analogData{trialindex(tr)}.EyeSignal(:,1)+xBaseline; %horizontal position of the left eye in degrees baseline corrected
                     samples(:,3) = all_analogData{trialindex(tr)}.EyeSignal(:,2); %vertical position of the left eye in degrees
@@ -322,6 +331,7 @@ for i=26:length(xfilenames)
                     recording = ClusterDetection.EyeMovRecording.Create(directory, session, samples, blinks, samplerate);
                     
                     % Runs the saccade detection
+                    try
                     [saccades, stats] = recording.FindSaccades();
                     enum = ClusterDetection.SaccadeDetector.GetEnum;
                     
@@ -334,6 +344,10 @@ for i=26:length(xfilenames)
                                 sparedSaccs(s,tr) = saccades(s,enum.startIndex);
                             end
                         end
+                    end
+                    catch
+                        nprocTrials(tr) =nprocTrials(tr)+1;
+                        disp(strcat({'Bad Trial',xBRdatafile}))
                     end
                     %{
                  % Plots a main sequence
@@ -350,6 +364,7 @@ for i=26:length(xfilenames)
                 end
             end
         end
+       
         %eyeMovData.(xcluster).cellclass = trialsTraces.NoFiltMultiContSUA.(xcluster).cellclass;
         %end
         
@@ -361,26 +376,29 @@ for i=26:length(xfilenames)
         
         for p =1:4
             pkN = sprintf('pk%d',p);
-            %selected trials neural data
-            selectedTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN)(:,~excludeTrials);
-            %all traces
-            allTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN);
-            
+            %all traces excluding unprocessed ones due to algorithm bug
+            allTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN)(:,~nprocTrials);
+           
+            %selected trials neural data excluding ones with msaccs during
+            %stimulation
+            selectedTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN)(:,~(excludeTrials + nprocTrials));
+          
             subplot(2,4,p)
             meanAll = nanmean(allTrialsTraces,2);
             ci_high = meanAll + 1.96*std(allTrialsTraces,[],2,'omitnan')./sqrt(length(allTrialsTraces(1,:)));
             ci_low = meanAll - 1.96*std(allTrialsTraces,[],2,'omitnan')./sqrt(length(allTrialsTraces(1,:)));
             plot(xabs, meanAll,'linewidth',1)
-            title(strcat(sprintf(' Mean response including all trials: %d trials',length(allTrialsTraces(1,:)))),'Interpreter', 'none')
             hold on
             h1= ciplot( ci_high, ci_low,[-125:124],[40/255 40/255 40/255],0.1);
             set(h1, 'edgecolor','none')
+            set(gca,'box','off')
             if p == 1
+                title(strcat(sprintf(' Mean response including all trials: %d trials',length(allTrialsTraces(1,:)))),'Interpreter', 'none')
                 yl = get(gca, 'ylim');
             end
             if p> 1
                ax1 = gca;
-               % ax1.YAxis.Visible = 'off';
+                %ax1.YAxis.Visible = 'off';
                 ylim(yl);
             end
             
@@ -394,24 +412,27 @@ for i=26:length(xfilenames)
             hold on
             h1= ciplot( ci_high, ci_low,[-125:124],[40/255 40/255 40/255],0.1);
             set(h1, 'edgecolor','none')
-            title(strcat(sprintf('Mean response excluding trials with msaccs %d trials',length(selectedTrialsTraces(1,:)))),'Interpreter', 'none')
             xlabel('Time from stimulus onset (ms)')
             ylabel('Spike rate (spikes/s)')
+            set(gca,'box','off')
             if p == 1
-                yl = get(gca, 'ylim');
-            end
+                 title(strcat(sprintf('Mean response excluding trials with msaccs %d trials',length(selectedTrialsTraces(1,:)))),'Interpreter', 'none')
+
+            %    yl2 = get(gca, 'ylim');
+           end
+            ylim(yl);
             if p> 1
                 ax1 = gca;
-              %  ax1.YAxis.Visible = 'off';
-                ylim(yl);
+                ax1.YAxis.Visible = 'off';
+               
             end
             
         end
-        %saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\mean_response_accounting_msaccs_',xcluster,'.png'));
+        saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\peaktrigg_mean_response_accounting_msaccs_',xcluster,'.png'));
         
     catch
-        cnt = cnt+1;
-        disp(xBRdatafile)
+       cnt = cnt+1;
+       disp(strcat({'missing data ' xBRdatafile}))
     end
     
     
