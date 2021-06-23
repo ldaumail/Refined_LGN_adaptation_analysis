@@ -264,7 +264,7 @@ trialsTraces =load([newdatadir 'NoFiltMultiContSUA_06212021']); %neural data +pe
 
 peak_trig_traces = suaPeakTrigResps(trialsTraces.NoFiltMultiContSUA);
 
-xfilenames = fieldnames(trialsTraces.NoFiltMultiContSUA);
+xfilenames = fieldnames(peak_trig_traces);
 cnt = 0;
 eyeMovData = struct();
 
@@ -352,60 +352,53 @@ for i=27:length(xfilenames)
         end
         %eyeMovData.(xcluster).cellclass = trialsTraces.NoFiltMultiContSUA.(xcluster).cellclass;
         %end 
-        %selected trials neural data
-        selectedTrialsTraces =trialsTraces.NoFiltMultiContSUA.(xcluster).bin1.neuralDat(:,~excludeTrials);
-        %all traces
-        allTrialsTraces =trialsTraces.NoFiltMultiContSUA.(xcluster).bin1.neuralDat;
-        
+       
         %plot mean response accross all trials above (subplot 1) and mean response with selected trials below (subplot
         %2)
-        xabs = -199:1300;
+        xabs = -125:124;
         
         figure('Renderer', 'painters', 'Position', [10 10 1000 1200]);
-        subplot(2,1,1)
-        meanAll = nanmean(allTrialsTraces(401:1900,:),2);
-        ci_high = meanAll + 1.96*std(allTrialsTraces(401:1900,:),[],2)./sqrt(length(allTrialsTraces(1,:)));
-        ci_low = meanAll - 1.96*std(allTrialsTraces(401:1900,:),[],2)./sqrt(length(allTrialsTraces(1,:)));
-        plot(xabs, meanAll,'linewidth',1)
-        title(strcat(sprintf(' Mean response including all trials: %d trials',length(allTrialsTraces(1,:)))),'Interpreter', 'none')
-        hold on
-        h1= ciplot( ci_high, ci_low,[-200:1299],[40/255 40/255 40/255],0.1);
-        set(h1, 'edgecolor','none')
         
-        %add all msaccs onset times on plot
-        for t = 1:length(trialindex)
-            yl = get(gca,'ylim');
-            u1= zeros(size(xabs))+yl(1);
-            u2= zeros(size(xabs))+yl(1);
-            u1(excluSaccs(~isnan(excluSaccs(:,t)) & (excluSaccs(:,t) > -199 & excluSaccs(:,t)<1300) ,t)) = yl(2); %only keep saccades within xabs range
-            u2(excluSaccs(~isnan(excluSaccs(:,t)) & (excluSaccs(:,t) > -199 & excluSaccs(:,t)<1300) ,t)+10) = yl(2);
-            uOri = (cumsum(u1)-cumsum(u2));
-            u =double(ischange(uOri));
-            u(u ==0) = NaN;
-            idc = find(~isnan(u));
-            %u(idc-1) =0;
-            u(idc+1) =0;
-            plot(xabs, 10*u.*uOri./uOri,'k','linewidth',1)
+        for p =1:4
+            pkN = sprintf('pk%d',p);
+            %selected trials neural data
+            selectedTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN)(:,~excludeTrials);
+            %all traces
+            allTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN);
+            
+            subplot(2,4,p)
+            meanAll = nanmean(allTrialsTraces,2);
+            ci_high = meanAll + 1.96*std(allTrialsTraces,[],2)./sqrt(length(allTrialsTraces(1,:)));
+            ci_low = meanAll - 1.96*std(allTrialsTraces,[],2)./sqrt(length(allTrialsTraces(1,:)));
+            plot(xabs, meanAll,'linewidth',1)
+            title(strcat(sprintf(' Mean response including all trials: %d trials',length(allTrialsTraces(1,:)))),'Interpreter', 'none')
             hold on
-            uOri(uOri ==0) = NaN;
-            plot(xabs,10*uOri./uOri,'k','linewidth',1)
+            h1= ciplot( ci_high, ci_low,[-125:124],[40/255 40/255 40/255],0.1);
+            set(h1, 'edgecolor','none')
+            if p> 1
+                ax1 = gca;
+                ax1.YAxis.Visible = 'off';
+            end
+            %ylim([0 120])
+            subplot(2,4,p+4)
+            meanSel = nanmean(selectedTrialsTraces,2);
+            ci_high = meanSel + 1.96*std(selectedTrialsTraces,[],2)./sqrt(length(selectedTrialsTraces(1,:)));
+            ci_low = meanSel - 1.96*std(selectedTrialsTraces,[],2)./sqrt(length(selectedTrialsTraces(1,:)));
+            plot(xabs, meanSel, 'Color', 'r', 'linewidth',1)
             hold on
+            h1= ciplot( ci_high, ci_low,[-125:124],[40/255 40/255 40/255],0.1);
+            set(h1, 'edgecolor','none')
+            title(strcat(sprintf('Mean response excluding trials with msaccs %d trials',length(selectedTrialsTraces(1,:)))),'Interpreter', 'none')
+            xlabel('Time from stimulus onset (ms)')
+            ylabel('Spike rate (spikes/s)')
+            if p> 1
+                ax1 = gca;
+                ax1.YAxis.Visible = 'off';
+            end
+             %ylim([0 120])
         end
+        %saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\mean_response_accounting_msaccs_',xcluster,'.png'));
         
-        subplot(2,1,2)
-        meanSel = nanmean(selectedTrialsTraces(401:1900,:),2);
-        ci_high = meanSel + 1.96*std(selectedTrialsTraces(401:1900,:),[],2)./sqrt(length(selectedTrialsTraces(1,:)));
-        ci_low = meanSel - 1.96*std(selectedTrialsTraces(401:1900,:),[],2)./sqrt(length(selectedTrialsTraces(1,:)));
-        plot(xabs, meanSel, 'Color', 'r', 'linewidth',1)
-        hold on
-        h1= ciplot( ci_high, ci_low,[-200:1299],[40/255 40/255 40/255],0.1);
-        set(h1, 'edgecolor','none')
-        title(strcat(sprintf('Mean response excluding trials with msaccs %d trials',length(selectedTrialsTraces(1,:)))),'Interpreter', 'none')
-        xlabel('Time from stimulus onset (ms)')
-        ylabel('Spike rate (spikes/s)')
-        
-        saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\mean_response_accounting_msaccs_',xcluster,'.png'));
-  
     catch
         cnt = cnt+1;
        disp(xBRdatafile)
