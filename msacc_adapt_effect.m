@@ -526,7 +526,7 @@ for i =1:length(xfilenames)
                         nprocTrials(tr) =nprocTrials(tr)+1;
                         disp(strcat({'Bad Trial',xBRdatafile}))
                     end
-                    %{
+                    
                  % Plots a main sequence
                 ampl = [ampl; saccades(:,enum.amplitude)];
                 veloc = [veloc; saccades(:,enum.peakVelocity)];
@@ -537,50 +537,65 @@ for i =1:length(xfilenames)
                 if ~all(isnan((saccades(:,enum.startIndex))))
                     ntr =ntr+1;
                 end
-                    %}
+                   
                 end
+                 
             end
         end
-        
-        %eyeMovData.(xcluster).cellclass = trialsTraces.NoFiltMultiContSUA.(xcluster).cellclass;
+        eyeMovData.(xcluster).nprocTrials = nprocTrials; 
+        eyeMovData.(xcluster).msaccTrials = excludeTrials;
+        eyeMovData.(xcluster).cellclass = trialsTraces.NoFiltMultiContSUA.(xcluster).cellclass;
         %end
-        
-        %plot mean response accross all trials above (subplot 1) and mean response with selected trials below (subplot
-        %2)
+        catch
+        cnt = cnt+1;
+        disp(strcat({'missing data ' xBRdatafile}))
+    end
+    
+end
+        %plot mean response accross all trials above (subplot 1) and mean
+        %response with selected trials below overlayed. Subplot 2: plot
+        %difference of the means
+        %colors
+        nlines =7;
+        cmaps =cbrewer2('Oranges', nlines);
+
         xabs = -125:124;
-        
+   for i =1:length(xfilenames) 
+       %xcluster =xfilenames{i};
+       %xcluster ='x160629_I_p03_uclust62_cinterocdrft_stab_fft_sig';
+       xcluster ='x180827_I_p02_uclust8_cinterocdrft_stab_fft_sig';
+       
+       if isfield(peak_trig_traces, xcluster) && isfield(eyeMovData,xcluster)
         figure('Renderer', 'painters', 'Position', [10 10 1000 1200]);
-        
         for p =1:4
             pkN = sprintf('pk%d',p);
             %all traces excluding unprocessed ones due to algorithm bug
-            allTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN)(:,~nprocTrials);
-            
+            allTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN)(:,~eyeMovData.(xcluster).nprocTrials);
             %selected trials neural data excluding ones with msaccs during
             %stimulation
-            selectedTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN)(:,~(excludeTrials + nprocTrials));
+            selectedTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN)(:,~( eyeMovData.(xcluster).msaccTrials  + eyeMovData.(xcluster).nprocTrials));
             
             subplot(2,4,p)
             meanAll = nanmean(allTrialsTraces,2);
             ci_high = meanAll + 1.96*std(allTrialsTraces,[],2,'omitnan')./sqrt(length(allTrialsTraces(1,:)));
             ci_low = meanAll - 1.96*std(allTrialsTraces,[],2,'omitnan')./sqrt(length(allTrialsTraces(1,:)));
-            plot(xabs, meanAll,'linewidth',1)
+            plot(xabs, meanAll,'linewidth',1,'col',[180/255 180/255 180/255])
             hold on
-            h1= ciplot( ci_high, ci_low,[-125:124],'b',0.1);
+            h1= ciplot( ci_high, ci_low,[-125:124],[40/255 40/255 40/255],0.1);
             set(h1, 'edgecolor','none')
             hold on
             meanSel = nanmean(selectedTrialsTraces,2);
             ci_high = meanSel + 1.96*std(selectedTrialsTraces,[],2,'omitnan')./sqrt(length(selectedTrialsTraces(1,:)));
             ci_low = meanSel - 1.96*std(selectedTrialsTraces,[],2,'omitnan')./sqrt(length(selectedTrialsTraces(1,:)));
-            plot(xabs, meanSel, 'Color', 'r', 'linewidth',1)
+            plot(xabs, meanSel, 'col', cmaps(4,:), 'linewidth',1)
             hold on
-            h2= ciplot( ci_high, ci_low,[-125:124],'r',0.1);
+            h2= ciplot( ci_high, ci_low,[-125:124],cmaps(4,:),0.1);
             set(h2, 'edgecolor','none')
             ylabel('Spike rate (spikes/s)')
             
             set(gca,'box','off')
             if p == 1
-                sgtitle(strcat(sprintf(' Mean response including all trials (%d trials) vs Mean response excluding trials with msaccs (%d trials)',length(allTrialsTraces(1,:)),length(selectedTrialsTraces(1,:)))),'Interpreter', 'none')
+                sgtitle(strcat({sprintf(' Mean response including all trials (%d trials) vs Mean response excluding trials with msaccs (%d trials)',length(allTrialsTraces(1,:)),length(selectedTrialsTraces(1,:))), xcluster}),'Interpreter', 'none')
             end
             if p> 1
                 ax1 = gca;
@@ -602,14 +617,100 @@ for i =1:length(xfilenames)
                 ax1 = gca;
                 ax1.YAxis.Visible = 'off';
             end
-            ylim([-7 5]);
+            ylim([-7 18]);
         end
-        saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\peaktrigg_diffmean_response_accounting_msaccs_',xcluster,'.png'));
-    catch
-        cnt = cnt+1;
-        disp(strcat({'missing data ' xBRdatafile}))
-    end
-    
+        saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\peaktrigg_diffmean_response_accounting_msaccs_',xcluster,'.svg'));
+       end
+   end
+   
+   
+   %% plot overall mean difference of the means across single units
+   
+   all_diffs = nan(250,4,length(xfilenames));
+   for i =1:length(xfilenames)
+       xcluster =xfilenames{i};
+       if isfield(peak_trig_traces, xcluster) && isfield(eyeMovData,xcluster)
+           
+           for p =1:4
+               pkN = sprintf('pk%d',p);
+               %all traces excluding unprocessed ones due to algorithm bug
+               allTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN)(:,~eyeMovData.(xcluster).nprocTrials);
+               %selected trials neural data excluding ones with msaccs during
+               %stimulation
+               selectedTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN)(:,~( eyeMovData.(xcluster).msaccTrials  + eyeMovData.(xcluster).nprocTrials));
+               meanAll = nanmean(allTrialsTraces,2);
+               meanSel = nanmean(selectedTrialsTraces,2);
+               all_diffs(:,p,i) = meanAll - meanSel;
+           end
+       end
+   end
+  
+   nlines =7;
+   cmaps =cbrewer2('GnBu', nlines);
+
+   figure('Renderer', 'painters', 'Position', [10 10 1500 800]);
+   meanDiffs= nanmean(all_diffs,3);
+   for p =1:4
+            subplot(1,4,p)
+            ci_high = meanDiffs(:,p) + 1.96*std(squeeze(all_diffs(:,p,:)),[],2,'omitnan')./sqrt(size(all_diffs,3));
+            ci_low = meanDiffs(:,p) - 1.96*std(squeeze(all_diffs(:,p,:)),[],2,'omitnan')./sqrt(size(all_diffs,3));
+            plot(xabs, meanDiffs(:,p), 'col', cmaps(4,:), 'linewidth',1)
+            hold on
+            h2= ciplot( ci_high, ci_low,[-125:124],cmaps(4,:),0.3);
+            set(h2, 'edgecolor','none')
+             if p == 1
+                sgtitle(strcat(sprintf('Mean(all trials) - Mean(msacc excluded trials) difference mean across all units')),'Interpreter', 'none')
+            end
+            if p> 1
+                ax1 = gca;
+                ax1.YAxis.Visible = 'off';
+            end
+            set(gca,'box','off')
+            ylim([-2 2]);
+            saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\peaktrigg_diffmean_response_withandwithout_msaccs_all.svg'));
+   end
+   
+%% Plot main sequence 
+
+xcluster ='x180827_I_p02_uclust8_cinterocdrft_stab_fft_sig';
+ampl = [];
+veloc = [];
+fieldn = fieldnames(eyeMovData.(xcluster));
+for tr =1:length(cell2mat(strfind(fieldn,'t')))
+    trIdx = fieldn{tr};
+ampl = [ampl; eyeMovData.(xcluster).(trIdx).saccades(:,eyeMovData.(xcluster).(trIdx).enum.amplitude)];
+veloc = [veloc; eyeMovData.(xcluster).(trIdx).saccades(:,eyeMovData.(xcluster).(trIdx).enum.peakVelocity)];
 end
-    
-    
+%{
+figure('Renderer', 'painters', 'Position', [10 10 600 700]);
+plot(ampl,veloc,'o')
+xlabel('Saccade amplitude (deg)');
+ylabel('Saccade peak velocity (deg/s)');
+set(gca,'box','off');
+set(gca, 'linewidth',1)
+xlim([0 2])
+title(strcat(sprintf('Main sequence example in %d trials',length(cell2mat(strfind(fieldn,'t'))))),'Interpreter', 'none')
+%}
+
+clear g10
+figure('Position',[100 100 600 450]);
+g=gramm('x',ampl,'y',veloc);
+g.set_names('x','Saccade amplitude (deg)','y','Saccade peak velocity (deg/s)');
+g.set_color_options('chroma',0,'lightness',60);
+g.stat_glm('geom','area','disp_fit',false);
+g.set_title(sprintf('Main sequence example in %d trials',length(cell2mat(strfind(fieldn,'t'))))); %Title must be provided before the first draw() call
+g.draw();
+snapnow;
+g.update();
+g.set_color_options();
+g.geom_point();
+g.draw();
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\', sprintf('main_sequence_example%s',xcluster), '.svg'));
+
+
+%% Frequency of msaccs accross trials broken down by animal I and B
+
+%x = frequency/trial during stimulation
+%y = number of single units
+%left = I monkey
+%right = B monkey
