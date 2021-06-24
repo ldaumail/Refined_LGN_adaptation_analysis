@@ -714,3 +714,53 @@ saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042
 %y = number of single units
 %left = I monkey
 %right = B monkey
+
+filenames = fieldnames(eyeMovData);
+freq = nan(length(fieldnames(eyeMovData)), 2); %2 = 2 monkeys
+icnt = 0;
+bcnt = 0;
+for i = 1:length(fieldnames(eyeMovData))
+    xcluster = filenames{i};
+    if contains(xcluster,'_I_')
+        icnt = icnt+1;
+        freq(i,1) = sum(eyeMovData.(xcluster).msaccTrials)/(length(find(~eyeMovData.(xcluster).nprocTrials)));
+    else 
+        if contains(xcluster,'_B_')
+            bcnt = bcnt+1;
+           freq(i,2) = sum(eyeMovData.(xcluster).msaccTrials)/(length(find(~eyeMovData.(xcluster).nprocTrials)));
+ 
+        end
+    end
+    
+end
+
+%linFreq = [freq(~isnan(freq(:,1)),1);freq(~isnan(freq(:,2)),2)];
+linFreq = [freq(:,1);freq(:,2)]';
+%animal = [repmat('I', [length(find(~isnan(freq(:,1)))),1]);repmat('B', [length(find(~isnan(freq(:,2)))),1])];
+animal = [repmat({'I'}, [length(freq(:,1)),1]);repmat({'B'}, [length(freq(:,2)),1])]';
+
+%unit = [1:length(find(~isnan(freq(:,1)))),1:length(find(~isnan(freq(:,2))))];
+unit = [1:length(freq(:,1)),1:length(freq(:,2))];
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
+clear g
+g(1,1)=gramm('x',linFreq,'y',unit,'color',animal);
+%g(1,1).stat_bin('nbins',25,'geom','overlaid_bar');
+g(1,1).stat_bin('nbins',10,'geom','overlaid_bar');
+g(1,1).stat_density();
+%g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+g(1,1).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
+g(1,1).set_names('x','Microsaccade frequency (normalized per trial)','color','Legend','row','','y','Count');
+g(1,1).set_title({'Microsaccade Frequency per trial per animal'});
+f = figure('Position',[100 100 800 1000]);
+g.draw();
+set(f,'position',get(f,'position').*[1 1 1.15 1])
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_frequency_per_trial_I_B.svg'));
+
