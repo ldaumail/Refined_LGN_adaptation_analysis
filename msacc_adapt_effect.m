@@ -746,7 +746,7 @@ nlines = 7;
 cmaps = struct();
 cmaps(1).map =cbrewer2('OrRd', nlines);
 cmaps(2).map =cbrewer2('BuPu', nlines);
-cmaps(3).map =cbrewer2('Greens', nlines);
+cmaps(3).map =cbrewer2('GnBu', nlines);
 cmap = flip(cmaps(2).map) ;
 colormap(cmap);
 
@@ -764,3 +764,62 @@ g.draw();
 set(f,'position',get(f,'position').*[1 1 1.15 1])
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_frequency_per_trial_I_B.svg'));
 
+
+%% Microsaccade amplitude distributions broken down by monkey
+
+filenames = fieldnames(eyeMovData);
+ampI = []; %monkey I
+ampB = []; %monkey B
+
+icnt = 0;
+bcnt = 0;
+for i = 1:length(fieldnames(eyeMovData))
+    xcluster = filenames{i};
+    fieldn = fieldnames(eyeMovData.(xcluster));
+
+    if contains(xcluster,'_I_')
+        icnt = icnt+1;
+        for tr =1:length(cell2mat(strfind(fieldn,'t')))
+            trIdx = fieldn{tr};
+            ampI= [ampI; eyeMovData.(xcluster).(trIdx).saccades(:,eyeMovData.(xcluster).(trIdx).enum.amplitude)]; %loop through trials
+        end
+            else 
+        if contains(xcluster,'_B_')
+            bcnt = bcnt+1;
+            for tr =1:length(cell2mat(strfind(fieldn,'t')))
+                trIdx = fieldn{tr};
+                ampB= [ampB; eyeMovData.(xcluster).(trIdx).saccades(:,eyeMovData.(xcluster).(trIdx).enum.amplitude)]; %loop through trials
+            end
+        end
+    end
+    
+end
+
+linAmp = log([ampI(ampI<2);ampB(ampB<2)])';
+animal = [repmat({'I'}, [length(ampI(ampI<2)),1]);repmat({'B'}, [length(ampB(ampB<2)),1])]';
+msacc = [1:length(ampI(ampI<2)),1:length(ampB(ampB<2))];
+
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('GnBu', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
+clear g
+g(1,1)=gramm('x',linAmp,'y',msacc,'color',animal);
+%g(1,1).stat_bin('nbins',25,'geom','overlaid_bar');
+g(1,1).stat_bin('normalization','probability','nbins',50,'geom','overlaid_bar');
+g(1,1).stat_density();
+%g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+g(1,1).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
+g(1,1).set_names('x','Microsaccade amplitude (log)','color','Legend','row','','y','Count');
+g(1,1).set_title({'Microsaccade Amplitude distribution per animal'});
+%g(1,1).axe_property('DataAspectRatio',[1 1 1])
+%g(1,1).axe_property('ylim',[0 .2]); 
+%'XTick',
+f = figure('Position',[100 100 800 1000]);
+g.draw();
+set(f,'position',get(f,'position').*[1 1 1.15 1])
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_amplitudes_density_I_B.svg'));
