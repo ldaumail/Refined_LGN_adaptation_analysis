@@ -753,8 +753,8 @@ colormap(cmap);
 clear g
 g(1,1)=gramm('x',linFreq,'y',unit,'color',animal);
 %g(1,1).stat_bin('nbins',25,'geom','overlaid_bar');
-g(1,1).stat_bin('nbins',10,'geom','overlaid_bar');
-g(1,1).stat_density();
+g(1,1).stat_bin('normalization','probability','nbins',10,'geom','overlaid_bar');
+%g(1,1).stat_density();
 %g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
 g(1,1).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
 g(1,1).set_names('x','Microsaccade frequency (normalized per trial)','color','Legend','row','','y','Count');
