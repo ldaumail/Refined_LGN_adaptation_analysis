@@ -577,16 +577,22 @@ end
             
             subplot(2,4,p)
             meanAll = nanmean(allTrialsTraces,2);
-            ci_high = meanAll + 1.96*std(allTrialsTraces,[],2,'omitnan')./sqrt(length(allTrialsTraces(1,:)));
-            ci_low = meanAll - 1.96*std(allTrialsTraces,[],2,'omitnan')./sqrt(length(allTrialsTraces(1,:)));
+            %ci_high = meanAll + 1.96*std(allTrialsTraces,[],2,'omitnan')./sqrt(length(allTrialsTraces(1,:)));
+            %ci_low = meanAll - 1.96*std(allTrialsTraces,[],2,'omitnan')./sqrt(length(allTrialsTraces(1,:)));
+            ci_high = meanAll + std(allTrialsTraces,[],2,'omitnan');
+            ci_low = meanAll - std(allTrialsTraces,[],2,'omitnan');
+          
             plot(xabs, meanAll,'linewidth',1,'col',[180/255 180/255 180/255])
             hold on
             h1= ciplot( ci_high, ci_low,[-125:124],[40/255 40/255 40/255],0.1);
             set(h1, 'edgecolor','none')
             hold on
             meanSel = nanmean(selectedTrialsTraces,2);
-            ci_high = meanSel + 1.96*std(selectedTrialsTraces,[],2,'omitnan')./sqrt(length(selectedTrialsTraces(1,:)));
-            ci_low = meanSel - 1.96*std(selectedTrialsTraces,[],2,'omitnan')./sqrt(length(selectedTrialsTraces(1,:)));
+            %ci_high = meanSel + 1.96*std(selectedTrialsTraces,[],2,'omitnan')./sqrt(length(selectedTrialsTraces(1,:)));
+            %ci_low = meanSel - 1.96*std(selectedTrialsTraces,[],2,'omitnan')./sqrt(length(selectedTrialsTraces(1,:)));
+            ci_high = meanSel + std(selectedTrialsTraces,[],2,'omitnan');
+            ci_low = meanSel - std(selectedTrialsTraces,[],2,'omitnan');
+      
             plot(xabs, meanSel, 'col', cmaps(4,:), 'linewidth',1)
             hold on
             h2= ciplot( ci_high, ci_low,[-125:124],cmaps(4,:),0.1);
@@ -601,7 +607,7 @@ end
                 ax1 = gca;
                 ax1.YAxis.Visible = 'off';
             end
-            ylim([0 245]);
+            ylim([0 270]);
             
             %ylim([0 120])
             subplot(2,4,p+4)
