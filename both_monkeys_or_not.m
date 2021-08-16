@@ -5,20 +5,20 @@
 %have been possible to use a table in order to this
 %%% Written by Loic Daumail -edited on
 
-gendatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\';
+gendatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\';
 channelfilename = [gendatadir 'refined_dataset']; 
 gen_data_file = load(channelfilename);
 
-spikpvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+spikpvaluesdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
 spikpvalfilename = [spikpvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
 spikpvalues = dlmread(spikpvalfilename, ',', 1,1);
 
-channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+channeldir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
 peakvals = load([channeldir 'all_data_peaks']);
 
-partsdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\part1_part2_norm_power.mat';
+partsdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\part1_part2_norm_power.mat';
 parts = load(partsdir);
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 sig95_idx = load( strcat(newdatadir,'roc_results95_stimonset_to1150ms.mat'));
 
 
@@ -52,7 +52,7 @@ filename = gen_data_file.new_data(i).channel_data.filename;
    end
 end
 
-%% Get file names
+%% Get modified file names
 cnt =0;
 selectedfilenames = cell(length(layer),1);
 for i = 1:length(spikpvalues(:,1))
@@ -69,6 +69,23 @@ T = table(selectedfilenames);
  savefile = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\selected_units_filenames');
    writetable(T,strcat(savefile, '.txt')); 
    
+ %% Get origin filenames
+ cnt =0;
+selectedfilenames = cell(length(layer),1);
+for i = 1:length(spikpvalues(:,1))
+    if ~all(isnan(spikpvalues(i,:))) && ~isempty(filenames{i,2})
+    
+     origin_name = filenames{i,1};
+     selectedfilenames(i) = {erase(origin_name,'mat')};
+     cnt = cnt+1;
+    end
+end
+T = table(selectedfilenames);
+
+ savefile = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\selected_orig_units_filenames');
+   writetable(T,strcat(savefile, '.txt')); 
+ 
+ 
    %% Get Sessions
    cnt =0;
 selectedfilenames = cell(length(layer),1);
