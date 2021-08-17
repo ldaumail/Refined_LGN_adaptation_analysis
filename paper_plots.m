@@ -226,7 +226,7 @@ end
     plot(-40:40, spikes(:,:,nc)-mean(spikes(:,:,nc),1),  'LineWidth',2)
    % hold on
    % plot(xlim, [0 0],'k')
-
+   ylim([-1000 600])
       
        set(h,'position',get(h,'position').*[1 1 1.15 1])
        
@@ -235,8 +235,8 @@ end
        
       ax1 = gca; 
       if nc > 1
-      ax1.YAxis.Visible = 'off';   
-      ax1.XAxis.Visible = 'off';
+     % ax1.YAxis.Visible = 'off';   
+     % ax1.XAxis.Visible = 'off';
       end
     end
     %end
@@ -516,14 +516,14 @@ end
 end
    
 
-%% (part of Figure 2) Plot overall across all cell classes and mean response of one cell for each cell class
+%% (part of Figure 2) Plot overall mean across all cell classes and mean response of one cell for each cell class
 
 %% find spike waveforme that correspond to single unit example plot (Figure 2)
 
     
    %% example single unit
 
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 channelfilename = [newdatadir 'clean_origin_sup_50']; 
 data_file = load(channelfilename);
 channelfilename = [newdatadir 'clean_SUA_sup_50']; 
@@ -587,15 +587,15 @@ end
 
  % plot example
    
-pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvaluesdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
 pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
 pvalues = dlmread(pvalfilename, ',', 1,1);
 
-channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+channeldir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
 peakvals = load([channeldir 'all_data_peaks']);
 
 %waveform data
-gendatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\';
+gendatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\';
 channelfilename = [gendatadir 'refined_dataset']; 
 gen_data_file = load(channelfilename);
 
@@ -614,10 +614,10 @@ col(3,:) = [146/255 197/255 222/255]; % -- blue
 % P ylim([.1 .8])
 % K ylim([-0.01 1])
 %normylims = [[0.05 .75];[.1 .8];[-0.01 1]];
- % P ylim([-20 85])
- % M ylim([-35 135])
- % K ylim([-20 200])
-ylims = [[0 240];[0 120];[0 230]];
+% P ylim([-20 85])
+% M ylim([-35 135])
+% K ylim([-20 200])
+ylims = [[0 280];[0 140];[0 280]];
 %ylims = [[-35 135];[-20 85];[-20 200]];
 unitNum = [5,4,1];
 for nc = 1:3
@@ -627,143 +627,141 @@ for nc = 1:3
     %aligned_trials = nan(1204, length(layer_idx));
     clear numTrials
     numTrials = nan(length(layer_idx),1);
-
-    clear i 
+    
+    clear i
     for i = 1:length(layer_idx)
         if ~isnan(max_low_dist(layer_idx(i)))
-             %store number of trials for each unit to determine the max length
-             numTrials(i) = length(suas_trials(layer_idx(i)).aligned(1,:,1));  
+            %store number of trials for each unit to determine the max length
+            numTrials(i) = length(suas_trials(layer_idx(i)).aligned(1,:,1));
         else
             numTrials(i) = 0;
-
+            
         end
-         
+        
     end
-
+    
     clear aligned_trials
     aligned_trials = nan(1204, max(numTrials), length(layer_idx));
     clear i
     for i = 1:length(layer_idx)
         if ~isnan(max_low_dist(layer_idx(i)))
-           for pn = 1:4
-               aligned_trials(250*(pn-1)+1:250*pn+1,1:numTrials(i),i)= suas_trials(layer_idx(i)).aligned(max_low_dist(layer_idx(i))-1-124:max_low_dist(layer_idx(i))+125,:,pn);
-
-           end
-         end
+            for pn = 1:4
+                aligned_trials(250*(pn-1)+1:250*pn+1,1:numTrials(i),i)= suas_trials(layer_idx(i)).aligned(max_low_dist(layer_idx(i))-1-124:max_low_dist(layer_idx(i))+125,:,pn);
+                
+            end
+        end
     end
+    
+    %aligned_trials = aligned_trials(:,~all(isnan(aligned_trials)));
+    
+    %figure(); plot(1:length(aligned_trials(:,4)), aligned_trials(:,:))
+    %figure(); plot(1:length(aligned_trials(:,4)), norm_aligned_trials(:,:))
+    %
+    clear sig_adapsu spikes spike_dat
+    cnt = 0;
+    all_mean_data = nan(4, length(layer_idx));
+    sig_adapsu = nan(length(aligned_trials(:,1)), max(numTrials),length(layer_idx));
+    spikes = nan(3000,81,length(layer_idx));
+    for nunit = 1:length(layer_idx)
+        if ~isempty(peakvals.peak_vals(layer_idx(nunit)).peak)
+            mean_data = nanmean(peakvals.peak_vals(layer_idx(nunit)).peak,2);
+            all_mean_data(:,nunit) = mean_data;
+            if all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05
+                cnt= cnt+1;
+                sig_adapsu(:,find(~all(isnan(aligned_trials(:,:,nunit)))),cnt) = aligned_trials(:, ~all(isnan(aligned_trials(:,:,nunit))),nunit);
+                
+                %isolate corresponding spike waveform
+                spike_dat = gen_data_file.new_data(layer_idx(nunit)).channel_data.wf.waveForms;
+                %mean_data = squeeze(mean(spike_dat,2));%mean of just one unit
+                chan_idx = str2double(gen_data_file.new_data(layer_idx(nunit)).channel_data.chan(3:4));
+                spikes(:,:,cnt) = squeeze(spike_dat(1,:,chan_idx,:));
+                % plot(x_stim,norm_chan(:, nunit)')
+                %hold on
+            end
+        end
+    end
+    
+    
+    %plot example single unit
+    idxs = find(~isnan(sig_adapsu(1,1,:)));
+    clear  meanSigSu unit_trials
+    % for n =1:length(find(~isnan(sig_adapsu(1,1,:))))
+    %take trials data of only one significant unit to plot it
+    unit_trials = squeeze(sig_adapsu(:,:,idxs(unitNum(nc))));
+    meanSigSu = nanmean(unit_trials,2);
+    
+    %mean_sig_su = nanmean(sig_adapsu,2);
+    sig_ci_low = meanSigSu - std(unit_trials(:,~all(isnan(unit_trials))),0,2, 'omitnan'); %./sqrt(length(find(~isnan(unit_trials(1,:)))));
+    sig_ci_high = meanSigSu + std(unit_trials(:,~all(isnan(unit_trials))),0,2, 'omitnan') %./sqrt(length(find(~isnan(unit_trials(1,:)))));
 
-%aligned_trials = aligned_trials(:,~all(isnan(aligned_trials)));
-
-%figure(); plot(1:length(aligned_trials(:,4)), aligned_trials(:,:))
-%figure(); plot(1:length(aligned_trials(:,4)), norm_aligned_trials(:,:))
-%
-     clear sig_adapsu spikes spike_dat
-      cnt = 0;
-     all_mean_data = nan(4, length(layer_idx));
-     sig_adapsu = nan(length(aligned_trials(:,1)), max(numTrials),length(layer_idx));
-     spikes = nan(3000,81,length(layer_idx));
-      for nunit = 1:length(layer_idx)
-          if ~isempty(peakvals.peak_vals(layer_idx(nunit)).peak)
-              mean_data = nanmean(peakvals.peak_vals(layer_idx(nunit)).peak,2);
-              all_mean_data(:,nunit) = mean_data;
-              if all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05
-                  cnt= cnt+1;
-                  sig_adapsu(:,find(~all(isnan(aligned_trials(:,:,nunit)))),cnt) = aligned_trials(:, ~all(isnan(aligned_trials(:,:,nunit))),nunit); 
-                  
-                  %isolate corresponding spike waveform
-                    spike_dat = gen_data_file.new_data(layer_idx(nunit)).channel_data.wf.waveForms;
-                    %mean_data = squeeze(mean(spike_dat,2));%mean of just one unit
-                    chan_idx = str2double(gen_data_file.new_data(layer_idx(nunit)).channel_data.chan(3:4)); 
-                    spikes(:,:,cnt) = squeeze(spike_dat(1,:,chan_idx,:));
-         % plot(x_stim,norm_chan(:, nunit)')
-         %hold on
-              end
-          end
-      end
-
-      
-      %plot example single unit
-      idxs = find(~isnan(sig_adapsu(1,1,:)));
-      clear  meanSigSu unit_trials
-     % for n =1:length(find(~isnan(sig_adapsu(1,1,:))))
-          %take trials data of only one significant unit to plot it
-          unit_trials = squeeze(sig_adapsu(:,:,idxs(unitNum(nc))));
-          meanSigSu = nanmean(unit_trials,2);
-
-          %mean_sig_su = nanmean(sig_adapsu,2);
-          sig_ci_low = meanSigSu - 1.96*std(unit_trials(:,~all(isnan(unit_trials))),0,2, 'omitnan')./sqrt(length(find(~isnan(unit_trials(1,:)))));
-          sig_ci_high = meanSigSu + 1.96*std(unit_trials(:,~all(isnan(unit_trials))),0,2, 'omitnan')./sqrt(length(find(~isnan(unit_trials(1,:)))));
-
-
-
-          figure();
-
-          for pn = 1:4
-              h =subplot(1,4,pn);
-
-              plot(-125:125, meanSigSu(250*(pn-1)+1:250*pn+1),'LineWidth',2, 'Color',[40/255 40/255 40/255] )
-              hold on
-              h1= ciplot(sig_ci_low(250*(pn-1)+1:250*pn+1), sig_ci_high(250*(pn-1)+1:250*pn+1),[-125:125],col(nc,:),0.5);
-              set(h1, 'edgecolor','none') 
-              set(h,'position',get(h,'position').*[1 1 1.15 1])
-
-                ylim(ylims(nc,:))
-
-
-               % K norm ylim([-0.02 1.1])
-              xlim([-125 125])
-              set(gca, 'linewidth',2)
-              set(gca,'box','off')
-              %set(gca, 'linewidth',2)
-              %hold on
-              %plot([0 0], ylim,'k')
-              if pn >1 
-                  ax1 = gca;                   
-                  ax1.YAxis.Visible = 'off';   
-              end
-
-          end
-
-     %brown [165/255 42/255 42/255]
-        currfig = gcf;
-
-        title(currfig.Children(end),{sprintf('%s single unit mean responses', cellclass(nc))}, 'Interpreter', 'none', 'FontSize', 20)
-
-       % xlabel('\fontsize{14}Resolution (ms)')
-        ylh = ylabel({'\fontsize{14}Spike Rate (spikes/s)'});
-
-       set(gcf,'Units','inches') 
-       set(gcf,'position',[1 1 15 11])
-
-
-       filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\',strcat(sprintf('example_%s_unit_95ci_sigadap', cellclass(nc))));
-       %saveas(gcf, strcat(filename, '.svg')); 
-       %saveas(gcf, strcat(filename, '.png')); 
-       
-       
-       %plot corresponding spike waveform
-       meanWf = mean(spikes(:,:,unitNum(nc)),1); %-mean(mean(spikes(:,:,unitNum(nc)),1));
-       figure();
-       plot(-40:40,meanWf,  'LineWidth',2,'Color',[40/255 40/255 40/255] )
-       hold on 
-       wf_ci_low = meanWf - 1.96*std(spikes(:,:,unitNum(nc)),0,1, 'omitnan')./sqrt(length(find(~isnan(spikes(:,1,unitNum(nc))))));
-       wf_ci_high =  meanWf + 1.96*std(spikes(:,:,unitNum(nc)),0,1, 'omitnan')./sqrt(length(find(~isnan(spikes(:,1,unitNum(nc))))));
-       h2= ciplot(wf_ci_low, wf_ci_high,[-40:40],col(nc,:),0.5);
-       set(h2, 'edgecolor','none') 
-            
-       set(gcf,'position',get(gcf,'position').*[1 1 1.15 1])
-       set(gca,'box','off')
-      
-       
-      ax1 = gca; 
-      
-      ax1.YAxis.Visible = 'off';   
-      ax1.XAxis.Visible = 'off';
-       
-      
-      filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\',strcat(sprintf('example_%s_unit_spike_wf_95CI', cellclass(nc))));
-       saveas(gcf, strcat(filename, '.svg')); 
-      
+    figure();
+    
+    for pn = 1:4
+        h =subplot(1,4,pn);
+        
+        plot(-125:125, meanSigSu(250*(pn-1)+1:250*pn+1),'LineWidth',2, 'Color',[40/255 40/255 40/255] )
+        hold on
+        h1= ciplot(sig_ci_low(250*(pn-1)+1:250*pn+1), sig_ci_high(250*(pn-1)+1:250*pn+1),[-125:125],col(nc,:),0.5);
+        set(h1, 'edgecolor','none')
+        set(h,'position',get(h,'position').*[1 1 1.15 1])
+        
+        ylim(ylims(nc,:))
+        
+        
+        % K norm ylim([-0.02 1.1])
+        xlim([-125 125])
+        set(gca, 'linewidth',2)
+        set(gca,'box','off')
+        %set(gca, 'linewidth',2)
+        %hold on
+        %plot([0 0], ylim,'k')
+        if pn >1
+            ax1 = gca;
+            ax1.YAxis.Visible = 'off';
+        end
+        
+    end
+    
+    %brown [165/255 42/255 42/255]
+    currfig = gcf;
+    
+    title(currfig.Children(end),{sprintf('%s single unit mean responses', cellclass(nc))}, 'Interpreter', 'none', 'FontSize', 20)
+    
+    % xlabel('\fontsize{14}Resolution (ms)')
+    ylh = ylabel({'\fontsize{14}Spike Rate (spikes/s)'});
+    
+    set(gcf,'Units','inches')
+    set(gcf,'position',[1 1 15 11])
+    
+    
+    filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\',strcat(sprintf('example_%s_unit_std_sigadap', cellclass(nc))));
+    saveas(gcf, strcat(filename, '.svg'));
+    %saveas(gcf, strcat(filename, '.png'));
+    
+    
+    %plot corresponding spike waveform
+    meanWf = mean(spikes(:,:,unitNum(nc)),1); %-mean(mean(spikes(:,:,unitNum(nc)),1));
+    figure();
+    plot(-40:40,meanWf,  'LineWidth',2,'Color',[40/255 40/255 40/255] )
+    hold on
+    wf_ci_low = meanWf - std(spikes(:,:,unitNum(nc)),0,1, 'omitnan'); %./sqrt(length(find(~isnan(spikes(:,1,unitNum(nc))))));
+    wf_ci_high =  meanWf + std(spikes(:,:,unitNum(nc)),0,1, 'omitnan'); %./sqrt(length(find(~isnan(spikes(:,1,unitNum(nc))))));
+    h2= ciplot(wf_ci_low, wf_ci_high,[-40:40],col(nc,:),0.5);
+    set(h2, 'edgecolor','none')
+    
+    set(gcf,'position',get(gcf,'position').*[1 1 1.15 1])
+    set(gca,'box','off')
+    
+    
+    ax1 = gca;
+    
+    ax1.YAxis.Visible = 'off';
+    ax1.XAxis.Visible = 'off';
+    
+    
+    filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\',strcat(sprintf('example_%s_unit_spike_wf_std', cellclass(nc))));
+    saveas(gcf, strcat(filename, '.svg'));
+    
 end
 
  %% Figure 4: Power plots
