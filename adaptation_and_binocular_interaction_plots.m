@@ -260,7 +260,8 @@ g(1,p).geom_jitter('width',0,'height',0.1); %Scatter plot
 g(1,p).no_legend();
 g(1,p).axe_property('xlim',[0.4 1.8],'ylim',[0.6 1.3],'YTickLabel','','YTick',''); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
 g(1,p).coord_flip();
-%Create point box plot on the right
+
+%Create point box plot below
 
 shortCondition = {'Monocular', 'Binocular'};
 meanPks = [meanpMono, meanpBino];
@@ -292,6 +293,41 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_0420
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
+
+%% %% Plot violin plot + point bar +-1.96sem plot on above for each peak
+
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
+%plot
+clear g
+figure('Position',[100 100 800 800]);
+for p =1:4
+
+%Create point box plot +violin plot
+pkLinVals = linPeakVals( strcmp(peakLabel,sprintf('Pk%d',p)));
+g(1,p)=gramm('x', condition( strcmp(peakLabel,sprintf('Pk%d',p))), 'y',pkLinVals,'color',condition( strcmp(peakLabel,sprintf('Pk%d',p))));
+g(1,p).stat_violin('fill','transparent' );
+g(1,p).stat_boxplot('width',0.15 );
+g(1,p).axe_property('ylim',[0.4 1.75],'XTickLabel','','XTick',''); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,p).no_legend();
+
+end
+%Set global axe properties
+g.axe_property('TickDir','out','XGrid','on','GridColor',[0.5 0.5 0.5]);
+g.set_title('Population peak responses in the binocular and monocular conditions');
+g.set_color_options('map',[cmap(3,:);cmaps(1).map(4,:)]);
+g.draw();
+%set(findobj(gcf, 'type','axes'), 'Visible','off')
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\violin_mono_bino_allcells_peaks');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
 
 %% Stats on variance
 peaks = nan(2,4,length(filenames));
@@ -371,7 +407,7 @@ saveas(gcf,strcat(plotdir, '.svg'));
 %2) Only plot significantly modulated units that show adaptation in the
 %monocular condition
 %% Box plot with jitter of significant binocularly modulated units that show suppressive adaptation
-%select data of those specific units  using the table created in "lmer_peaks_binocular_adaptation.R"
+%select data of those specific units  using the table created in "lmer_peaks_binocular_adaptation.R" script
 
 newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
 filename = 'summary_table_pvalues_normmono_meanpks_mono_bino';
