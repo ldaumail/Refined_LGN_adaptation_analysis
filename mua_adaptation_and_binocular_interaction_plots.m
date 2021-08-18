@@ -318,3 +318,179 @@ for p =1:4
     ttestRes(p) = ttest(meansMono,meansBino);
     
 end
+
+%% Adaptation index
+
+%1) Get mean peak response values for all units in both mono vs bino
+%conditions ===> cf binocular adaptation analysis
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\';
+channelfilename = [newdatadir 'all_orig_bs_zscore_trials_05122021_mono_bino']; 
+peak_aligned_trials = load(channelfilename);
+filenames = fieldnames(peak_aligned_trials.peak_aligned_trials);
+
+
+%get peak values
+bins = [1,6];
+
+meanPks = nan(4, 2,length(filenames) );
+for i = 1: length(filenames)
+    filename = filenames{i};
+    if length(fieldnames(peak_aligned_trials.peak_aligned_trials.(filename).origin)) == 2
+        for b = 1:2
+            binN = sprintf('bin%d',bins(b));
+             %compute mean peak responses
+             for p = 1:4
+                 pkN = sprintf('pk%d',p);
+                 meanPks(p,b,i) = mean(max(peak_aligned_trials.peak_aligned_trials.(filename).origin.(binN).(pkN),[],1));
+             end
+     %normalize in relation to all mean peaks in the monocular condition
+         %norm_aligned_resps(:,:,b,i) = (mean_peaks(:,:,b,i) - min(mean_peaks(:,1,1,i),[], 'all'))./(max(mean_peaks(:,1,1,i), [], 'all') - min(mean_peaks(:,1,1,i),[], 'all'));
+         %norm_aligned_resps(:,:,b,i) = (mean_peaks(:,:,b,i))./(max(mean_peaks(:,1,1,i), [], 'all'));
+        end
+    end
+end
+
+%meanPks = load([newdatadir 'all_unfiltered_data_peaks_05022021']); %peak values obtained with BinocularAdaptationTrialSelection.m
+cellclassDir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\selected_filenames_05132021_2.xlsx';
+opts = detectImportOptions(cellclassDir);
+%preview(cellclassDir,opts)
+cellclassFile = readmatrix(cellclassDir,opts);
+cellclass = cellclassFile(:,5); %get the cell classes
+NdeAvgCont = [0,0.85];
+class ={'M','P','K'};
+bins =[1,6];
+
+mean_pk1 = nan(length(fieldnames( peak_aligned_trials.peak_aligned_trials)),length(NdeAvgCont),length(class));
+mean_pk4 = nan(length(fieldnames( peak_aligned_trials.peak_aligned_trials)),length(NdeAvgCont),length(class));
+
+ for c = 1:length(class)   
+    for i =1:length(fieldnames( peak_aligned_trials.peak_aligned_trials))
+        filename = filenames{i};
+        if strcmp(cellclass{i}, class{c})
+            for bin = 1:length(NdeAvgCont)
+                binNb = sprintf('bin%d',bins(bin));
+                if nnz(strcmp(fieldnames(peak_aligned_trials.peak_aligned_trials.(filename).origin),binNb))
+                    
+                    mean_pk1(i,bin,c) = meanPks(1,bin,i);
+                    mean_pk4(i,bin,c) = meanPks(4,bin,i);
+                end
+            end
+        end
+    end
+    
+    %meanAllPk1 = nanmean(mean_pk1,1);
+    %meanAllPk4 = nanmean(mean_pk4,1);
+    %idxs(c) = ~isnan(meanAllPk1(:,c));
+ end
+ 
+ %2) Compute index
+ adapt_idx = nan(length(fieldnames( peak_aligned_trials.peak_aligned_trials)),length(NdeAvgCont),length(class));
+ for i = 1:length(mean_pk1(1,1,:))
+    for j = 1:length(mean_pk1(1,:,1))
+        for k = 1:length(mean_pk1(:,1,1))
+            adapt_idx(k,j,i) = 2*(mean_pk1(k,j,i) - mean_pk4(k,j,i))/(mean_pk1(k,j,i) + mean_pk4(k,j,i));
+        end
+    end
+ end
+
+ %set data in appropriate structure for gramm
+ 
+ unit =  nan(2*length(adapt_idx(:,1,1)),1);
+condition = cell(2*length(adapt_idx(:,1,1)),1);
+cellclass = cell(2*length(adapt_idx(:,1,1)),1);
+index =  nan(2*length(adapt_idx(:,1,1)),1);
+
+for k = 1:length(adapt_idx(:,1,1))
+    for j = 1:length(adapt_idx(1,:,1))
+        for i = 1:length(adapt_idx(1,1,:))
+            
+            if ~isnan(adapt_idx(k,j,i))
+                
+                if j == 1
+                    unit(k) = k;
+                    condition{k} = 'Monocular';
+                    index(k) = adapt_idx(k,j,i);
+                    if i == 1
+                        cellclass{k} = class{1};
+                    else
+                        if i == 2
+                            cellclass{k} = class{2};
+                        else
+                            if i == 3
+                                cellclass{k} = class{3};
+                            end
+                        end
+                    end
+                    %{
+                    if isempty(condition{k})
+                        condition{k} = char();
+                        cellclass{k} = char();
+                    end
+                    %}
+                else
+                    if j == 2
+                        unit(length(adapt_idx(:,1,1))+k) = k;
+                        condition{length(adapt_idx(:,1,1))+k} = 'Binocular';
+                        index(length(adapt_idx(:,1,1))+k) = adapt_idx(k,j,i);
+                        if i == 1
+                            cellclass{length(adapt_idx(:,1,1))+ k} = class{1};
+                        else
+                            if i == 2
+                                cellclass{length(adapt_idx(:,1,1))+ k} = class{2};
+                            else
+                                if i == 3
+                                    cellclass{length(adapt_idx(:,1,1))+ k} = class{3};
+                                end
+                            end
+                        end
+                        %{
+                        if isempty(condition{length(adapt_idx(:,1,1))+ k})
+                            condition{length(adapt_idx(:,1,1))+ k} = char();
+                            cellclass{length(adapt_idx(:,1,1))+ k} = char();
+                        end
+                        %}
+                    end
+                    
+                end
+            end
+            
+        end
+    end
+end
+
+for n = 1:length(condition)
+    if isempty(condition{n})
+        condition{n} = char();
+        cellclass{n} = char();
+        
+    end
+end
+ 
+ %plot
+ nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
+clear g
+g(1,1)=gramm('x',index,'y',unit,'color',condition);
+
+g(1,1).stat_bin('nbins',25,'geom','overlaid_bar');
+g(1,1).stat_density();
+%g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+g(1,1).set_color_options('map',[cmap(3,:);cmaps(1).map(4,:)]); 
+g(1,1).set_names('x','Adaptation Index','color','Legend','row','','y','Count');
+g(1,1).set_title({'Adaptation index distribution across all cells in the monocular and binocular conditions'});
+
+
+f = figure('Position',[100 100 800 1000]);
+%g.set_title({'Adaptation index distribution across all cells in the monocular and binocular conditions'});
+g.draw();
+set(f,'position',get(f,'position').*[1 1 1.15 1])
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\plots\mua_adaptation_index_hist_mono_bino');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+ 
