@@ -648,7 +648,7 @@ peakLab = unique(peakLabel); % Based on data
         %linear regression
         coeffs1 = polyfit(x1(isfinite(x1) & isfinite(y1)),y1(isfinite(x1) & isfinite(y1)),1);
         f1 = polyval(coeffs1,x1);
-        plot(x1, y1,'o',x1, f1,'-','Color',cmaps(1).map(4,:),'MarkerSize',2, 'MarkerFaceColor',cmaps(1).map(4,:),'linewidth',2)
+        plot(x1, y1,'o',x1, f1,'-','Color',cmap(3,:),'MarkerSize',2, 'MarkerFaceColor',cmap(3,:),'linewidth',2)
         xlim([0 10])
         ylim([0 4.5])
         % Monocular Peak Data selection
@@ -660,7 +660,7 @@ peakLab = unique(peakLabel); % Based on data
         % Keep the same color for the statistics
         coeffs = polyfit(x(isfinite(x) & isfinite(y)),y(isfinite(x) & isfinite(y)),1);
         f = polyval(coeffs,x);
-        plot(x, y,'o',x, f,'-','Color',cmap(3,:),'MarkerSize',2, 'MarkerFaceColor',cmap(3,:),'linewidth',2)
+        plot(x, y,'o',x, f,'-','Color',cmaps(1).map(4,:),'MarkerSize',2, 'MarkerFaceColor',cmaps(1).map(4,:),'linewidth',2)
         xlim([0 10])
         ylim([0 4.5])
         hold on
