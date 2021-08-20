@@ -22,9 +22,9 @@ up_dist = nan(1, length(channum),4);
 max_low_dist = nan(1, length(channum));
 all_locsdSUA_filtered = nan(1,length(channum),4);
 
-%for i = channum  
-%    if ~isempty(data_file.clean_origin_data(i).unit)
-    i =22; 
+for i = channum  
+    if ~isempty(data_file.clean_origin_data(i).unit)
+   i =22;
     trialidx = 1:length(data_file.clean_origin_data(i).unit(1,:));
     origin_dSUA = data_file.clean_origin_data(i).unit(401:1900,:)%-mean(data_file.clean_origin_data(i).unit(401:600,:),1);
     filtered_dSUA = filt_data_file.clean_high_SUA(i).namelist;
@@ -61,7 +61,8 @@ all_locsdSUA_filtered = nan(1,length(channum),4);
     %get the aligned data if it exists for the unit
     suas_trials(i).aligned= fp_locked_trials;
     max_low_dist(i) = max_low_dist_unit;
-     
+    end
+end
     
 %% Plot unaligned individual trials of example single unit 
    
@@ -83,7 +84,7 @@ stdev = std(origin_dSUA,[],2);
 h =figure();
 plot(xabs, mean_unit, 'linewidth', 1)
 hold on
-h1= ciplot( mean_unit+ 1.96*stdev/sqrt(22), mean_unit-1.96*stdev/sqrt(22),[-200:1299],[40/255 40/255 40/255],0.1);
+h1= ciplot( mean_unit+ stdev, mean_unit-stdev,[-200:1299],[40/255 40/255 40/255],0.1);
 set(h1, 'edgecolor','none')
 set(h,'position',get(h,'position').*[1 1 1.15 1])
 set(gca, 'Box', 'off')
@@ -91,7 +92,7 @@ set(gca, 'linewidth', 2)
 xlim([-50 1100])
 ylim([0 180])
 
-filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\unaligned_trials_unit22');
+filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\unaligned_trials_unit22_std');
 saveas(gcf, strcat(filename, '.png'));
 saveas(gcf, strcat(filename, '.svg')); 
 
@@ -159,10 +160,10 @@ saveas(gcf, strcat(filename, '.svg'));
          h = subplot(1,4,pn);
          plot(-125:124, mean_unit(:,pn),'linewidth', 1);
          hold on
-         h1= ciplot( mean_unit(:,pn)+ 1.96*stdev(:,pn)/sqrt(22), mean_unit(:,pn)-1.96*stdev(:,pn)/sqrt(22),[-125:124],[40/255 40/255 40/255],0.1);
+         h1= ciplot( mean_unit(:,pn)+ stdev(:,pn), mean_unit(:,pn)-stdev(:,pn),[-125:124],[40/255 40/255 40/255],0.1);
          set(h1, 'edgecolor','none')
          set(h,'position',get(h,'position').*[1 1 1.15 1])
-         ylim([0 190])
+         ylim([0 225])
          xlim([-125 125])
          set(gca,'box','off')
          set(gca, 'linewidth',2)
@@ -178,7 +179,7 @@ saveas(gcf, strcat(filename, '.svg'));
      xlabel('Resolution (ms)')
      set(gcf,'Units','inches')
      %set(gcf,'position',[1 1 8.5 11])
-     filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\aligned_mean_unit22');
+     filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\aligned_mean_unit1_std');
      % saveas(gcf, strcat(filename, '.png'));
      saveas(gcf, strcat(filename, '.svg'));
  end
