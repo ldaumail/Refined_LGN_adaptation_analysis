@@ -1,4 +1,5 @@
 %This script was developped to analyze the noise present in single units data
+%last edited by Loic Daumail on 08-18-2021
 
 %get filenames where the data is located
 selectUnitsFilenames =load('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\s_potentials_analysis\analysis\single_units_ns6_metadata.mat');
@@ -27,7 +28,7 @@ NoFiltMultiContSUA = load(strcat(datadir,'NoFiltMultiContSUA_05022021'));
 NoFiltMultiContSUA = NoFiltMultiContSUA.NoFiltMultiContSUA;
 %}
 
-
+%%Prepare binary data (no need to repeat that if already done once)
 %Load peakLocs, NoFiltMultiContSUA, binSpkTrials
 datadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
 peakLocs = load(strcat(datadir, 'peak_locs_data_06022021'));
@@ -44,6 +45,7 @@ save(strcat(allfilename, '.mat'), 'peak_aligned_trials');
 allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\binary_peak_winds30_06022021';
 save(strcat(allfilename, '.mat'), 'wind_peak_vals');
 
+%% compute Fano Factor and start plotting data
 %load the binary peak values data
 datadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
 wind_peak_vals = load(strcat(datadir, 'binary_peak_winds30_06022021'));
@@ -486,8 +488,6 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_0420
 
 
 
-
-
 %% Variance point plot 
 %{
 %Load peakLocs, NoFiltMultiContSUA, binSpkTrials
@@ -590,6 +590,100 @@ g(1,1).axe_property('ylim',[0 7]); %We have to set y scale manually, as the auto
 figure('Position',[100 100 800 450]);
 g.draw();
 plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('all_sliding_window_mean_variance_rsstimonset_jitter_point_ci_no_outlier'));
+ saveas(gcf,strcat(plotdir, '.png'));
+ saveas(gcf,strcat(plotdir, '.svg'));
+
+
+%% Monocular vs Binocular condition comparison
+%% Plot linear regressions of mean versus trial-to-trial variance comparing peaks in the monocular vs binocular condition
+%merge mono and bino since they are not different
+
+%all_fanofs = squeeze(nanmean(all_fanofs(:,:,:,:,:),3)); %computing the mean of between mono and binocular to reduce error size
+%mvar_vals = squeeze(nanmean(var_vals,2));
+%mpeak_vals = squeeze(nanmean(peak_vals,2));
+
+outliers = nan(size(var_vals));
+for b =1:2
+    for p = 1:size(var_vals,1)
+        for w =1:size(var_vals,3)
+            outliers(p,b,w,:) = ~isoutlier(var_vals(p,b,w,:));
+        end
+    end
+end
+select_var = var_vals.*outliers; %zero out outliers
+select_var(select_var == 0) = NaN; %replace zeros by nans
+% use variables below in plot code above to replot them
+svar_vals = select_var;
+sfanofs = svar_vals./peak_vals;
+%window size = 50ms
+
+peakLabel = repmat({'Baseline State';'Pk1';'Pk2';'Pk3';'Pk4'}, size(svar_vals,4),2);
+linVars = reshape(squeeze(svar_vals(:,:,3,:)), size(svar_vals,1)*size(svar_vals,4), 2); 
+linMeans = reshape(peak_vals(:,:,3,:), size(peak_vals,1)*size(peak_vals,4), 2);
+
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
+figure('Position',[100 100 800 400],'Color',[1 1 1]);
+% Define groups
+peakLab = unique(peakLabel); % Based on data
+
+
+    % Loop over groups
+    for p = 2:length(peakLab) % External loop on the axes
+        % Axes creation
+        ax = subplot(1,length(peakLab)-1,p-1);
+        hold on
+        % Binocular Data selection
+        sel = strcmp(peakLabel(:,2),peakLab{p}) &...
+            ~isnan(linVars(:,2));
+        x1 = linMeans(sel,2);
+        y1 = linVars(sel,2);
+        % Plotting of Bino data
+        %linear regression
+        coeffs1 = polyfit(x1(isfinite(x1) & isfinite(y1)),y1(isfinite(x1) & isfinite(y1)),1);
+        f1 = polyval(coeffs1,x1);
+        plot(x1, y1,'o',x1, f1,'-','Color',cmaps(1).map(4,:),'MarkerSize',2, 'MarkerFaceColor',cmaps(1).map(4,:),'linewidth',2)
+        xlim([0 10])
+        ylim([0 4.5])
+        % Monocular Peak Data selection
+        sel = strcmp(peakLabel(:,1),peakLab{p}) &...
+            ~isnan(linVars(:,1));
+        x = linMeans(sel,1);
+        y = linVars(sel,1);
+        % Plotting of raw data
+        % Keep the same color for the statistics
+        coeffs = polyfit(x(isfinite(x) & isfinite(y)),y(isfinite(x) & isfinite(y)),1);
+        f = polyval(coeffs,x);
+        plot(x, y,'o',x, f,'-','Color',cmap(3,:),'MarkerSize',2, 'MarkerFaceColor',cmap(3,:),'linewidth',2)
+        xlim([0 10])
+        ylim([0 4.5])
+        hold on
+        %format short
+        %text(max(x)/12,max(y)/2, sprintf('y = %.2f + %.2f*x', round(coeffs(2),2), round(coeffs(1),2)));
+        %ax.ColorOrderIndex = ax.ColorOrderIndex - 1;
+        set(gca, 'linewidth',2)
+        set(gca,'box','off')
+        % Statistics (linear fit and plotting)
+        %{
+        b = [ones(sum(sel),1) linMeans(sel)] \ ...
+			linVars(sel);
+        x_fit = [min(linMeans(sel)) ...
+			max(linVars(sel))];
+        plot(x_fit, x_fit * b(2) + b(1),'LineWidth',1.5);
+        %}
+        % Axes legends
+        title(['Label: ' peakLab{p}]);
+        xlabel('Mean spike count');
+        ylabel('Spike count variance');
+    end
+
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('scatter_linreg_50ms_window_mean_vs_variance_mono_bino_excludeVarOutliers'));
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
 
