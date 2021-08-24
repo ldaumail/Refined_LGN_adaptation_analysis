@@ -293,6 +293,60 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_0420
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
+%%
+%% %% Plot jitter scatter plot + point bar +-1.96sem plot on above for each peak combining both conditions
+
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('Blues', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
+%plot
+clear g
+figure('Position',[100 100 800 800]);
+
+%Create a scatter plot
+%combine mono and bino data
+pksMono = linPeakVals( strcmp(condition, 'Monocular'));
+pksBino = linPeakVals( strcmp(condition, 'Binocular'));
+meanpks = nanmean([pksMono,pksBino],2);
+g(1,1)=gramm('x',categorical(peakLabel(1:length(peakLabel)/2)),'y',meanpks);
+g(1,1).geom_jitter('width',0.3,'height',0.2);
+g(1,1).set_names('color','Peak','y','Spiking activity (Normalized)','x','Peak #');
+g(1,1).no_legend();
+g(1,1).axe_property('ylim',[0.4 1.8]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,1).set_color_options('map',cmap(4,:));
+
+%Create point box plot below
+allpksMono = linPeakVals(strcmp(condition, 'Monocular'));
+allpksBino = linPeakVals(strcmp(condition, 'Binocular'));
+meanUnitPks = nanmean([allpksMono,allpksBino],2);
+meanPks = nan(4,1);
+semPks = nan(4,1);
+for p =1:4
+meanPks(p) = nanmean(meanUnitPks( strcmp(peakLabel(1:length(peakLabel)/2),sprintf('Pk%d',p))));
+semPks(p) = std(meanUnitPks(strcmp(peakLabel(1:length(peakLabel)/2),sprintf('Pk%d',p))), 'omitnan')/sqrt(length(meanUnitPks(strcmp(peakLabel(1:length(peakLabel)/2),sprintf('Pk%d',p)))));
+end
+ci_low = meanPks - 1.96*semPks;
+ci_high = meanPks + 1.96*semPks;
+shortPks = {'Pk1','Pk2','Pk3','Pk4'};
+g(1,1).update('x',categorical(shortPks), 'y',meanPks,...
+    'ymin',ci_low,'ymax',ci_high);
+g(1,1).set_color_options('map',cmaps(1).map(4,:));
+g(1,1).geom_point('dodge',0.2);
+g(1,1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+%Set global axe properties
+%g.axe_property('TickDir','out','XGrid','on','GridColor',[0.5 0.5 0.5]);
+g.set_title('Population peak responses');
+g.draw();
+%set(findobj(gcf, 'type','axes'), 'Visible','off')
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\jitter_boxpointbar_conditions_fused_allcells_peaks_95ci');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
 
 %% %% Plot violin plot + point bar +-1.96sem plot on above for each peak
 
@@ -468,13 +522,10 @@ clear g
 figure('Position',[100 100 1000 600]);
 g(1,1)=gramm('x',stackT.PeakResp_Indicator ,'y',str2double(stackT.PeakResp),'color',stackT.Condition);
 %g(1,1)=gramm('x',str2double(stackSigBinoT.PeakResp),'color',stackSigBinoT.Condition);
-
 g(1,1).set_names('y','Spiking activity (Normalized)', 'column', '');
 %g(1,1).facet_grid([],grp2idx(stackSigBinoT.PeakResp_Indicator)); %Provide facets
-
 g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
 %g(1,1).set_color_options('chroma',0,'lightness',75); %We make it light grey
-
 g(1,1).geom_jitter('width',0,'height',0); %Scatter plot
 g(1,1).stat_boxplot();
 %g(1,1).stat_density();
@@ -539,7 +590,7 @@ peakLabel = repmat([repmat({'Pk1'}, length(peaks(1,1,:)),1);repmat({'Pk2'}, leng
 for p =1:4
     meansMono =linPeakVals(strcmp(condition, 'Monocular')& strcmp(peakLabel,sprintf('Pk%d',p)));
     meansBino =linPeakVals(strcmp(condition, 'Binocular')& strcmp(peakLabel,sprintf('Pk%d',p))); 
-    ttestRes(p) = ttest(meansMono,meansBino);
+    [ttestRes(p), pval(p)] = ttest(meansMono,meansBino);
     WtestRes(p) = signrank(meansMono,meansBino);
 end
 
