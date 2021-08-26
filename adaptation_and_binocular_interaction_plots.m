@@ -294,7 +294,7 @@ saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
 %%
-%% %% Plot jitter scatter plot + point bar +-1.96sem plot on above for each peak combining both conditions
+%% %% Plot jitter scatter plot + point bar +-1.96sem plot overlay for each peak combining both conditions
 
 %colors
 nlines = 7;
@@ -321,7 +321,7 @@ g(1,1).no_legend();
 g(1,1).axe_property('ylim',[0.4 1.8]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
 g(1,1).set_color_options('map',cmap(4,:));
 
-%Create point box plot below
+%Create point box plot overlay
 allpksMono = linPeakVals(strcmp(condition, 'Monocular'));
 allpksBino = linPeakVals(strcmp(condition, 'Binocular'));
 meanUnitPks = nanmean([allpksMono,allpksBino],2);
