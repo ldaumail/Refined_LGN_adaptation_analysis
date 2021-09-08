@@ -423,15 +423,106 @@ T = readtable(strcat(newdatadir, filename, '.csv'));
 %T(ismember(T.Wpvalue,'NA'),:)=[]; %remove rows with NAs
 Tmono = T(ismember(T.Condition, 'Monocular'),:);
 suppressed =  ismember(char(Tmono.Pk1Pk4supress), 'True');
-goodrows = (Tmono.Pk1Pk4pvalue <0.05) & suppressed(:,1);
+goodrows = (Tmono.Pk1Pk4pvalue <0.05) & suppressed(:,1); %Gert rows of suppressed (significant) single units
 Tsuppress = Tmono(goodrows,:);
 
-idx = str2num(char(Tsuppress.Var1));
+idx = str2num(char(Tsuppress.Var1)); 
 
 %plot fano factor distribution of suppressed units
+w =3; %for window size = 50 ms
+halflen = round(len./2); %middle sliding value for each window size
+adapt_dat = squeeze(all_fanofs(halflen(w),:,w,idx))'; %fano factor values (we didn't exclude outliers here, we want all adapting neurons FF values%data dimensions dim 1 = units, dim 2 = peaks, dim 3 = window  
+%95%CI
+meanFfs = nanmean(adapt_dat);
+stdFfs = std(adapt_dat,[],'omitnan');
+ci_high = meanFfs + 1.96*stdFfs/sqrt(length(adapt_dat));
+ci_low = meanFfs - 1.96*stdFfs/sqrt(length(adapt_dat));;
+%prepare data for jitter
+peakLabel = [repmat({'Baseline State'}, size(adapt_dat,1),1);repmat({'Pk1'}, size(adapt_dat,1),1);repmat({'Pk2'}, size(adapt_dat,1),1);repmat({'Pk3'}, size(adapt_dat,1),1);repmat({'Pk4'}, size(adapt_dat,1),1)];
+linFfs = reshape(adapt_dat, size(adapt_dat,1)*size(adapt_dat,2), 1); 
 
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('Blues', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
 
-%% Plot linear regressions of mean versus trial-to-trial variance comparing peaks with resting state
+%points and error bars plot
+clear g
+
+%jitter
+
+g(1,1) = gramm('x',categorical(peakLabel),'y',linFfs);
+g(1,1).geom_jitter('width',0.2,'height',0.2);
+g(1,1).set_names('y','Mean Fano Factor','x','Peak #');
+g(1,1).axe_property('ylim',[0 1.5]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+g(1,1).set_color_options('map',cmap(4,:));
+g(1,1).set_title('Mean 50 ms Sliding Window (10 ms steps) Fano Factor');
+
+%point bar plot
+
+g(1,1).update('x',categorical(unique(peakLabel)),'y',meanFfs,...
+    'ymin',ci_low,'ymax',ci_high);
+g(1,1).set_color_options('map',cmaps(1).map(4,:));
+g(1,1).geom_point('dodge',0.2);
+g(1,1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+g(1,1).axe_property('ylim',[0 1.5]); %We have to set y scale manually, as the automatic scaling from the first plot was forgotten
+
+figure('Position',[100 100 800 450]);
+g.draw();
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('adapt_sliding_window50ms_mean_fanofactor_rsstimonset_jitter_point_ci'));
+ saveas(gcf,strcat(plotdir, '.png'));
+ saveas(gcf,strcat(plotdir, '.svg'));
+ 
+ %perform stats on adapting single units
+ %(2) Use Shapiro-Wilk test to test for normality on each peak
+labs = unique(peakLabel);
+alpha = 0.05;
+for i = 1:length(unique(peakLabel))
+    pkN = labs{i};
+    x = linFfs(strcmp(peakLabel, pkN));
+[H(i), pValue(i), W(i)] = swtest(x, alpha);
+end
+
+%(3) Perform pairwise comparisons corrected for FWER = 0.05
+%since distributions aren't all normally distributed, lets use Wilcoxon
+%signed rank tests
+%here we want to perform 7 two-sided tests, with Holm's method for
+%correction for multiple comparisons
+
+%(1) Prestim vs Pk1
+x = adapt_dat(:,1);
+y = adapt_dat(:,2);
+p1 = signrank(x,y);
+%(2) Prestim vs Pk4
+x = adapt_dat(:,1);
+y = adapt_dat(:,5);
+p2 = signrank(x,y);
+%(3) Pk1 vs Pk2
+x = adapt_dat(:,2);
+y = adapt_dat(:,3);
+p3 = signrank(x,y);
+%(4) Pk1 vs Pk3
+x = adapt_dat(:,2);
+y = adapt_dat(:,4);
+p4 = signrank(x,y);
+%(5) Pk1 vs Pk4
+x = adapt_dat(:,2);
+y = adapt_dat(:,5);
+p5 = signrank(x,y);
+%(6) Pk2 vs Pk3
+x = adapt_dat(:,3);
+y = adapt_dat(:,4);
+p6 = signrank(x,y);
+%(7) Pk3 vs Pk4
+x = adapt_dat(:,4);
+y = adapt_dat(:,5);
+p7 = signrank(x,y);
+
+%% Plot population linear regressions of mean versus trial-to-trial variance comparing peaks with resting state
 %window size = 50ms
 peakLabel = repmat({'Baseline State';'Pk1';'Pk2';'Pk3';'Pk4'}, size(mvar_vals,3),1);
 linVars = reshape(squeeze(mvar_vals(:,3,:)), size(mvar_vals,1)*size(mvar_vals,3), 1); 
@@ -500,9 +591,80 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_0420
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
 
+%% Plot linear regressions of mean versus trial-to-trial variance comparing peaks with resting state 
+%for ADAPTING neurons
+%window size = 50ms
+adapt_vars = squeeze(mvar_vals(:,w,idx))'; 
+adapt_mpeaks = squeeze(mpeak_vals(:,w,idx))'; 
+peakLabel = repmat({'Baseline State';'Pk1';'Pk2';'Pk3';'Pk4'}, length(idx),1);
+linVars = reshape(adapt_vars, size(adapt_vars,1)*size(adapt_vars,2), 1); 
+linMeans = reshape(adapt_mpeaks, size(adapt_mpeaks,1)*size(adapt_mpeaks,2), 1);
+
+nlines = 7;
+cmap =flip(cbrewer2('Blues', nlines));
+colormap(cmap);
 
 
-%% Variance point plot 
+figure('Position',[100 100 800 400],'Color',[1 1 1]);
+% Define groups
+peakLab = unique(peakLabel); % Based on data
+
+% Loop over groups
+for p = 2:length(peakLab) % External loop on the axes
+    
+    % Axes creation
+    ax = subplot(1,length(peakLab)-1,p-1);
+    hold on
+    % Pre-stimulation Data selection
+    sel = strcmp(peakLabel,peakLab{1}) &...
+        ~isnan(linVars);
+    x1 = linMeans(sel);
+    y1 = linVars(sel);
+    % Plotting of raw data
+    %linear regression
+    coeffs1 = polyfit(x1(isfinite(x1) & isfinite(y1)),y1(isfinite(x1) & isfinite(y1)),1);
+    f1 = polyval(coeffs1,x1);
+    plot(x1, y1,'o',x1, f1,'-','Color',[160/255 160/255 160/255],'MarkerSize',2, 'MarkerFaceColor',[160/255 160/255 160/255],'linewidth',2)
+    xlim([0 10])
+    ylim([0 6])
+    % Peak Data selection
+    sel = strcmp(peakLabel,peakLab{p}) &...
+        ~isnan(linVars);
+    x = linMeans(sel);
+    y = linVars(sel);
+    % Plotting of raw data
+    % Keep the same color for the statistics
+    coeffs = polyfit(x(isfinite(x) & isfinite(y)),y(isfinite(x) & isfinite(y)),1);
+    f = polyval(coeffs,x);
+    plot(x, y,'o',x, f,'-','Color',cmap(4,:),'MarkerSize',2, 'MarkerFaceColor',cmap(4,:),'linewidth',2)
+    xlim([0 10])
+    ylim([0 6])
+    hold on
+    %format short
+    %text(max(x)/12,max(y)/2, sprintf('y = %.2f + %.2f*x', round(coeffs(2),2), round(coeffs(1),2)));
+    %ax.ColorOrderIndex = ax.ColorOrderIndex - 1;
+    set(gca, 'linewidth',2)
+    set(gca,'box','off')
+    % Statistics (linear fit and plotting)
+    %{
+        b = [ones(sum(sel),1) linMeans(sel)] \ ...
+			linVars(sel);
+        x_fit = [min(linMeans(sel)) ...
+			max(linVars(sel))];
+        plot(x_fit, x_fit * b(2) + b(1),'LineWidth',1.5);
+    %}
+    % Axes legends
+    title(['Label: ' peakLab{p}]);
+    xlabel('Mean spike count');
+    ylabel('Spike count variance');
+end
+
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('scatter_linreg_50ms_window_mean_vs_variance_rsstimonset_excludeVarOutliers'));
+ saveas(gcf,strcat(plotdir, '.png'));
+ saveas(gcf,strcat(plotdir, '.svg'));
+
+
+%% Variance (population) point plot 
 %{
 %Load peakLocs, NoFiltMultiContSUA, binSpkTrials
 datadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
