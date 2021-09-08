@@ -1,4 +1,4 @@
-%This script was developped to analyze the noise present in single units data
+%This script was developped to analyze the variability quenching present in single units data
 %last edited by Loic Daumail on 08-18-2021
 
 %get filenames where the data is located
@@ -415,6 +415,20 @@ p6 = signrank(x,y);
 x = stat_dat(:,4);
 y = stat_dat(:,5);
 p7 = signrank(x,y);
+
+%% Perform similar analysis on significantly adapting units
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
+filename = 'summary_table_pvalues_normmono_meanpks_mono_bino';
+T = readtable(strcat(newdatadir, filename, '.csv'));
+%T(ismember(T.Wpvalue,'NA'),:)=[]; %remove rows with NAs
+Tmono = T(ismember(T.Condition, 'Monocular'),:);
+suppressed =  ismember(char(Tmono.Pk1Pk4supress), 'True');
+goodrows = (Tmono.Pk1Pk4pvalue <0.05) & suppressed(:,1);
+Tsuppress = Tmono(goodrows,:);
+
+idx = str2num(char(Tsuppress.Var1));
+
+%plot fano factor distribution of suppressed units
 
 
 %% Plot linear regressions of mean versus trial-to-trial variance comparing peaks with resting state
