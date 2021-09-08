@@ -591,6 +591,51 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_0420
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
 
+ %% Test significance of slope relative to 0
+ peakLabel = repmat({'Baseline State';'Pk1';'Pk2';'Pk3';'Pk4'}, size(mvar_vals,3),1);
+linVars = reshape(squeeze(mvar_vals(:,3,:)), size(mvar_vals,1)*size(mvar_vals,3), 1); 
+linMeans = reshape(mpeak_vals(:,3,:), size(mpeak_vals,1)*size(mpeak_vals,3), 1);
+peakLab = unique(peakLabel); % Based on data
+
+linPvalue = zeros(5,1);
+Rsquared = zeros(5,1);
+slope = zeros(5,1);
+% Loop over groups
+for p = 2:length(peakLab) % External loop on the axes
+
+    % Pre-stimulation Data selection
+    sel = strcmp(peakLabel,peakLab{1}) &...
+        ~isnan(linVars);
+    x1 = linMeans(sel);
+    y1 = linVars(sel);
+    linreg = fitlm(x1,y1);
+    [linPvalue(1,1),F] = coefTest(linreg);
+    Rsquared(1,1) = linreg.Rsquared.Ordinary;
+    coeffs1 = polyfit(x1(isfinite(x1) & isfinite(y1)),y1(isfinite(x1) & isfinite(y1)),1);
+    slope(1,1) = coeffs1(1);
+    % Plotting of raw data
+    %linear regression
+    
+    %f1 = polyval(coeffs1,x1);
+    %plot(x1, y1,'o',x1, f1,'-','Color',[160/255 160/255 160/255],'MarkerSize',2, 'MarkerFaceColor',[160/255 160/255 160/255],'linewidth',2)
+
+    % Peak Data selection
+    sel = strcmp(peakLabel,peakLab{p}) &...
+        ~isnan(linVars);
+    x = linMeans(sel);
+    y = linVars(sel);
+    % Plotting of raw data
+    linreg2 = fitlm(x,y);
+    [linPvalue(p,1),F] = coefTest(linreg2);
+    Rsquared(p,1) = linreg2.Rsquared.Ordinary;
+    coeffs = polyfit(x(isfinite(x) & isfinite(y)),y(isfinite(x) & isfinite(y)),1);
+    slope(p,1) = coeffs(1);
+   % f = polyval(coeffs,x);
+   % plot(x, y,'o',x, f,'-','Color',cmap(4,:),'MarkerSize',2, 'MarkerFaceColor',cmap(4,:),'linewidth',2)
+   
+end
+
+ 
 %% Plot linear regressions of mean versus trial-to-trial variance comparing peaks with resting state 
 %for ADAPTING neurons
 %window size = 50ms
