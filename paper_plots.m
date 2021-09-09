@@ -767,7 +767,7 @@ end
  %% Figure 4: Power plots
  
 %% Plots for the method process explaination
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 channelfilename = [newdatadir 'clean_origin_sup_50']; 
 data_file = load(channelfilename);
 
@@ -837,6 +837,16 @@ title({'Mean spectrogram', sprintf('')}, 'Interpreter', 'none')
 filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\mean_powersepc_imagesc');
 saveas(gcf, strcat(filename, '.png')); 
 saveas(gcf, strcat(filename, '.svg')); 
+
+%% Plot example trial Power  only in the 5Hz range for 1 unit across trials
+figure, 
+plot(tvec,S(:,1,3))
+set(gca, 'box', 'off')      
+title({'Example trial power at 4 Hz', sprintf('')}, 'Interpreter', 'none')
+    xlabel('Time from stimulus onset(ms)')
+    ylabel('Power (spikes^2/sec^2)')
+  saveDir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\trialSelectionPlots\';
+  saveas(gcf,strcat(saveDir, 'power4hzTrial.svg'));     
 %% plot the mean power only in the 5Hz range for 1 unit across trials 
 
 figure, 

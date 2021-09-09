@@ -71,10 +71,35 @@ end
    set(gca, 'Box', 'off')
    set(gca, 'linewidth', 2)
    xlim([-50 1100])
-   filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\unaligned_trials_unit22');
+   filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\unaligned_trials_unit22');
+       saveas(gcf, strcat(filename, '.png'));
+       saveas(gcf, strcat(filename, '.svg')); 
+ 
+       
+  %% Example trial
+  figure(); 
+   plot(xabs, origin_dSUA(:,1), 'linewidth', 1)
+   set(gca, 'Box', 'off')
+   set(gca, 'linewidth', 2)
+   xlim([-50 1100])
+   filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\example_trial_unit22');
        saveas(gcf, strcat(filename, '.png'));
        saveas(gcf, strcat(filename, '.svg')); 
        
+ %% Low pass filtered example Trial
+     lpc       = 4.5; %low pass cutoff
+                lWn       = lpc/nyq;
+                [bwb,bwa] = butter(4,lWn,'low');
+                lpdSUA      = filtfilt(bwb,bwa, origin_dSUA(:,1));
+    figure(); 
+   plot(xabs, lpdSUA(:,1), 'linewidth', 1)
+   set(gca, 'Box', 'off')
+   set(gca, 'linewidth', 2)
+   xlim([-50 1100])
+   filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\plots\example_lowpass_trial_unit22');
+       saveas(gcf, strcat(filename, '.png'));
+       saveas(gcf, strcat(filename, '.svg'));         
+                
 %% Mean of unaligned trials
 
 
