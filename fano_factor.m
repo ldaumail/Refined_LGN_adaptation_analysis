@@ -522,6 +522,49 @@ x = adapt_dat(:,4);
 y = adapt_dat(:,5);
 p7 = signrank(x,y);
 
+%% Text for a non linear trend
+%modelfun = @(b,x)(b(1)+b(2)*exp(b(3)*x));
+%modelfun = @(b,x)(b(1)+b(2)* ((x.^2)-(b(3))));
+%modelfun = @(b,x)(b(1)+b(2)*x.^b(3));
+b = [0.1,0.3,0.2, 0.2];
+modelfun = @(b,x)(b(1)+b(2)*x+b(3)*x.^b(4));
+
+adapt_dat2 = adapt_dat(:,2:end);
+adapt_dat3 = adapt_dat2(isfinite(adapt_dat2)); 
+%fit model
+rng('default') % for reproducibility
+
+x = [1*ones(9,1); 2*ones(9,1); 3*ones(9,1); 4*ones(9,1)];
+y = adapt_dat3;
+opts = statset('nlinfit');
+opts.RobustWgtFun = 'bisquare';
+beta0 = [2;2;2;2];
+[beta,R,J,CovB,MSE] = nlinfit(x,y,modelfun,beta0,opts);
+
+xrange = min(x):.01:max(x);
+[ypred,delta] = nlpredci(modelfun,xrange,beta,R,'Covar',CovB,...
+                         'MSE',MSE,'SimOpt','on');
+lower = ypred - delta;
+upper = ypred + delta;
+
+figure()
+plot(x,y,'ko') % observed data
+hold on
+plot(xrange,ypred,'k','LineWidth',2)
+plot(xrange,[lower;upper],'r--','LineWidth',1.5)
+hold on
+plot([1 2 3 4], meanFfs(2:5),'b-o')
+set(gca,'box','off')
+set(gca, 'linewidth', 2)
+title(sprintf('x = %.2d + %.2d*x + %.2d*x^(%.2d)', beta),'Interpreter', 'none');
+xlim([0 5])
+ylim([0 1])
+xlabel('Peak #')
+ylabel('Fano Factor')
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('nlfit_a_bx_cxpowd'));
+ saveas(gcf,strcat(plotdir, '.png'));
+ saveas(gcf,strcat(plotdir, '.svg'));
+
 %% Plot population linear regressions of mean versus trial-to-trial variance comparing peaks with resting state
 %window size = 50ms
 peakLabel = repmat({'Baseline State';'Pk1';'Pk2';'Pk3';'Pk4'}, size(mvar_vals,3),1);
