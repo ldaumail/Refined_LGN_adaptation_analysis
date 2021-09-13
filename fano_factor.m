@@ -524,10 +524,14 @@ p7 = signrank(x,y);
 
 %% Text for a non linear trend
 %modelfun = @(b,x)(b(1)+b(2)*exp(b(3)*x));
-%modelfun = @(b,x)(b(1)+b(2)* ((x.^2)-(b(3))));
+
 %modelfun = @(b,x)(b(1)+b(2)*x.^b(3));
 b = [0.1,0.3,0.2, 0.2];
-modelfun = @(b,x)(b(1)+b(2)*x+b(3)*x.^b(4));
+%modelfun = @(b,x)(b(1)+b(2)*x+b(3)*x.^b(4)); %polynomial
+%modelfun = @(b,x)(b(1)+b(2)*x+b(3)*x.^2); %polynomial with only 3 coefficients to estimate
+%modelfun = @(b,x)(b(1)+b(2)* (x-(b(3))).^2);
+%b = [.2,.2];
+%modelfun = @(b,x)(b(1)+b(2)*log(x));
 
 adapt_dat2 = adapt_dat(:,2:end);
 adapt_dat3 = adapt_dat2(isfinite(adapt_dat2)); 
@@ -536,14 +540,36 @@ rng('default') % for reproducibility
 
 x = [1*ones(9,1); 2*ones(9,1); 3*ones(9,1); 4*ones(9,1)];
 y = adapt_dat3;
+
+%use nlinfit
+%{
 opts = statset('nlinfit');
 opts.RobustWgtFun = 'bisquare';
-beta0 = [2;2;2;2];
+beta0 = [2;2;2];
 [beta,R,J,CovB,MSE] = nlinfit(x,y,modelfun,beta0,opts);
 
+%get 95%CI
 xrange = min(x):.01:max(x);
 [ypred,delta] = nlpredci(modelfun,xrange,beta,R,'Covar',CovB,...
                          'MSE',MSE,'SimOpt','on');
+lower = ypred - delta;
+upper = ypred + delta;
+%}
+%use more recent fitnlm function
+tabxy = table(x,y);
+
+%modelfun = @(b,x)(b(1)+b(2)* (x-(b(3))).^2); %parabolic
+%modelfun = @(b,x)(b(1)+b(2)* (x)); %linear
+modelfun = @(b,x)(b(1)+b(2)* (x).^(b(3)));%logarithm
+
+beta0 = [2;2;2];
+mdl = fitnlm(tabxy,modelfun,beta0);
+AIC = mdl.ModelCriterion.AIC;
+
+%get 95%CI
+xrange = min(x):.01:max(x);
+[ypred,delta] = nlpredci(modelfun,xrange,mdl.Coefficients.Estimate,mdl.Residuals.Raw,'Covar',mdl.CoefficientCovariance,...
+                         'MSE',mdl.MSE,'SimOpt','on');
 lower = ypred - delta;
 upper = ypred + delta;
 
@@ -554,14 +580,17 @@ plot(xrange,ypred,'k','LineWidth',2)
 plot(xrange,[lower;upper],'r--','LineWidth',1.5)
 hold on
 plot([1 2 3 4], meanFfs(2:5),'b-o')
+
 set(gca,'box','off')
 set(gca, 'linewidth', 2)
-title(sprintf('x = %.2d + %.2d*x + %.2d*x^(%.2d)', beta),'Interpreter', 'none');
+title(sprintf('x = %.2d + %.2d*x^(%.2d)', mdl.Coefficients.Estimate),'Interpreter', 'none');
+
 xlim([0 5])
 ylim([0 1])
 xlabel('Peak #')
 ylabel('Fano Factor')
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('nlfit_a_bx_cxpowd'));
+text(2.5,.5,sprintf('AIC = %d', AIC));
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\noise_suppression\plots\',sprintf('nlfit_logarithm'));
  saveas(gcf,strcat(plotdir, '.png'));
  saveas(gcf,strcat(plotdir, '.svg'));
 
