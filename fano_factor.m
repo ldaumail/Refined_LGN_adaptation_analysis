@@ -522,7 +522,7 @@ x = adapt_dat(:,4);
 y = adapt_dat(:,5);
 p7 = signrank(x,y);
 
-%% Text for a non linear trend
+%% Test for a non linear trend
 %modelfun = @(b,x)(b(1)+b(2)*exp(b(3)*x));
 
 %modelfun = @(b,x)(b(1)+b(2)*x.^b(3));
@@ -681,7 +681,7 @@ for p = 2:length(peakLab) % External loop on the axes
     x1 = linMeans(sel);
     y1 = linVars(sel);
     linreg = fitlm(x1,y1);
-    [linPvalue(1,1),F] = coefTest(linreg);
+    [linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linreg);
     Rsquared(1,1) = linreg.Rsquared.Ordinary;
     coeffs1 = polyfit(x1(isfinite(x1) & isfinite(y1)),y1(isfinite(x1) & isfinite(y1)),1);
     slope(1,1) = coeffs1(1);
@@ -698,7 +698,7 @@ for p = 2:length(peakLab) % External loop on the axes
     y = linVars(sel);
     % Plotting of raw data
     linreg2 = fitlm(x,y);
-    [linPvalue(p,1),F] = coefTest(linreg2);
+    [linPvalue(p,1),F(p,1), r(p,1)] = coefTest(linreg2);
     Rsquared(p,1) = linreg2.Rsquared.Ordinary;
     coeffs = polyfit(x(isfinite(x) & isfinite(y)),y(isfinite(x) & isfinite(y)),1);
     slope(p,1) = coeffs(1);
