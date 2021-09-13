@@ -73,8 +73,8 @@
        - Allows to plot all results (horizontal histograms comparing each peak between monocular and binocular condition, jitter..)
  
  ## Variability quenching:
- 1)
- 2)
+ 1) Please refer to "fano_factor.m", the whole analysis pipeline is coded in this script, and refers to functions needed to run it, such as "peakTrigFano"
+ 
 
 
 
