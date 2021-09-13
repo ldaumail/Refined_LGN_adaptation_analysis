@@ -68,6 +68,13 @@
        - plots the data using gramm toolbox (https://github.com/piermorel/gramm)
        - Perform ROC analysis to test on difference of distributions
        - Performs other tests for difference between distributions (Qi square goodness of fit test...)
+       
+3) "adaptation_and_binocular_interaction_plots.m"
+       - Allows to plot all results (horizontal histograms comparing each peak between monocular and binocular condition, jitter..)
+ 
+ ## Variability quenching:
+ 1)
+ 2)
 
 
 
