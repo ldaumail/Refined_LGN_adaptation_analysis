@@ -390,11 +390,11 @@ end
 %(1) Prestim vs Pk1
 x = stat_dat(:,1);
 y = stat_dat(:,2);
-p1 = signrank(x,y);
+[p1,~,stats1] = signrank(x,y);
 %(2) Prestim vs Pk4
 x = stat_dat(:,1);
 y = stat_dat(:,5);
-p2 = signrank(x,y);
+[p2,~,stats2] = signrank(x,y);
 %(3) Pk1 vs Pk2
 x = stat_dat(:,2);
 y = stat_dat(:,3);
@@ -414,7 +414,7 @@ p6 = signrank(x,y);
 %(7) Pk3 vs Pk4
 x = stat_dat(:,4);
 y = stat_dat(:,5);
-p7 = signrank(x,y);
+[p7,~,stats7] = signrank(x,y);
 
 %% Perform similar analysis on significantly adapting units
 newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
@@ -496,7 +496,7 @@ end
 %(1) Prestim vs Pk1
 x = adapt_dat(:,1);
 y = adapt_dat(:,2);
-p1 = signrank(x,y);
+[p1, ~,stats1] = signrank(x,y);
 %(2) Prestim vs Pk4
 x = adapt_dat(:,1);
 y = adapt_dat(:,5);
@@ -520,7 +520,7 @@ p6 = signrank(x,y);
 %(7) Pk3 vs Pk4
 x = adapt_dat(:,4);
 y = adapt_dat(:,5);
-p7 = signrank(x,y);
+[p7,~,stats7] = signrank(x,y);
 
 %% Test for a non linear trend
 %modelfun = @(b,x)(b(1)+b(2)*exp(b(3)*x));
