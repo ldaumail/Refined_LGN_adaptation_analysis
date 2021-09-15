@@ -315,7 +315,7 @@ peakLabel = repmat([repmat({'Pk1'}, length(peaks(1,1,:)),1);repmat({'Pk2'}, leng
 for p =1:4
     meansMono =linPeakVals(strcmp(condition, 'Monocular')& strcmp(peakLabel,sprintf('Pk%d',p)));
     meansBino =linPeakVals(strcmp(condition, 'Binocular')& strcmp(peakLabel,sprintf('Pk%d',p))); 
-    ttestRes(p) = ttest(meansMono,meansBino);
+    [ttestRes(p),pval(p),~,stats(p).stats] = ttest(meansMono,meansBino);
     
 end
 
