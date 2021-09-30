@@ -3,7 +3,7 @@
 % with "mua_lmer_peaks_binocular_adaptation.R"
 %Last edited on 05-25-2021 by Loic Daumail
 
-%% Part 1 : Single Units Analysis (Part 2 for MUA in other script in MUA section)
+%% Part 2: MUA analysis (Part 1 was single unit analysis)
 
 newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\multi_units\adaptation_analysis\all_channels\';
 channelfilename = [newdatadir 'all_orig_bs_zscore_trials_05122021_mono_bino']; 
