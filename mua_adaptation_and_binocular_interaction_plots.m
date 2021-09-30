@@ -1,5 +1,5 @@
 %This script is developped following trial selection with
-%"BinocularAdaptationTrialSelection.m" and adaptation and binocular interaction analysis 
+%"peakLocsMUATrialSelection.m" in "mua_adaptation_analysis.m" and adaptation and binocular interaction analysis 
 % with "mua_lmer_peaks_binocular_adaptation.R"
 %Last edited on 05-25-2021 by Loic Daumail
 
