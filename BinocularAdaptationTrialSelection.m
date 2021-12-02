@@ -1,6 +1,6 @@
 %% First: use the list of single units file names that were selected in the adaptation analysis with
 % high contrast
-selectUnitsFilenames =load('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\s_potentials_analysis\analysis\single_units_ns6_metadata.mat');
+selectUnitsFilenames =load('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\single_units_ns6_metadata.mat');
 filenames = selectUnitsFilenames.STIMFileName;
 
 
@@ -23,7 +23,7 @@ cellClass([1,46,55]) = [];
  %find the multiple contrast levels present in the data
  allContLevels =0;
  for i =1:71
-     if ~isempty(filenames(i))
+     if ~isempty(filenames{i})
     contLevels = unique(unitsData.new_data(i).channel_data.fixedc);
     allContLevels = unique([allContLevels; contLevels]);
      end
