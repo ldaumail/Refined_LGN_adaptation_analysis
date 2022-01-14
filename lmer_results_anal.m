@@ -1,9 +1,9 @@
 %this script was written after get_clean_peaks_and_data.m in order to
 %analyze the lmer results and plot the clean data.
-%Written by Loic Daumail edited on 6/29/2020
+%Written by Loic Daumail edited on 1/14/2022
 
 %loading the clean data
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 channelfilename = [newdatadir 'clean_SUA_sup_50']; 
 data_file = load(channelfilename);
 
@@ -18,7 +18,7 @@ layer([1,46,55]) = [];
  f = {'DE0_NDE50','DE50_NDE0','DE50_NDE50'};
  
  
- pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+ pvaluesdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
  pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
  pvalues = dlmread(pvalfilename, ',', 1,1);
  
@@ -95,8 +95,8 @@ end
  %% compute proportion of significant adaptation per peak and proportion of neurons adapting for a certain amount of 
 %peak from peak 2 to 4
 
-channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
-pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+channeldir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+pvaluesdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
 pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
 pvalues = dlmread(pvalfilename, ',', 1,1);
 
@@ -161,46 +161,46 @@ layer([1,46,55]) = [];
    
    all_mean_data(:,nunit) = mean_data;
 
-     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05
+     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05/3
          cntpk2 = cntpk2 +1;
      end
-     if all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05
+     if all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05/3
          cntpk3 = cntpk3 +1;
      end
-     if all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05
+     if all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05/3
          cntpk4 = cntpk4 +1;
      end
-     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05 && ...
-             all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05
+     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05/3 && ...
+             all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05/3
          cntpk2pk3 = cntpk2pk3 +1;
      end
-     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05 && ...
-             all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05 ...
-             && all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05
+     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05/3 && ...
+             all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05/3 ...
+             && all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05/3
          cntpk2pk3pk4 = cntpk2pk3pk4 +1;
      end
-       if all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05 ...
-             && all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05 
+       if all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05/3 ...
+             && all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05/3 
          cntpk3pk4 = cntpk3pk4 +1;
        end
        
-     if all_mean_data(2,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05
+     if all_mean_data(2,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05/3
          cntincpk2 = cntincpk2 +1;
      end
-     if all_mean_data(3,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05
+     if all_mean_data(3,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05/3
          cntincpk3 = cntincpk3 +1;
      end
      
-     if all_mean_data(4,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05
+     if all_mean_data(4,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05/3
          cntincpk4 = cntincpk4 +1;
      end
-     if pvalues(layer_idx(nunit),2) > .05
+     if pvalues(layer_idx(nunit),2) > .05/3
          cntnspk2 = cntnspk2 +1;
      end
-     if pvalues(layer_idx(nunit),3) > .05
+     if pvalues(layer_idx(nunit),3) > .05/3
          cntnspk3 = cntnspk3 +1;
      end
-    if pvalues(layer_idx(nunit),4) > .05
+    if pvalues(layer_idx(nunit),4) > .05/3
          cntnspk4 = cntnspk4 +1;
     end
       end
