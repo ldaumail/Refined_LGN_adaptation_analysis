@@ -1,6 +1,6 @@
 %this script was written after get_clean_peaks_and_data.m in order to
 %analyze the lmer results and plot the clean data.
-%Written by Loic Daumail edited on 1/14/2022
+%Written by Loic Daumail edited on 1/17/2022
 
 %loading the clean data
 newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
@@ -97,7 +97,7 @@ end
 
 channeldir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
 pvaluesdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
-pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected_dunnett.csv'];
 pvalues = dlmread(pvalfilename, ',', 1,1);
 
 peakvals = load([channeldir 'all_raw_data_peaks']);
@@ -118,7 +118,7 @@ peakvals = load([channeldir 'all_raw_data_peaks']);
 '','','M','M','M','P','M','M','M','M','P','P'};
 layer([1,46,55]) = [];
 
- layer_idx = find(strcmp(layer, 'M'));
+ layer_idx = find(strcmp(layer, 'K'));
  
  
 %{
@@ -161,46 +161,46 @@ layer([1,46,55]) = [];
    
    all_mean_data(:,nunit) = mean_data;
 
-     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05/3
+     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),1) < .05
          cntpk2 = cntpk2 +1;
      end
-     if all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05/3
+     if all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05
          cntpk3 = cntpk3 +1;
      end
-     if all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05/3
+     if all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05
          cntpk4 = cntpk4 +1;
      end
-     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05/3 && ...
-             all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05/3
+     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),1) < .05 && ...
+             all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05
          cntpk2pk3 = cntpk2pk3 +1;
      end
-     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05/3 && ...
-             all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05/3 ...
-             && all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05/3
+     if all_mean_data(2,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),1) < .05 && ...
+             all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05 ...
+             && all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05
          cntpk2pk3pk4 = cntpk2pk3pk4 +1;
      end
-       if all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05/3 ...
-             && all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05/3 
+       if all_mean_data(3,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05 ...
+             && all_mean_data(4,nunit) < all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05 
          cntpk3pk4 = cntpk3pk4 +1;
        end
        
-     if all_mean_data(2,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05/3
+     if all_mean_data(2,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),1) < .05
          cntincpk2 = cntincpk2 +1;
      end
-     if all_mean_data(3,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05/3
+     if all_mean_data(3,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),2) < .05
          cntincpk3 = cntincpk3 +1;
      end
      
-     if all_mean_data(4,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),4) < .05/3
+     if all_mean_data(4,nunit) > all_mean_data(1,nunit) && pvalues(layer_idx(nunit),3) < .05
          cntincpk4 = cntincpk4 +1;
      end
-     if pvalues(layer_idx(nunit),2) > .05/3
+     if pvalues(layer_idx(nunit),1) > .05
          cntnspk2 = cntnspk2 +1;
      end
-     if pvalues(layer_idx(nunit),3) > .05/3
+     if pvalues(layer_idx(nunit),2) > .05
          cntnspk3 = cntnspk3 +1;
      end
-    if pvalues(layer_idx(nunit),4) > .05/3
+    if pvalues(layer_idx(nunit),3) > .05
          cntnspk4 = cntnspk4 +1;
     end
       end
