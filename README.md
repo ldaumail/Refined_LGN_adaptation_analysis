@@ -22,7 +22,7 @@
      #### "get_origin_troughs.m": similar to previous script for response trough values.
      
 ### Statistical analysis results of monocular adaptation of spiking activity data:
-     #### "lmer_results_anal.m": follows "get_origin_peaks.m" and "individual_channels_analysis_origpeaks_KRpvalcorr.R" of the statistical analysis on R.This script ("lmer_results_anal.m"), allows to get proportion values of single units that show significant adapatation effects.
+     #### "lmer_results_anal.m": follows "get_origin_peaks.m" and "individual_channels_analysis_origpeaks_KRpvalcorr_Dunnett.R" of the statistical analysis on R.This script ("lmer_results_anal.m"), allows to get proportion values of single units that show significant adapatation effects.
      #### "cohensd.m": effect sizes of both spiking activity data and analysis of the F1 component (power at 4Hz).
      #### "both_monkeys_or_not.m": determines which single unit showed adaptation, according to the session, allows to see which monkey it was recorded from. The goal was to see if adaptation is seen in both monkeys. Data saved in: "C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\selected_units_filenames.m", "C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\selected_units_sessions"
      
