@@ -6,11 +6,11 @@
 
 
 %% first of all = cohens d for the spiking activity analysis
- pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
-pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
+pvaluesdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected_dunnett.csv'];
 pvalues = dlmread(pvalfilename, ',', 1,1);
 
-channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+channeldir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
 peakvals = load([channeldir 'all_raw_data_peaks']);
 
 layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
@@ -38,7 +38,7 @@ layer_idx = find(strcmp(layer, cellclass(nc)));
 
             mean_peaks = nanmean(peakvals.peak_vals(layer_idx(nunit)).peak,2);
             all_mean_peaks(:,nunit) = mean_peaks;
-            if all_mean_peaks(4,nunit) > all_mean_peaks(1,nunit) && pvalues(layer_idx(nunit),4) < .05
+            if all_mean_peaks(4,nunit) > all_mean_peaks(1,nunit) && pvalues(layer_idx(nunit),3) < .05
                 
                 cntsiginc= cntsiginc+1;
                 %should compute the cohen's d with var or std of the
@@ -50,7 +50,7 @@ layer_idx = find(strcmp(layer, cellclass(nc)));
                 sig_inccd(cntsiginc,pn-1,nc) = (all_mean_peaks(1,nunit)-all_mean_peaks(pn,nunit))/(sqrt(var1)); 
      
             
-            elseif all_mean_peaks(4,nunit) < all_mean_peaks(1,nunit) && pvalues(layer_idx(nunit),4) < .05
+            elseif all_mean_peaks(4,nunit) < all_mean_peaks(1,nunit) && pvalues(layer_idx(nunit),3) < .05
                 cntsigadapt= cntsigadapt+1;
                 var1 =var(peakvals.peak_vals(layer_idx(nunit)).peak(1,:)-peakvals.peak_vals(layer_idx(nunit)).peak(pn,:));
             
@@ -74,11 +74,11 @@ mean_incd =nanmean(sig_inccd,1);
 
 
 %% compute the percent of amplitude decrease
- pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
-pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
+ pvaluesdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected_dunnett.csv'];
 pvalues = dlmread(pvalfilename, ',', 1,1);
 
-channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+channeldir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
 peakvals = load([channeldir 'all_data_peaks']);
 
 layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
@@ -106,14 +106,14 @@ layer_idx = find(strcmp(layer, cellclass(nc)));
 
             mean_peaks = nanmean(peakvals.peak_vals(layer_idx(nunit)).peak,2);
             all_mean_peaks(:,nunit) = mean_peaks;
-            if all_mean_peaks(4,nunit) > all_mean_peaks(1,nunit) && pvalues(layer_idx(nunit),4) < .05
+            if all_mean_peaks(4,nunit) > all_mean_peaks(1,nunit) && pvalues(layer_idx(nunit),3) < .05
                 
                 cntsiginc= cntsiginc+1;
                
                 sig_ainc(cntsiginc,pn-1,nc) = 100*(all_mean_peaks(1,nunit)-all_mean_peaks(pn,nunit))/all_mean_peaks(1,nunit); 
      
             
-            elseif all_mean_peaks(4,nunit) < all_mean_peaks(1,nunit) && pvalues(layer_idx(nunit),4) < .05
+            elseif all_mean_peaks(4,nunit) < all_mean_peaks(1,nunit) && pvalues(layer_idx(nunit),3) < .05
                 cntsigadapt= cntsigadapt+1;
                 sig_aadap(cntsigadapt,pn-1,nc) = 100*(all_mean_peaks(1,nunit)-all_mean_peaks(pn,nunit))/all_mean_peaks(1,nunit);
                
