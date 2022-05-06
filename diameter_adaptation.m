@@ -14,7 +14,16 @@ cellClass = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P',
 'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
 '','','M','M','M','P','M','M','M','M','P','P'};
 cellClass([1,46,55]) = [];
-
+ allContLevels =0;
+ alltilts =[];
+ for i =1:71
+     if ~isempty(filenames(i))
+    contLevels = unique(unitsData.new_data(i).channel_data.fixedc);
+    allContLevels = unique([allContLevels; contLevels]);
+    tilts = find(unique(unitsData.new_data(i).channel_data.tilt));
+    alltilts = [alltilts; tilts];
+     end
+ end
 %select trials with at least 4 peak values, of convenient quality. Keep peak locations and trial responses: 
 [peakLocs, NoFiltMultiContSUA] = peakLocsTrialSelection(unitsData, filenames);
 
@@ -64,6 +73,58 @@ grating_diameters =[];
      end
  end
   
- 
- figure();
- plot()
+
+%% Plot adaptation as a function of diameter with gramm
+x=squeeze(grating_diameters');
+y=squeeze(normdp1p4.bin.(binNb));
+figure('Position',[100 100 800 500]);
+clear g
+g=gramm('x',x,'y',y);
+g.stat_glm();
+g.axe_property('xlim',[0 9]);
+g.set_names('x','Diameter','y','(P4-P1)/P4','column','');
+g(1,1).geom_point();
+
+g.set_title('Adaptation index as a function of grating diameter');
+g.draw();
+
+%% Plot adaptation as a function of diameter with polyfit
+
+nlines = 7;
+cmap =flip(cbrewer2('Blues', nlines));
+figure();
+x=squeeze(grating_diameters');
+binNb = sprintf('bin%d', 1); %plot monocular distribution
+y=squeeze(normdp1p4.bin.(binNb));
+coeffs = polyfit(x,y,1);
+f = polyval(coeffs,x);
+plot(x, y,'o',x, f,'-','Color',cmap(4,:),'MarkerSize',2, 'MarkerFaceColor',cmap(4,:),'linewidth',2)
+xlim([0 9])
+text(max(x)/1.3,max(y)/20, sprintf('y = %.2f + %.2f*x', round(coeffs(2),2), round(coeffs(1),2)))
+hold on
+binNb = sprintf('bin%d', 6); %plot binocular condition
+y1=squeeze(normdp1p4.bin.(binNb));
+coeffs1 = polyfit(x,y1,1);
+f1 = polyval(coeffs1,x);
+plot(x, y1,'o',x, f1,'-','Color',cmap(1,:),'MarkerSize',2, 'MarkerFaceColor',cmap(1,:),'linewidth',2)
+text(max(x)/1.3,max(y1)/2, sprintf('y = %.2f + %.2f*x', round(coeffs1(2),2), round(coeffs1(1),2)))
+
+colormap(cmap);
+hold on
+set(gca,'box','off')
+set(gca, 'linewidth', 2)
+title('Adaptation index as a function of grating diameter');
+xlabel('Diameter (deg)')
+ylabel('Adaptation strength')
+legend('','Monocular','','Binocular')
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\adaptation_vs_diameter');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
+ %% test significance of slope versus 0
+
+    xtest = x;
+    ytest = y1;
+    linreg = fitlm(xtest,ytest);
+    [linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linreg);
+    Rsquared(1,1) = linreg.Rsquared.Ordinary;
