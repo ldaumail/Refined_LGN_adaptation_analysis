@@ -48,7 +48,7 @@ for n = 1:length(contLims)
      for i = channum
         if ~isempty(filenames{i})
            filename = filenames(i);
-           blankcontrast = unitsData.new_data(i).channel_data.contrast ==  0 & unitsData.new_data(i).channel_data.fixedc ==  0; %get logicacal indices of trials with 0 contrast in both eyes
+           blankcontrast = unitsData.new_data(i).channel_data.contrast ==  0 & unitsData.new_data(i).channel_data.fixedc ==  0; %get logical indices of trials with 0 contrast in both eyes
            if n == 1
                contrastBin =unitsData.new_data(i).channel_data.contrast >=  0.5 & unitsData.new_data(i).channel_data.fixedc ==  0; %trials indices with 0 contrast in NDE, and contrast >0.5 in DE
                else
@@ -139,8 +139,8 @@ for n = 1:length(contLims)
             
             for ln = 1:550
                 if filtered_dSUA_high(200+ln,trial) < filtered_dSUA_high(200+ln+1,trial) && ~all(isnan(filtered_dSUA_high(:,trial)))
-                    [~,locsdSUA_trial] = findpeaks(filtered_dSUA_high(200+ln:1499,trial));
-                     
+                    locsdSUA_trial_struct = findpeaks_Loic(filtered_dSUA_high(200+ln:1499,trial));
+                    locsdSUA_trial = locsdSUA_trial_struct.loc;
                     %if peak1 is too small, peak2 becomes peak1
                     if filtered_dSUA_high(locsdSUA_trial(1)+200+ln,trial) >= 0.4*filtered_dSUA_high(locsdSUA_trial(2)+200+ln)
                         %store first peak location
@@ -209,8 +209,9 @@ for n = 1:length(contLims)
             for loc = 1:200
                 if filtered_dSUA_high(loc,tr) < filtered_dSUA_high(loc+1,tr) && ~all(isnan(filtered_dSUA_high(:,tr)))
                     if length(filtered_dSUA_high(loc:200,tr)) >= 3
-                        if ~isempty(findpeaks(filtered_dSUA_high(loc:200,tr)))
-                            [~, bsl_peak_locs] = findpeaks(filtered_dSUA_high(loc:200,tr));
+                        if ~isempty(findpeaks_Loic(filtered_dSUA_high(loc:200,tr)))
+                            bsl_peak_locs_struct = findpeaks_Loic(filtered_dSUA_high(loc:200,tr));
+                            bsl_peak_locs = bsl_peak_locs_struct.loc;
                             bsl_peaks(1,tr) = max(filtered_dSUA_high(bsl_peak_locs+loc,tr));
                         else
                             bsl_peaks(1,tr) = NaN;

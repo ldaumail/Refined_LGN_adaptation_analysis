@@ -1,9 +1,12 @@
+%script developped to plot the different steps of trial selection
+%Last modified 05/06/2022 - Loic Daumail
+
 %% First: use the list of single units file names that were selected in the adaptation analysis with
 % high contrast
-selectUnitsFilenames =load('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\s_potentials_analysis\analysis\single_units_ns6_metadata.mat');
+%selectUnitsFilenames =load('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\s_potentials_analysis\analysis\single_units_ns6_metadata.mat');
+%filenames = selectUnitsFilenames.STIMFileName;
+selectUnitsFilenames =load('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\single_units_ns6_metadata.mat');
 filenames = selectUnitsFilenames.STIMFileName;
-
-
 unitsDir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\';
 unitsDataDir = [unitsDir 'refined_dataset']; 
 unitsData= load(unitsDataDir);
@@ -28,6 +31,18 @@ cellClass([1,46,55]) = [];
     allContLevels = unique([allContLevels; contLevels]);
      end
  end
+ 
+ %find all the multiple sizes
+ allSizeLevels =[];
+ for i =1:71
+     
+     if ~isempty(filenames(i))
+   sizeLevels = find(unique(unitsData.new_data(i).channel_data.diameter));
+    allSizeLevels = unique([allSizeLevels; sizeLevels]);
+     end
+ end
+ 
+ 
  %lets create contrast limits (bins to pool different contrast levels)
 contLims = [0,0.1,0.3,0.5,0.7,1];  
 channum = 1: length(unitsData.new_data);
@@ -122,8 +137,8 @@ for n = 1:length(contLims)
        %FIGURE smoothed
        figure();
        plot(filtered_dSUA_high(:,1))
-       saveDir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\trialSelectionPlots\';
-       saveas(gcf,strcat(saveDir, 'smoothedTrial.svg'));   
+       %saveDir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\trialSelectionPlots\';
+       %saveas(gcf,strcat(saveDir, 'smoothedTrial.svg'));   
 
 
        for tr = 1:length(powerDE)
@@ -148,8 +163,8 @@ for n = 1:length(contLims)
             
             for ln = 1:550
                 if filtered_dSUA_high(200+ln,trial) < filtered_dSUA_high(200+ln+1,trial) && ~all(isnan(filtered_dSUA_high(:,trial)))
-                    [~,locsdSUA_trial] = findpeaks(filtered_dSUA_high(200+ln:1499,trial));
-                     
+                    locsdSUA_trial_struct = findpeaks_Loic(filtered_dSUA_high(200+ln:1499,trial));
+                     locsdSUA_trial = locsdSUA_trial_struct.loc;
                     %if peak1 is too small, peak2 becomes peak1
                     if filtered_dSUA_high(locsdSUA_trial(1)+200+ln,trial) >= 0.4*filtered_dSUA_high(locsdSUA_trial(2)+200+ln)
                         %store first peak location
@@ -218,8 +233,9 @@ for n = 1:length(contLims)
             for loc = 1:200
                 if filtered_dSUA_high(loc,tr) < filtered_dSUA_high(loc+1,tr) && ~all(isnan(filtered_dSUA_high(:,tr)))
                     if length(filtered_dSUA_high(loc:200,tr)) >= 3
-                        if ~isempty(findpeaks(filtered_dSUA_high(loc:200,tr)))
-                            [~, bsl_peak_locs] = findpeaks(filtered_dSUA_high(loc:200,tr));
+                        if ~isempty(findpeaks_Loic(filtered_dSUA_high(loc:200,tr)))
+                            bsl_peak_locs_struct = findpeaks_Loic(filtered_dSUA_high(loc:200,tr));
+                            bsl_peak_locs = bsl_peak_locs_struct.loc;
                             bsl_peaks(1,tr) = max(filtered_dSUA_high(bsl_peak_locs+loc,tr));
                         else
                             bsl_peaks(1,tr) = NaN;
