@@ -3,7 +3,7 @@ function [peakLocs, NoFiltMultiContSUA] = peakLocsTrialSelection(data, filenames
 %(low-pass filtered) data as well as the trials they correspond to.
 %Last edited by Loic Daumail on 06/02/2021
 %Location of multiunits data isolated in the previous section
-data = unitsData;
+%data = unitsData;
 %lets create contrast limits (bins to pool different contrast levels in different groups)
 contLims = [0,0.1,0.3,0.5,0.7,1];
 channum = 1: length(filenames);
@@ -117,7 +117,8 @@ for i = channum
 
                 for ln = 1:550
                     if filtered_dMUA_high(200+ln,trial) < filtered_dMUA_high(200+ln+1,trial) && ~all(isnan(filtered_dMUA_high(:,trial)))
-                        [~,locsdMUA_trial] = findpeaks(filtered_dMUA_high(200+ln:1499,trial));
+                        locsdMUA_trial_struct = findpeaks_Loic(filtered_dMUA_high(200+ln:1499,trial));
+                        locsdMUA_trial = locsdMUA_trial_struct.loc;
 
                         %if peak1 is too small, peak2 becomes peak1
                         if filtered_dMUA_high(locsdMUA_trial(1)+200+ln,trial) >= 0.4*filtered_dMUA_high(locsdMUA_trial(2)+200+ln)
@@ -187,8 +188,9 @@ for i = channum
                 for loc = 1:200
                     if filtered_dMUA_high(loc,tr) < filtered_dMUA_high(loc+1,tr) && ~all(isnan(filtered_dMUA_high(:,tr)))
                         if length(filtered_dMUA_high(loc:200,tr)) >= 3
-                            if ~isempty(findpeaks(filtered_dMUA_high(loc:200,tr)))
-                                [~, bsl_peak_locs] = findpeaks(filtered_dMUA_high(loc:200,tr));
+                            if ~isempty(findpeaks_Loic(filtered_dMUA_high(loc:200,tr)))
+                                bsl_peak_locs_struct = findpeaks_Loic(filtered_dMUA_high(loc:200,tr));
+                                bsl_peak_locs = bsl_peak_locs_struct.loc;
                                 bsl_peaks(1,tr) = max(filtered_dMUA_high(bsl_peak_locs+loc,tr));
                             else
                                 bsl_peaks(1,tr) = NaN;
