@@ -643,11 +643,11 @@ peaks_diff = nan(3,2,length(filenames));
 for i = 1:length(filenames)
     for b = 1:2
         for p = 2:4
-            peaks_diff(p-1,b,i) = peaks(1,b,i)- peaks(p,b,i);
+            peaks_diff(p-1,b,i) = (peaks(1,b,i)- peaks(p,b,i))/peaks(1,b,i);
         end
     end
 end
-
+peaks_diff = peaks_diff(:,:,~isnan(peaks_diff(1,1,:)));
 
 
 %% Plot 
@@ -663,7 +663,7 @@ cmaps(2).map =flip(cbrewer2('BuPu', nlines));
 %cmap = flip(cmaps(2).map) ;
 colormap(cmaps(2).map);
 
-colmaps = [cmaps(1).map(4,:);cmaps(2).map(3,:)];
+colmaps = [cmaps(1).map(4,:);cmaps(2).map(3,:)]; %invert order of colors since we plot monocular condition first
 titles = {'Monocular'; 'Binocular'};
 figure('Position',[100 100 800 400],'Color',[1 1 1]);   
 for b =1:2
@@ -689,7 +689,7 @@ ax = subplot(1,2,b);
     f2 = polyval(coeffs2,x2);
     plot(x2, y2,'o',x2, f2,'-','Color',colmaps(b,:),'MarkerSize',2, 'MarkerFaceColor',colmaps(b,:),'linewidth',2)
     %xlim([0 10])
-    %ylim([0 4.5])
+    %ylim([-0.7 0.8])
     text(max(x2)/1.3,max(y2)/20, sprintf('y2 = %.2f + %.2f*x', round(coeffs2(2),2), round(coeffs2(1),2)))
 
     hold on
@@ -699,63 +699,27 @@ ax = subplot(1,2,b);
     title(titles(b))
 end
  
- plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\trends_across_peaks');
+ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\trends_across_peaks_normalized');
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
  
 %% Need to make statistical tests on slopes
- 
-%% 2) Plot correlation coeffs
-%Compute correlations
+xtest = x2;
+ytest = y2;
+linreg = fitlm(xtest,ytest);
+[linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linreg); %r =numerator degrees of freedom, linreg.DFE = denominator degrees of freedom.
+linreg.DFE
+length(xtest)
+linPvalue(1,1)
+F(1,1)
+%% 2)Compute correlations
 
-corrs = nan(2,2,length(filenames));
-for i = 1:length(filenames)
+corrs = nan(2,2);
+
     for b = 1:2
-        corrs(1,b,i) = corr(peaks_diff(1,b,i), peaks_diff(2,b,i)); %compare pk1-pk2 vs pk1-pk3
-        corrs(2,b,i) = corr(peaks_diff(2,b,i), peaks_diff(3,b,i)); %compare pk1-pk3 vs pk1-pk4
+        corrs(1,b) = corr(squeeze(peaks_diff(1,b,:)), squeeze(peaks_diff(2,b,:))); %compare pk1-pk2 vs pk1-pk3
+        corrs(2,b) = corr(squeeze(peaks_diff(2,b,:)), squeeze(peaks_diff(3,b,:))); %compare pk1-pk3 vs pk1-pk4
     end
-end
-
-lincorrs = reshape(corrs, [4*length(corrs(1,1,:)),1]); 
-condition = [repmat({'Monocular'},2*length(corrs(1,1,:)),1); repmat({'Binocular'},2*length(corrs(1,1,:)),1)];
-%unit = repmat(1:length(peaks(1,1,:)),1,8)';
-peakLabel = [repmat({'Pk1-Pk2'}, length(corrs(1,1,:)),1);repmat({'Pk1-Pk3'},2*length(corrs(1,1,:)),1);repmat({'Pk1-Pk4'}, length(corrs(1,1,:)),1)];
-
-clear g
-g(1,1)=gramm('x',condition,'y',lincorrs,'color',condition);
-g(1,1).geom_jitter('width',0.4,'height',0); 
-g(1,1).set_names('x','','y', '');
-g(1,1).axe_property('xlim', [0 4], 'ylim',[0 50],'XTickLabel','','XTick',''); 
-g(1,1).set_color_options('map',[cmap(3,:);cmaps(1).map(4,:)]);
-g(1,1).no_legend();
-
-%Plot the mean and std for trial numbers
-alltnMono = trial_numbers(strcmp(condition, 'Monocular'));
-alltnBino = trial_numbers(strcmp(condition, 'Binocular'));
-meanTn = nanmean([alltnMono,alltnBino],1);
-shortCondition = unique(condition);
-stdTns = std([alltnMono,alltnBino], 'omitnan');%/sqrt(length([alltnMono,alltnBino]));
-
-ci_low = meanTn - stdTns;
-ci_high = meanTn + stdTns;
-g(1,1).update('x', shortCondition, 'y',meanTn,...
-    'ymin',ci_low,'ymax',ci_high,'color',shortCondition);
-%g(1,1).set_color_options('map','r');
-g(1,1).geom_point('dodge',0.5);
-g(1,1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
-g(1,1).axe_property('xlim', [0 4], 'ylim',[0 50],'XTickLabel','','XTick',''); 
-g(1,1).set_names('x','','y', 'Number of Trials');
-g(1,1).no_legend();
-g(1,1).set_point_options('base_size',7);
-
-g(1,2) = gramm('x',ones(1,length(tn(:,1))), 'y', tn(:,1)-tn(:,2) );
-g(1,2).geom_jitter('width',0.3,'height',0); 
-g(1,2).axe_property('xlim', [0 2], 'ylim',[-30 30], 'XTickLabel','','XTick',''); 
-g(1,2).set_names('x','','y', 'Difference Monocular-Binocular (Number of Trials)');
-g.set_title('Number of trials in selected units post-processing');
-g(1,2).set_color_options('map',[0.5 0.5 0.5]);
-
-
 
 
 
