@@ -278,7 +278,7 @@ grating_diameters =[];
                   
                   dp1p4.bin.(binNb)(i) = -mean(peak_vals(1,:) - peak_vals(4,:)); %Pk1 - Pk4
                   normdp1p4.bin.(binNb)(i) = -mean(peak_vals(1,:) - peak_vals(4,:))/mean(peak_vals(1,:)); %(Pk1 - Pk4)/Pk1
-                  midx.bin.(binNb)(i) = -(mean(peak_vals(1,:) - peak_vals(4,:)))/(2*mean(peak_vals(1,:) + peak_vals(4,:))); %(Pk1 - Pk4)/(2*mean(Pk1 + Pk4))
+                  midx.bin.(binNb)(i) = mean(-2*(peak_vals(1,:) - peak_vals(4,:))/(peak_vals(1,:) + peak_vals(4,:))); %mean(2*(Pk1 - Pk4)/(Pk1 + Pk4))
                   meanpk.(binNb) = mean(peak_vals,2); %mean across all peaks
               end
           end
@@ -381,18 +381,18 @@ title('Adaptation index as a function of grating diameter');
 xlabel('Diameter (deg)')
 ylabel('Adaptation strength')
 legend('','Monocular','','Binocular','','Monocular Suppressed','','Monocular Facilitated','','Binocular Suppressed','','Binocular Facilitated')
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\adaptationidx_vs_diameter_signif');
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\plots\adaptationidx_vs_diameter_signif_old');
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
    
    %% test significance of slope versus 0 for suppressed units
 
     xtest = xfac;
-    ytest = yfac;
+    ytest = y1fac;
     linreg = fitlm(xtest,ytest);
     [linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linreg) %r =numerator degrees of freedom, linreg.DFE = denominator degrees of freedom.
     linreg.DFE
-    
+    length(xtest)
     
     
     Rsquared(1,1) = linreg.Rsquared.Ordinary
