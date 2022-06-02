@@ -1,7 +1,7 @@
 %This script is developped following trial selection with
 %"BinocularAdaptationTrialSelection.m" and adaptation and binocular interaction analysis 
 % with "lmer_peaks_binocular_adaptation.R"
-%Last edited on 05-25-2021 by Loic Daumail
+%Last edited on 05-25-2022 by Loic Daumail
 
 %% Part 1 : Single Units Analysis (Part 2 for MUA in other script in MUA section)
 
