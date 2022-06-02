@@ -643,14 +643,14 @@ peaks_diff = nan(3,2,length(filenames));
 for i = 1:length(filenames)
     for b = 1:2
         for p = 2:4
-            peaks_diff(p-1,b,i) = (peaks(1,b,i)- peaks(p,b,i))/peaks(1,b,i);
+            peaks_diff(p-1,b,i) = (peaks(1,b,i)- peaks(p,b,i)); %/peaks(1,b,i);
         end
     end
 end
 peaks_diff = peaks_diff(:,:,~isnan(peaks_diff(1,1,:)));
 
 
-%% Plot 
+%% Plot the correlation trends between subsequent peaks (Pk1-Pk3 vs Pk1-Pk4)(Pk1-Pk2 vs Pk1-Pk3)
 %1) Plot Pk1-Pk2 vs Pk1-Pk3 + overlay Pk1-Pk3 vs Pk1-Pk4
 %nlines = 7;
 %cmap =flip(cbrewer2('Blues', nlines));
@@ -703,16 +703,44 @@ end
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
  
-%% Need to make statistical tests on slopes
+%% Need to make statistical tests on slopes vs 0 for above linear fits
 xtest = x2;
 ytest = y2;
 linreg = fitlm(xtest,ytest);
-[linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linreg); %r =numerator degrees of freedom, linreg.DFE = denominator degrees of freedom.
-linreg.DFE
+[linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linreg); %r =numerator degrees of freedom
 length(xtest)
 linPvalue(1,1)
 F(1,1)
-%% 2)Compute correlations
+
+%% Assess difference betwen slopes of linear regressions performed above (previous section) 
+%% between monocular and binocular stimulation
+
+xm = squeeze(peaks_diff(1,1,:)); %Pk1-Pk2 mono
+ym =  squeeze(peaks_diff(2,1,:)); %Pk1-Pk3 mono
+
+xb = squeeze(peaks_diff(1,2,:)); %Pk1-Pk2 bino
+yb =  squeeze(peaks_diff(2,2,:)); %Pk1-Pk3 bino
+
+linm = fitlm(xm,ym);
+linb = fitlm(xb,yb);
+[linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linm,[0 1],linb.Coefficients{2,1}); %[0 1] = origin*0+1*slopemono = slopebino?
+linPvalue(1,1)
+F(1,1)
+
+xm = squeeze(peaks_diff(2,1,:)); %Pk1-Pk3 mono
+ym =  squeeze(peaks_diff(3,1,:)); %Pk1-Pk4 mono
+
+xb = squeeze(peaks_diff(2,2,:)); %Pk1-Pk3 bino
+yb =  squeeze(peaks_diff(3,2,:)); %Pk1-Pk4 bino
+
+linm = fitlm(xm,ym);
+linb = fitlm(xb,yb);
+[linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linm,[0 1],linb.Coefficients{2,1}); %[0 1] = origin*0+1*slopemono = slopebino?
+linPvalue(1,1)
+F(1,1)
+
+
+%% 2)Compute Pearson's r correlations
 
 corrs = nan(2,2);
 
