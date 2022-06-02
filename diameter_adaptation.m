@@ -390,8 +390,7 @@ saveas(gcf,strcat(plotdir, '.svg'));
     xtest = xfac;
     ytest = y1fac;
     linreg = fitlm(xtest,ytest);
-    [linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linreg) %r =numerator degrees of freedom, linreg.DFE = denominator degrees of freedom.
-    linreg.DFE
+    [linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linreg); %r =numerator degrees of freedom,
     length(xtest)
     
     
