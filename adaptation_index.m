@@ -3,7 +3,7 @@
 % monocular and binocular conditions
 % This script follows the processing steps of "BinocularAdaptationTrialSelection.m"
 
-% Developped by Loic Daumail, started 04-08-2021
+% Developped by Loic Daumail, started 04-08-2021, last edited 06-02-2022
 
 
 %1) Get mean peak response values for all units in both mono vs bino
@@ -26,10 +26,9 @@ mean_pk4 = nan(length(fieldnames( meanPks.mean_peaks)),length(NdeAvgCont),length
     for i =1:length(fieldnames( meanPks.mean_peaks))
         filename = filenames{i};
         if strcmp(NoFiltMultiContSUA.NoFiltMultiContSUA.(filename).cellclass, class{c})
-            for bin = 1:length(NdeAvgCont)
-                binNb = sprintf('bin%d',bins(bin));
-                if nnz(strcmp(fieldnames(meanPks.mean_peaks.(filename)),binNb))
-                    
+            if nnz(strcmp(fieldnames(meanPks.mean_peaks.(filename)),'bin1')) && nnz(strcmp(fieldnames(meanPks.mean_peaks.(filename)),'bin6'))  
+                for bin = 1:length(NdeAvgCont)
+                    binNb = sprintf('bin%d',bins(bin));    
                     mean_pk1(i,bin,c) = meanPks.mean_peaks.(filename).(binNb)(1);
                     mean_pk4(i,bin,c) = meanPks.mean_peaks.(filename).(binNb)(4);
                 end
@@ -267,9 +266,128 @@ plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_0420
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
 
+%% Plot the difference of adaptation indices across adaptation conditions
+%Use trial selected data from other trial selection ('same as adaptation_and_binocular_interaction_plots.m', that has more single unit data
 
-%% Mean adaptation index for significantly modulated neurons
 
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
+channelfilename = [newdatadir 'all_orig_bs_zscore_trials_05022021_mono_bino']; 
+peak_aligned_trials = load(channelfilename);
+
+%Normalize data differently so Pk1 mono also has a normal distribution
+filenames = fieldnames(peak_aligned_trials.peak_aligned_trials);
+bins = [1,6];
+
+mean_peaks = nan(250, 4, 2,length(filenames) );
+for i = 1: length(filenames)
+    filename = filenames{i};
+    if length(fieldnames(peak_aligned_trials.peak_aligned_trials.(filename).origin)) == 2
+        for b = 1:2
+            binN = sprintf('bin%d',bins(b));
+             %compute mean peak responses
+             for p = 1:4
+                 pkN = sprintf('pk%d',p);
+                 mean_peaks(:,p,b,i) = mean(peak_aligned_trials.peak_aligned_trials.(filename).origin.(binN).(pkN),2);
+             end
+        end
+    end
+end
+%store norm peak values
+ peaks = nan(4,2,length(filenames));
+for i = 1:length(filenames)
+    for b = 1:2
+        for p = 1:4
+            peaks(p,b,i) = max(mean_peaks(:,p,b,i));
+        end
+    end
+end
+
+%compute adaptation index
+adapt_idx = nan(2,length(filenames));
+for i =1:length(filenames)
+    for b =1:2
+        adapt_idx(b,i) = 2*(peaks(1,b,i)-peaks(4,b,i))/(peaks(1,b,i)+peaks(4,b,i));
+    end
+end
+
+index = adapt_idx(:,~isnan(adapt_idx(1,:)));
+
+idx_diff = index(1,:) - index(2,:);
+
+unitnb = 1:length(idx_diff);
+%get pvalues from lmer results with Dunnett correction
+pvalues = dlmread('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\lmer_results_orig_03032020_corrected_dunnett.csv', ',', 1,1);
+
+%clear out nans
+pk1pk4pval = pvalues(~isnan(pvalues(:,3)),3);
+
+pk1pk4pval = pk1pk4pval(~isnan(adapt_idx(1,:)));
+
+suppsig = pk1pk4pval(pk1pk4pval < 0.05 & index(1,:)' > 0);
+facsig = pk1pk4pval(pk1pk4pval < 0.05 & index(1,:)' < 0);
+
+
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('Blues', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+
+colors = [cmaps(2).map(7,:); cmaps(1).map(7,:)];
+adapType = [pk1pk4pval < 0.05 & index(1,:)' > 0,pk1pk4pval < 0.05 & index(1,:)' < 0 ];
+%colormap(cmap);
+clear g
+f = figure('Position',[100 100 800 1000]);
+set(f,'position',get(f,'position').*[1 1 1.15 1])
+for t = 1:size(adapType,2)
+ condition = [repmat({'all'},length(idx_diff),1); repmat({'sig'},length(idx_diff(unitnb(adapType(:,t)))),1)];
+  %jitter
+g(1,2*(t-1)+1) = gramm('x',condition,'y', [idx_diff,idx_diff(adapType(:,t))]', 'color',condition); %[unitnb,1:length(unitnb(adapType(:,t)))]
+g(1,2*(t-1)+1).geom_jitter('width',0.4,'height',0); %Scatter plot
+g(1,2*(t-1)+1).set_color_options('map',[cmaps(3).map(3,:);colors(t,:)]); 
+g(1,2*(t-1)+1).axe_property( 'xlim',[0 4] , 'ylim',[-1 1]); 
+% add confidence interval 95%
+ci_low = [mean(idx_diff) - std(idx_diff)/sqrt(length(idx_diff)); mean(idx_diff(adapType(:,t))) - std(idx_diff(adapType(:,t)))/sqrt(length(idx_diff(adapType(:,t)))) ];
+ci_high = [mean(idx_diff) + std(idx_diff)/sqrt(length(idx_diff)); mean(idx_diff(adapType(:,t))) + std(idx_diff(adapType(:,t)))/sqrt(length(idx_diff(adapType(:,t)))) ];
+g(1,2*(t-1)+1).update('x',[1;2], 'y', [mean(idx_diff); mean(idx_diff(adapType(:,t)))],...
+    'ymin',ci_low,'ymax',ci_high,'color',[1;2]);
+g(1,2*(t-1)+1).geom_point('dodge',0.5);
+g(1,2*(t-1)+1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+g(1,2*(t-1)+1).set_color_options('map',[cmaps(3).map(3,:);colors(t,:)]); 
+g(1,2*(t-1)+1).axe_property('xlim',[0 4]); 
+g(1,2*(t-1)+1).set_point_options('base_size',7);
+
+%bar
+g(1,2*(t-1)+2)=gramm('x',idx_diff,'y',unitnb);
+g(1,2*(t-1)+2).stat_bin('nbins',25,'geom','overlaid_bar');
+g(1,2*(t-1)+2).stat_density();
+%g(1,1).set_color_options('map', [251/255 154/255 153/255;160/255 160/255 160/255]);
+g(1,2*(t-1)+2).set_color_options('map',cmaps(3).map(3,:)); 
+g(1,2*(t-1)+2).axe_property('xlim',[-1 1], 'ylim', [0 6]); 
+g(1,2*(t-1)+2).set_names('x','Adaptation Index Difference','color','Legend','row','','y','Count');
+
+g(1,2*(t-1)+2).update('x',idx_diff(adapType(:,t)), 'y',unitnb(adapType(:,t)))
+g(1,2*(t-1)+2).stat_bin('nbins',25,'geom','overlaid_bar');
+g(1,2*(t-1)+2).stat_density();
+g(1,2*(t-1)+2).set_color_options('map',colors(t,:)); 
+g(1,2*(t-1)+2).axe_property('xlim',[-1 1], 'ylim', [0 6]); 
+
+end
+g(1,2).coord_flip();
+g(1,4).coord_flip();
+g.set_title({'Adaptation index difference distribution across all cells'});
+g.draw();
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_sdf_mono_bino_allcells_adaptindex_difference');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
+
+%% Test for significant difference between stimulation conditions
+
+%1) Population level
+[hpop, ppop, cipop, statspop] = ttest(idx_diff);
+%2) Suppressed units
+[hsup, psup, cisup, statsup] = ttest(idx_diff(adapType(:,1)));
 %% Plots of mon/bin distributions of indices
 nbins = [15, 20; 15, 15; 15, 3];
 xlims = [-0.2 0.4;-0.25 0.3;0 0.4];
@@ -434,6 +552,14 @@ end
 xlabel('Monocular adaptation index')
 ylabel('Binocular adaptation index')
 title('K cells adaptation indices')
+
+%% Compute adaptation index difference in the binocular versus monocular condition
+
+
+
+
+
+
 
 %{
 %% ROC analyis of distributions in the monocular versus binocular condition
