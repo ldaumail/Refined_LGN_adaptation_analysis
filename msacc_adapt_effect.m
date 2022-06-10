@@ -955,8 +955,8 @@ for i =1 :length(facUnits)
         unitBhv(i) = {'Suppressed'};
     end
 end
-index=cellfun(@isempty,unitBhv);
-fullIndex = ~index;
+index=cellfun(@isempty,unitBhv); 
+fullIndex = ~index; %only keep significantly adapting units
 linUnitBhv = [unitBhv(fullIndex); repmat({'Population'}, [length(unitBhv),1])];
 linFreq = [freq(fullIndex);freq(:)]';
 
@@ -990,9 +990,42 @@ g(1,1).set_point_options('base_size',7);
 g.draw();
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_frequency_adapt_scatter.svg'));
 
-%2) Amplitude
-%3) Eye Movement Trace
+%% Assess correlation between microsaccade frequency and adaptation strength
 
+colmaps = [cmaps(1).map(5,:);cmaps(2).map(3,:)]; %invert order of colors since we plot monocular condition first
+
+%1) Compute adaptation index in the monocular condition
+adapt_idx = 2*(meanpk1 - meanpk4)./(meanpk1+meanpk4);
+
+figure('Renderer', 'painters', 'Position', [10 10 1000 1200]);
+x = freq;
+y = adapt_idx;
+
+% Keep the same color for the statistics
+coeffs = polyfit(x(isfinite(x) & isfinite(y)),y(isfinite(x) & isfinite(y)),1);
+f = polyval(coeffs,x);
+plot(x, y,'o',x, f,'-','Color',colmaps(1,:),'MarkerSize',2, 'MarkerFaceColor',colmaps(1,:),'linewidth',2)
+%xlim([0 10])
+%ylim([-0.7 0.8])
+text(max(x)/1.3,max(y)/20, sprintf('y = %.2f + %.2f*x', round(coeffs(2),2), round(coeffs(1),2)))
+
+hold on
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+legend('','Adaptation Index = f(Microsaccade Frequency)')
+title('Adaptation index as a function of microsaccade frequency')
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\adapt_idx_vs_msaccfreq_population.svg'));
+  
+%% Stats on slope and correlation
+xtest = x;
+ytest = y;
+linreg = fitlm(xtest,ytest);
+[linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linreg); %r =numerator degrees of freedom
+length(xtest)
+linPvalue(1,1)
+F(1,1)
+
+corr(x(isfinite(x)),y(isfinite(y)))
 %% Other idea:  Take one facilitated unit and retrigger peak responses to microsaccade onset times
 %% then compare to the peak aligned average
    %get pvalues from lmer results with Dunnett correction
