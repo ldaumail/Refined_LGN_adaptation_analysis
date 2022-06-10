@@ -446,8 +446,6 @@ end
 
 %% Now use knowledge from previous steps to make a good figure for the paper
 
-%1) Pick 1 good example
-
 indexdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\analysis\';
 concat_filenames = load( [indexdir, 'concat_filenames_completenames']); %cluster filenames
 newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
@@ -550,16 +548,17 @@ for i =1:length(xfilenames)
         end
         eyeMovData.(xcluster).nprocTrials = nprocTrials; 
         eyeMovData.(xcluster).msaccTrials = excludeTrials;
+        eyeMovData.(xcluster).msaccOn = excluSaccs;
         eyeMovData.(xcluster).cellclass = trialsTraces.NoFiltMultiContSUA.(xcluster).cellclass;
         %end
         catch
         cnt = cnt+1;
         disp(strcat({'missing data ' xBRdatafile}))
     end
-    
 end
-        %plot mean response accross all trials above (subplot 1) and mean
-        %response with selected trials below overlayed. Subplot 2: plot
+
+   %% plot mean response accross all trials above (subplot 1) and mean
+        %response with selected trials overlayed. Subplot 2: plot
         %difference of the means
         %colors
         nlines =7;
@@ -567,9 +566,9 @@ end
 
         xabs = -125:124;
    for i =1:length(xfilenames) 
-       %xcluster =xfilenames{i};
+       xcluster =xfilenames{i};
        %xcluster ='x160629_I_p03_uclust62_cinterocdrft_stab_fft_sig';
-       xcluster ='x180827_I_p02_uclust8_cinterocdrft_stab_fft_sig';
+       %xcluster ='x180827_I_p02_uclust8_cinterocdrft_stab_fft_sig';
        
        if isfield(peak_trig_traces, xcluster) && isfield(eyeMovData,xcluster)
         figure('Renderer', 'painters', 'Position', [10 10 1000 1200]);
@@ -637,7 +636,7 @@ end
    
    
    %% plot overall mean difference of the means across single units
-   
+   xabs = -125:124;
    all_diffs = nan(250,4,length(xfilenames));
    for i =1:length(xfilenames)
        xcluster =xfilenames{i};
@@ -878,7 +877,7 @@ set(f,'position',get(f,'position').*[1 1 1.15 1])
 g(1,1) = gramm('x',animal,'y',linAmp, 'color',animal); 
 g(1,1).geom_jitter('width',0.4,'height',0); %Scatter plot
 g(1,1).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
-g(1,1).axe_property( 'xlim',[0 4] , 'ylim',[-4 1]); 
+g(1,1).axe_property( 'xlim',[0 4] , 'ylim',[-5 1]); 
 % add confidence interval 95%
 ci_low = [nanmean(linAmp(strcmp(animal, 'B'))) - std(linAmp(strcmp(animal, 'B')),0,'omitnan')/sqrt(length(linAmp(strcmp(animal, 'B')))); nanmean(linAmp(strcmp(animal, 'I'))) - std(linAmp(strcmp(animal, 'I')),0,'omitnan')/sqrt(length(linAmp(strcmp(animal, 'I')))) ];
 ci_high = [nanmean(linAmp(strcmp(animal, 'B'))) + std(linAmp(strcmp(animal, 'B')),0,'omitnan')/sqrt(length(linAmp(strcmp(animal, 'B')))); nanmean(linAmp(strcmp(animal, 'I'))) + std(linAmp(strcmp(animal, 'I')),0,'omitnan')/sqrt(length(linAmp(strcmp(animal, 'I')))) ];
@@ -896,9 +895,180 @@ g(1,2)=gramm('x',linAmp,'y',msacc, 'color',animal);
 g(1,2).stat_bin('normalization','probability','nbins',50,'geom','overlaid_bar');
 g(1,2).stat_density();
 g(1,2).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
-g(1,2).axe_property('xlim',[-4 1], 'ylim', [0 1]); 
+g(1,2).axe_property('xlim',[-5 1], 'ylim', [0 1]); 
 g(1,2).set_names('x','Microsaccade Amplitude (log)','color','Legend','row','','y','Count');
 g(1,2).coord_flip();
 g.draw();
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_amplitudes_density_I_B_scatter.svg'));
 
+%% New Idea: compare frequency, amplitude, and traces of microsaccades in facilitated units vs suppressed units
+
+%1) Frequency
+filenames = fieldnames(peak_trig_traces);
+freq = nan(length(fieldnames(peak_trig_traces)), 1); 
+
+for i = 1:length(fieldnames(peak_trig_traces))
+    xcluster = filenames{i};
+    if isfield(peak_trig_traces, xcluster) && isfield(eyeMovData,xcluster)
+       
+            freq(i) = sum(eyeMovData.(xcluster).msaccTrials)/(length(find(~eyeMovData.(xcluster).nprocTrials)));
+
+    end
+end
+
+
+
+unit = [1:length(freq(:,1)),1:length(freq(:,2))]; 
+
+%get pvalues from lmer results with Dunnett correction
+pvalues = dlmread('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\lmer_results_orig_03032020_corrected_dunnett.csv', ',', 1,1);
+pk1pk4pval = pvalues(~isnan(pvalues(:,3)),3);%clear out nans
+ 
+%get mean pk1-pk4 differences for all units
+meanpk1 = nan(length(xfilenames),1);
+meanpk4 = nan(length(xfilenames),1);
+
+for i =1:length(xfilenames)
+       xcluster =xfilenames{i};
+       if isfield(peak_trig_traces, xcluster) && isfield(eyeMovData,xcluster)
+         
+               %all traces excluding unprocessed ones due to algorithm bug
+               pk1Traces =peak_trig_traces.(xcluster).originSUA.bin1.pk1(:,~eyeMovData.(xcluster).nprocTrials);
+               pk4Traces = peak_trig_traces.(xcluster).originSUA.bin1.pk4(:,~eyeMovData.(xcluster).nprocTrials);
+               
+               meanpk1(i) = max(mean(pk1Traces,2));
+               meanpk4(i) = max(mean(pk4Traces,2));
+
+       end
+end
+
+%get logicals to extract suppressed and facilitated units from the
+%population
+facUnits = pk1pk4pval < 0.05 & meanpk1 - meanpk4 < 0;
+suppUnits = pk1pk4pval < 0.05 & meanpk1 - meanpk4 > 0;
+
+unitBhv = cell(length(facUnits),1); %is the unit adapting or not? facilitated or suppressed?
+for i =1 :length(facUnits)
+    if facUnits(i) == 1
+        unitBhv(i) = {'Facilitated'};
+    elseif suppUnits(i) == 1
+        unitBhv(i) = {'Suppressed'};
+    end
+end
+index=cellfun(@isempty,unitBhv);
+fullIndex = ~index;
+linUnitBhv = [unitBhv(fullIndex); repmat({'Population'}, [length(unitBhv),1])];
+linFreq = [freq(fullIndex);freq(:)]';
+
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+
+
+%plot figure
+clear g
+f = figure('Position',[100 100 800 1000]);
+set(f,'position',get(f,'position').*[1 1 1.15 1])
+  %jitter
+g(1,1) = gramm('x',linUnitBhv ,'y',linFreq, 'color',linUnitBhv); 
+g(1,1).geom_jitter('width',0.4,'height',0); %Scatter plot
+g(1,1).set_color_options('map',[cmaps(2).map(4,:);cmaps(1).map(5,:);cmaps(3).map(5,:)]); 
+%g(1,1).axe_property( 'xlim',[0 4] , 'ylim',[-5 1]); 
+% add confidence interval 95%
+ci_low = [nanmean(linFreq(strcmp(linUnitBhv, 'Facilitated'))) - std(linFreq(strcmp(linUnitBhv, 'Facilitated')),0,'omitnan')/sqrt(length(linFreq(strcmp(linUnitBhv, 'Facilitated'))));nanmean(linFreq(strcmp(linUnitBhv, 'Population'))) - std(linFreq(strcmp(linUnitBhv, 'Population')),0,'omitnan')/sqrt(length(linFreq(strcmp(linUnitBhv, 'Population')))); nanmean(linFreq(strcmp(linUnitBhv, 'Suppressed'))) - std(linFreq(strcmp(linUnitBhv, 'Suppressed')),0,'omitnan')/sqrt(length(linFreq(strcmp(linUnitBhv, 'Suppressed')))) ];
+ci_high = [nanmean(linFreq(strcmp(linUnitBhv, 'Facilitated'))) + std(linFreq(strcmp(linUnitBhv, 'Facilitated')),0,'omitnan')/sqrt(length(linFreq(strcmp(linUnitBhv, 'Facilitated'))));nanmean(linFreq(strcmp(linUnitBhv, 'Population'))) + std(linFreq(strcmp(linUnitBhv, 'Population')),0,'omitnan')/sqrt(length(linFreq(strcmp(linUnitBhv, 'Population')))); nanmean(linFreq(strcmp(linUnitBhv, 'Suppressed'))) + std(linFreq(strcmp(linUnitBhv, 'Suppressed')),0,'omitnan')/sqrt(length(linFreq(strcmp(linUnitBhv, 'Suppressed')))) ];
+g(1,1).update('x',[1;2;3], 'y', [nanmean(linFreq(strcmp(linUnitBhv, 'Facilitated')));nanmean(linFreq(strcmp(linUnitBhv, 'Population'))); nanmean(linFreq(strcmp(linUnitBhv, 'Suppressed')))],...
+    'ymin',ci_low,'ymax',ci_high,'color',[1;2;3]);
+g(1,1).geom_point('dodge',0.5);
+g(1,1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+g(1,1).set_color_options('map',[cmaps(2).map(4,:);cmaps(1).map(5,:);cmaps(3).map(5,:)]); 
+%g(1,1).axe_property('xlim',[0 4]); 
+g(1,1).set_point_options('base_size',7);
+g.draw();
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_frequency_adapt_scatter.svg'));
+
+%2) Amplitude
+%3) Eye Movement Trace
+
+%% Other idea:  Take one facilitated unit and retrigger peak responses to microsaccade onset times
+%% then compare to the peak aligned average
+   %get pvalues from lmer results with Dunnett correction
+pvalues = dlmread('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\lmer_results_orig_03032020_corrected_dunnett.csv', ',', 1,1);
+pk1pk4pval = pvalues(~isnan(pvalues(:,3)),3);%clear out nans
+      
+
+nlines =7;
+        cmaps =cbrewer2('Oranges', nlines);
+
+        xabs = -125:124;
+   for i =1:length(xfilenames) 
+       xcluster =xfilenames{i};
+       
+
+       if isfield(peak_trig_traces, xcluster) && isfield(eyeMovData,xcluster)
+        figure('Renderer', 'painters', 'Position', [10 10 1000 1200]);
+        for p =1:4
+            pkN = sprintf('pk%d',p);
+            %all traces excluding unprocessed ones due to algorithm bug
+            allTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN)(:,~eyeMovData.(xcluster).nprocTrials);
+            %selected trials neural data retriggered to msaccs onset times
+            %1)retrigger msac onset times within each peak response window
+            %2)retrigger peak responses to msac onset times
+            selectedTrialsTraces =peak_trig_traces.(xcluster).originSUA.bin1.(pkN)(:,~eyeMovData.(xcluster).nprocTrials);
+            
+            subplot(2,4,p)
+            meanAll = nanmean(allTrialsTraces,2);
+            %ci_high = meanAll + 1.96*std(allTrialsTraces,[],2,'omitnan')./sqrt(length(allTrialsTraces(1,:)));
+            %ci_low = meanAll - 1.96*std(allTrialsTraces,[],2,'omitnan')./sqrt(length(allTrialsTraces(1,:)));
+            ci_high = meanAll + std(allTrialsTraces,[],2,'omitnan');
+            ci_low = meanAll - std(allTrialsTraces,[],2,'omitnan');
+          
+            plot(xabs, meanAll,'linewidth',1,'col',[180/255 180/255 180/255])
+            hold on
+            h1= ciplot( ci_high, ci_low,[-125:124],[40/255 40/255 40/255],0.1);
+            set(h1, 'edgecolor','none')
+            hold on
+            meanSel = nanmean(selectedTrialsTraces,2);
+            %ci_high = meanSel + 1.96*std(selectedTrialsTraces,[],2,'omitnan')./sqrt(length(selectedTrialsTraces(1,:)));
+            %ci_low = meanSel - 1.96*std(selectedTrialsTraces,[],2,'omitnan')./sqrt(length(selectedTrialsTraces(1,:)));
+            ci_high = meanSel + std(selectedTrialsTraces,[],2,'omitnan');
+            ci_low = meanSel - std(selectedTrialsTraces,[],2,'omitnan');
+      
+            plot(xabs, meanSel, 'col', cmaps(4,:), 'linewidth',1)
+            hold on
+            h2= ciplot( ci_high, ci_low,[-125:124],cmaps(4,:),0.1);
+            set(h2, 'edgecolor','none')
+            ylabel('Spike rate (spikes/s)')
+            
+            set(gca,'box','off')
+            if p == 1
+                sgtitle(strcat({sprintf(' Mean response including all trials (%d trials) vs Mean response excluding trials with msaccs (%d trials)',length(allTrialsTraces(1,:)),length(selectedTrialsTraces(1,:))), xcluster}),'Interpreter', 'none')
+            end
+            if p> 1
+                ax1 = gca;
+                ax1.YAxis.Visible = 'off';
+            end
+            ylim([0 270]);
+            
+            %ylim([0 120])
+            subplot(2,4,p+4)
+            diff = meanAll - meanSel;
+            plot(xabs, diff, 'Color', [40/255 40/255 40/255], 'linewidth',1)
+            xlabel('Time from stimulus onset (ms)')
+            ylabel('Spike rate difference (spikes/s)')
+            set(gca,'box','off')
+            if p == 1
+                title(strcat(sprintf('Mean(all trials) - Mean(msacc excluded trials) difference')),'Interpreter', 'none')
+            end
+            if p> 1
+                ax1 = gca;
+                ax1.YAxis.Visible = 'off';
+            end
+            ylim([-7 18]);
+        end
+       % saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\peaktrigg_diffmean_response_accounting_msaccs_',xcluster,'.svg'));
+       end
+   end
