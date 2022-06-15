@@ -265,6 +265,41 @@ set(f,'position',get(f,'position').*[1 1 1.15 1])
 plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_sdf_mono_bino_allcells_adaptindex_purpOr');
 saveas(gcf,strcat(plotdir, '.png'));
 saveas(gcf,strcat(plotdir, '.svg'));
+%% Same plot as above, with scatter plots and vertical
+
+clear g
+f = figure('Position',[100 100 800 1000]);
+set(f,'position',get(f,'position').*[1 1 1.15 1])
+  %jitter
+ %g(1,1)=gramm('x',index,'y',unit,'color',condition);
+g(1,1) = gramm('x',condition,'y',index, 'color',condition); 
+g(1,1).geom_jitter('width',0.4,'height',0); %Scatter plot
+g(1,1).set_color_options('map',[cmap(3,:);cmaps(1).map(4,:)]); 
+g(1,1).axe_property( 'xlim',[0 4] , 'ylim',[-0.3 0.5]); 
+% add confidence interval 95%
+ci_low = [nanmean(index(strcmp(condition, 'Monocular'))) - std(index(strcmp(condition, 'Monocular')),0,'omitnan')/sqrt(length(index(strcmp(condition, 'Monocular')))); nanmean(index(strcmp(condition, 'Binocular'))) - std(index(strcmp(condition, 'Binocular')),0,'omitnan')/sqrt(length(index(strcmp(condition, 'Binocular'))))];
+ci_high = [nanmean(index(strcmp(condition, 'Monocular'))) + std(index(strcmp(condition, 'Monocular')),0,'omitnan')/sqrt(length(index(strcmp(condition, 'Monocular')))); nanmean(index(strcmp(condition, 'Binocular'))) + std(index(strcmp(condition, 'Binocular')),0,'omitnan')/sqrt(length(index(strcmp(condition, 'Binocular'))))];
+g(1,1).update('x',[1;2], 'y', [nanmean(index(strcmp(condition, 'Monocular'))); nanmean(index(strcmp(condition, 'Binocular')))],...
+    'ymin',ci_low,'ymax',ci_high,'color',[1;2]);
+g(1,1).geom_point('dodge',0.5);
+g(1,1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+g(1,1).set_color_options('map',[cmap(3,:);cmaps(1).map(4,:)]); 
+g(1,1).axe_property('xlim',[0 4]); 
+g(1,1).set_point_options('base_size',7);
+%}
+%bar
+g(1,2)=gramm('x',index,'y',unit, 'color',condition);
+g(1,2).stat_bin('nbins',25,'geom','overlaid_bar');
+%g(1,2).stat_bin('normalization','probability','nbins',20,'geom','overlaid_bar');
+g(1,2).stat_density();
+g(1,2).set_color_options('map',[cmap(3,:);cmaps(1).map(4,:)]); 
+g(1,2).axe_property('xlim',[-0.3 0.5], 'ylim', [0 5]); 
+g(1,2).set_names('x','Adaptation index','color','Legend','row','','y','Count');
+g(1,2).coord_flip();
+g.draw();
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_scat_mono_bino_allcells_adaptindex_purpOr');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
 
 %% Plot the difference of adaptation indices across adaptation conditions
 %Use trial selected data from other trial selection ('same as adaptation_and_binocular_interaction_plots.m', that has more single unit data
