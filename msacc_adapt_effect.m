@@ -901,7 +901,7 @@ g(1,2).coord_flip();
 g.draw();
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_amplitudes_density_I_B_scatter.svg'));
 
-%% New Idea: compare frequency, amplitude, and traces of microsaccades in facilitated units vs suppressed units
+%% New Idea: assess correlation between frequency of microsaccades and adaptation index
 
 %1) Frequency
 filenames = fieldnames(peak_trig_traces);
@@ -918,7 +918,7 @@ end
 
 
 
-unit = [1:length(freq(:,1)),1:length(freq(:,2))]; 
+unit = [1:length(freq(:,1)),1:length(freq(:,1))]; 
 
 %get pvalues from lmer results with Dunnett correction
 pvalues = dlmread('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\lmer_results_orig_03032020_corrected_dunnett.csv', ',', 1,1);
@@ -1026,6 +1026,90 @@ linPvalue(1,1)
 F(1,1)
 
 corr(x(isfinite(x)),y(isfinite(y)))
+
+
+%% Assess correlation between frequency DIFFERENCE (start of trial vs end) and adaptation index
+
+%1) Compute frequency difference between f
+filenames = fieldnames(peak_trig_traces);
+freqDiff = nan(length(fieldnames(peak_trig_traces)), 1); 
+
+for i = 1:length(fieldnames(peak_trig_traces))
+    xcluster = filenames{i};
+    if isfield(peak_trig_traces, xcluster) && isfield(eyeMovData,xcluster)
+            % average frequency of msaccs per second across trials
+            freqDiff(i) = (sum(eyeMovData.(xcluster).msaccOn <= 550,'all')-sum(eyeMovData.(xcluster).msaccOn > 550,'all'))/(0.55*length(find(~eyeMovData.(xcluster).nprocTrials)));
+
+    end
+end
+
+%2) Compute adaptation index in the monocular condition
+adapt_idx = 2*(meanpk1 - meanpk4)./(meanpk1+meanpk4);
+
+colmaps = [cmaps(1).map(5,:);cmaps(2).map(3,:)]; %invert order of colors since we plot monocular condition first
+
+figure('Renderer', 'painters', 'Position', [10 10 1000 1200]);
+x = freqDiff;
+y = adapt_idx;
+
+% Keep the same color for the statistics
+coeffs = polyfit(x(isfinite(x) & isfinite(y)),y(isfinite(x) & isfinite(y)),1);
+f = polyval(coeffs,x);
+plot(x, y,'o',x, f,'-','Color',colmaps(1,:),'MarkerSize',2, 'MarkerFaceColor',colmaps(1,:),'linewidth',2)
+%xlim([0 10])
+%ylim([-0.7 0.8])
+text(max(x)/1.3,max(y)/20, sprintf('y = %.2f + %.2f*x', round(coeffs(2),2), round(coeffs(1),2)))
+
+hold on
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+legend('','Adaptation Index = f(Microsaccade Frequency Difference)')
+title('Adaptation index as a function of microsaccade frequency difference')
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\adapt_idx_vs_msaccfreqDiff_population.svg'));
+%% Stats on slope and correlation
+xtest = x;
+ytest = y;
+linreg = fitlm(xtest,ytest);
+[linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linreg); %r =numerator degrees of freedom
+length(xtest)
+linPvalue(1,1)
+F(1,1)
+
+corr(x(isfinite(x)),y(isfinite(y)))
+%% Plot frequency difference per adapting subset + population (scatter)
+linFreq = [freqDiff(fullIndex);freqDiff(:)]';
+
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('Greens', nlines);
+cmap = flip(cmaps(2).map) ;
+
+
+%plot figure
+clear g
+f = figure('Position',[100 100 800 1000]);
+set(f,'position',get(f,'position').*[1 1 1.15 1])
+  %jitter
+g(1,1) = gramm('x',linUnitBhv ,'y',linFreq, 'color',linUnitBhv); 
+g(1,1).geom_jitter('width',0.4,'height',0); %Scatter plot
+g(1,1).set_color_options('map',[cmaps(2).map(4,:);cmaps(1).map(5,:);cmaps(3).map(5,:)]); 
+%g(1,1).axe_property( 'xlim',[0 4] , 'ylim',[-5 1]); 
+% add confidence interval 95%
+ci_low = [nanmean(linFreq(strcmp(linUnitBhv, 'Facilitated'))) - std(linFreq(strcmp(linUnitBhv, 'Facilitated')),0,'omitnan')/sqrt(length(linFreq(strcmp(linUnitBhv, 'Facilitated'))));nanmean(linFreq(strcmp(linUnitBhv, 'Population'))) - std(linFreq(strcmp(linUnitBhv, 'Population')),0,'omitnan')/sqrt(length(linFreq(strcmp(linUnitBhv, 'Population')))); nanmean(linFreq(strcmp(linUnitBhv, 'Suppressed'))) - std(linFreq(strcmp(linUnitBhv, 'Suppressed')),0,'omitnan')/sqrt(length(linFreq(strcmp(linUnitBhv, 'Suppressed')))) ];
+ci_high = [nanmean(linFreq(strcmp(linUnitBhv, 'Facilitated'))) + std(linFreq(strcmp(linUnitBhv, 'Facilitated')),0,'omitnan')/sqrt(length(linFreq(strcmp(linUnitBhv, 'Facilitated'))));nanmean(linFreq(strcmp(linUnitBhv, 'Population'))) + std(linFreq(strcmp(linUnitBhv, 'Population')),0,'omitnan')/sqrt(length(linFreq(strcmp(linUnitBhv, 'Population')))); nanmean(linFreq(strcmp(linUnitBhv, 'Suppressed'))) + std(linFreq(strcmp(linUnitBhv, 'Suppressed')),0,'omitnan')/sqrt(length(linFreq(strcmp(linUnitBhv, 'Suppressed')))) ];
+g(1,1).update('x',[1;2;3], 'y', [nanmean(linFreq(strcmp(linUnitBhv, 'Facilitated')));nanmean(linFreq(strcmp(linUnitBhv, 'Population'))); nanmean(linFreq(strcmp(linUnitBhv, 'Suppressed')))],...
+    'ymin',ci_low,'ymax',ci_high,'color',[1;2;3]);
+g(1,1).geom_point('dodge',0.5);
+g(1,1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+g(1,1).set_color_options('map',[cmaps(2).map(4,:);cmaps(1).map(5,:);cmaps(3).map(5,:)]); 
+%g(1,1).axe_property('xlim',[0 4]); 
+g(1,1).set_point_options('base_size',7);
+g.draw();
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_frequencyDiff_adapt_scatter.svg'));
+  
+
 %% Other idea:  Take one facilitated unit and retrigger peak responses to microsaccade onset times
 %% then compare to the peak aligned average
    %get pvalues from lmer results with Dunnett correction
