@@ -246,7 +246,7 @@ end
    
    %% Figure 2: cell class response plots
    
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\all_units\';
 channelfilename = [newdatadir 'clean_origin_sup_50']; 
 data_file = load(channelfilename);
 channelfilename = [newdatadir 'clean_SUA_sup_50']; 
@@ -337,11 +337,11 @@ end
 
  % plot overall mean
    
-pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
+pvaluesdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_peaks\';
 pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_corrected.csv'];
 pvalues = dlmread(pvalfilename, ',', 1,1);
 
-channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+channeldir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
 peakvals = load([channeldir 'all_data_peaks']);
 
 layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
@@ -982,19 +982,18 @@ mean_S_stim = nan(1646+128,38, length(channum));
 
 clear i ;
  for i = 1:length(layer)
-      if ~isempty(data_file.clean_origin_data(i).unit)
-data = squeeze(data_file.clean_origin_data(i).unit(1:1901,:));
-   bsl = mean(data(400:599,:));
-   %stim and bl data
-   norm_mean_bs = nan(length(data(:,1)),1,length(data(1,:)));
-   norm_mean_bs = data(1:end,:) - bsl;
-  
+     if ~isempty(data_file.clean_origin_data(i).unit)
+         data = squeeze(data_file.clean_origin_data(i).unit(1:1901,:));
+         bsl = mean(data(400:599,:));
+         %stim and bl data
+         norm_mean_bs = nan(length(data(:,1)),1,length(data(1,:)));
+         norm_mean_bs = data(1:end,:) - bsl;
 
-clear S namelist;
-[S,t,f]        = mtspecgramc(norm_mean_bs(:,:) ,movingwin, params); 
-
-mean_S_stim(129:end,:,i) = nanmean(S,3);
-      end
+         clear S namelist;
+         [S,t,f]        = mtspecgramc(norm_mean_bs(:,:) ,movingwin, params);
+         
+         mean_S_stim(129:end,:,i) = nanmean(S,3);
+     end
 
 %we can also store tvec and f in a struct, but they are all identical
  end
@@ -1844,7 +1843,7 @@ end
 %% Figure 7: Plots of the TROUGHS
 
 %% Troughs alignment (making the data ready for plotting
-newdatadir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_troughs_03032020\all_units\';
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_troughs_03032020\all_units\';
 channelfilename = [newdatadir 'clean_origin_sup_50']; 
 data_file = load(channelfilename);
 channelfilename = [newdatadir 'clean_SUA_sup_50']; 
@@ -1933,7 +1932,7 @@ for i = channum
     end
 end  
 
-%% Figure 7: Plot troughs of one single unit one after the other with 95% CI
+%% Figure 7: Plot troughs of one single unit one after the other with +-std
 
 
 %%store all trials of a given peak, in a matrix, across all units
@@ -1969,11 +1968,11 @@ stdev = nan(1204,1);
       nlines = 3;
       for nl = 1:nlines  
      
-      cihigh =  mean_aligned(250*(nl-1)+1:250*nl+1)+ 1.96*stdev(250*(nl-1)+1:250*nl+1)/sqrt(14);
-      cilow= mean_aligned(250*(nl-1)+1:250*nl+1)- 1.96*stdev(250*(nl-1)+1:250*nl+1)/sqrt(14);
+      cihigh =  mean_aligned(250*(nl-1)+1:250*nl+1)+ stdev(250*(nl-1)+1:250*nl+1);
+      cilow= mean_aligned(250*(nl-1)+1:250*nl+1)- stdev(250*(nl-1)+1:250*nl+1);
    
       h2= subplot(1,3,nl);
-      plot(-125:125, mean_aligned(250*(nl-1)+1:250*nl+1), 'LineWidth',1);
+      plot(-125:125, mean_aligned(250*(nl-1)+1:250*nl+1), 'LineWidth',2);
       hold on
       h1= ciplot(cihigh,cilow,[-125:125],[40/255 40/255 40/255],0.1);
       ylim([0 180])
@@ -1992,29 +1991,30 @@ stdev = nan(1204,1);
 
       title('Single Unit Mean')
     
-      legend('Mean', '95%CI')
+      legend('Mean', 'std')
 
    
    set(gcf,'Units','inches') 
    set(gcf,'position',[1 1 15 11])
    
    
-   filename = strcat('C:\Users\daumail\Documents\first_year_committee_meeting\','origin_unit_example_troughs');
+   filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\plots\origin_unit_example_troughs');
    saveas(gcf, strcat(filename, '.svg')); 
    saveas(gcf, strcat(filename, '.png')); 
    
-   %% Figure 7:  plot stacking all troughs together
+   %% Figure 7:  plot overall mean of the troughs 
    
- pvaluesdir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_troughs\';
-pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_troughs.csv'];
-pvalues = dlmread(pvalfilename, ',', 1,1);
+ %pvaluesdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\lmer_results_troughs\';
+%pvalfilename = [pvaluesdir 'lmer_results_orig_03032020_troughs.csv'];
+%pvalues = dlmread(pvalfilename, ',', 1,1);
 
-channeldir = 'C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_troughs_03032020\orig_trough_values\all_units\';
+channeldir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_troughs_03032020\orig_trough_values\all_units\';
 troughvals = load([channeldir 'all_data_troughs']);
 
 layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
 'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
 '','','M','M','M','P','M','M','M','M','P','P'};
+
 layer([1,46,55]) = [];
 nlines = 5;
 cmaps = struct();
@@ -2023,112 +2023,98 @@ cmaps(1).map =cbrewer2('Blues', nlines);
 cmaps(2).map =cbrewer2('Reds', nlines);
 cmaps(3).map =cbrewer2('Greens', nlines);
 %}
-cmaps(1).map =cbrewer2('Greys', nlines);
-cmaps(2).map =cbrewer2('Reds', nlines);
-cmaps(3).map =cbrewer2('Blues', nlines)
+%cmaps(1).map =cbrewer2('Greys', nlines);
+%cmaps(2).map =cbrewer2('Reds', nlines);
+%cmaps(3).map =cbrewer2('Blues', nlines)
+col(1,:) =[86/255 86/255 86/255] ; %--dark grey 
+col(2,:) = [251/255 154/255 153/255]; % -- red
+col(3,:) = [146/255 197/255 222/255]; % -- blue
 
-ylims = [[0 140];[0 95];[0 140]];
+
+ylims = [[0 140];[0 95];[0 145]];
 
 
 cellclass = [ 'M', 'P', 'K'];
 for nc = 1:3
-layer_idx = find(strcmp(layer, cellclass(nc)));
-%%store all trials of a given peak, in a matrix, across all units
-%aligned_trials = nan(1204, length(layer_idx));
-aligned_trials = nan(1204, length(layer_idx));
-
-%norm_aligned_trials = nan(1204, length(layer_idx));
-%norm_aligned_trials = nan(1204, length(layer_idx));
-
-clear i
-for i = 1:length(layer_idx)
-    if ~isnan(max_low_dist(layer_idx(i)))
-       for pn = 1:3
-          % aligned_trials(250*(pn-1)+1:250*pn+1,i)= mean(suas_trials(layer_idx(i)).aligned(max_low_dist(layer_idx(i))-125:max_low_dist(layer_idx(i))+125,:,pn),2);
-           aligned_trials(250*(pn-1)+1:250*pn+1,i)= mean(suas_trials(layer_idx(i)).aligned(max_low_dist(layer_idx(i))-1-124:max_low_dist(layer_idx(i))+125,:,pn),2);
-       end
-       %normalizing with max and min of each unit
-       %norm_aligned_trials(:,i) = (aligned_trials(:,i) - min(aligned_trials(:,i)))/(max(aligned_trials(:,i))-min(aligned_trials(:,i)));
-     
+    layer_idx = find(strcmp(layer, cellclass(nc)));
+    %%store all trials of a given peak, in a matrix, across all units
+    %aligned_trials = nan(1204, length(layer_idx));
+    aligned_trials = nan(1204, length(layer_idx));
+    %norm_aligned_trials = nan(1204, length(layer_idx));
+    %norm_aligned_trials = nan(1204, length(layer_idx));
+    
+    clear i
+    for i = 1:length(layer_idx)
+        if ~isnan(max_low_dist(layer_idx(i)))
+            for pn = 1:3
+                aligned_trials(250*(pn-1)+1:250*pn+1,i)= mean(suas_trials(layer_idx(i)).aligned(max_low_dist(layer_idx(i))-1-124:max_low_dist(layer_idx(i))+125,:,pn),2);
+            end
+            %normalizing with max and min of each unit
+            %norm_aligned_trials(:,i) = (aligned_trials(:,i) - min(aligned_trials(:,i)))/(max(aligned_trials(:,i))-min(aligned_trials(:,i)));
+        end
     end
-end
-  %normalizing with max and min across units
-       maximum = max(aligned_trials,[],'all');
-       minimum = min(aligned_trials,[],'all');
-       norm_aligned_trials = (aligned_trials - minimum)/(maximum-minimum);
-
-%aligned_trials = aligned_trials(:,~all(isnan(aligned_trials)));
-
-%figure(); plot(1:length(aligned_trials(:,4)), aligned_trials(:,:))
-%figure(); plot(1:length(aligned_trials(:,4)), norm_aligned_trials(:,:))
-
- clear sig_su mean_sig_su
-  cnt = 0;
- all_mean_data = nan(3, length(layer_idx));
- sig_su = nan(length(aligned_trials(:,1)),length(layer_idx));
-  for nunit = 1:length(layer_idx)
-      if ~isempty(troughvals.trough_vals(layer_idx(nunit)).trough)
- mean_data = nanmean(troughvals.trough_vals(layer_idx(nunit)).trough,2);
-   all_mean_data(:,nunit) = mean_data;
-  
-      end
-  end
- 
-
-
-
-   h=  figure();
-     mean_origin =nanmean(aligned_trials,2);
- 
-        cmap = flip(cmaps(nc).map) ;
-  
-       colormap(cmap); 
-     
-      
-      nlines = 3;
-      for nl = 1:nlines
-      %cmap = jet(4); 
+    %normalizing with max and min across units
+    maximum = max(aligned_trials,[],'all');
+    minimum = min(aligned_trials,[],'all');
+    norm_aligned_trials = (aligned_trials - minimum)/(maximum-minimum);
+   %{ 
+    clear sig_su mean_sig_su
+    cnt = 0;
+    all_mean_data = nan(3, length(layer_idx));
+    sig_su = nan(length(aligned_trials(:,1)),length(layer_idx));
+    for nunit = 1:length(layer_idx)
+        if ~isempty(troughvals.trough_vals(layer_idx(nunit)).trough)
+            mean_data = nanmean(troughvals.trough_vals(layer_idx(nunit)).trough,2);
+            all_mean_data(:,nunit) = mean_data;
+        end
+    end
+    %}
+    h=  figure();
+    mean_origin =nanmean(aligned_trials,2);
+    std_origin = std(aligned_trials,[],2,'omitnan');
+    %cmap = flip(cmaps(nc).map) ;
+    colormap(col);
+    nlines = 3;
+    for nl = 1:nlines
+        %cmap = jet(4);
+        subplot(1,3,nl)
+        plot(-125:125, mean_origin(250*(nl-1)+1:250*nl+1), 'LineWidth',2, 'Color',[40/255 40/255 40/255]);
+        cihigh =  mean_origin(250*(nl-1)+1:250*nl+1)+ std_origin(250*(nl-1)+1:250*nl+1)./sqrt(length(find(~isnan(aligned_trials(1,:)))));
+        cilow= mean_origin(250*(nl-1)+1:250*nl+1)- std_origin(250*(nl-1)+1:250*nl+1)./sqrt(length(find(~isnan(aligned_trials(1,:)))));
+        hold on
+        h1= ciplot(cihigh,cilow,[-125:125],col(nc,:),0.5);%[40/255 40/255 40/255],0.1);
+        set(h1, 'edgecolor','none')
+        xlim([-125 125]) 
+        ylim(ylims(nc,:))
+    end
+    set(h,'position',get(h,'position').*[1 1 1.15 1])
    
-      plot(-125:125, mean_origin(250*(nl-1)+1:250*nl+1), 'LineWidth',1,'color',cmap(nl,:));
-      hold on
-      end
-      set(h,'position',get(h,'position').*[1 1 1.15 1])
-      ylim(ylims(nc,:))
-      xlim([-125 125])
-      set(gca,'box','off')
-      ylabel({'\fontsize{14}Spike Rate (spikes/s)'});
-      title('Overall Mean')
-     
-      set(gca,'box','off')
-      legend('trough 1', 'trough 2', 'trough 3')
-      % P ylim([-20 85])
-      % M ylim([-35 135])
-      % K ylim([-20 200])
-       
-      % M ylim([0.05 .75])
-      % P ylim([.1 .8])
-      % K ylim([-0.01 1])
-      
-       % K norm ylim([-0.02 1.1])
-      
-      %set(gca, 'linewidth',2)
-      %hold on
-      %plot([0 0], ylim,'k')
- 
-
+    xlim([-125 125])
+    set(gca,'box','off')
+    set(gca, 'linewidth',2)
+    ylabel({'\fontsize{14}Spike Rate (spikes/s)'});
+    title('Overall Mean')
+    %set(gca,'box','off')
+    legend('trough 1', 'trough 2', 'trough 3')
+    % P ylim([-20 85])
+    % M ylim([-35 135])
+    % K ylim([-20 200])
+    
+    % M ylim([0.05 .75])
+    % P ylim([.1 .8])
+    % K ylim([-0.01 1])  
+    % K norm ylim([-0.02 1.1])
+    %set(gca, 'linewidth',2)
+    %hold on
+    %plot([0 0], ylim,'k')
     currfig = gcf;
-    
     title(currfig.Children(end),{sprintf('%s mean responses', cellclass(nc))}, 'Interpreter', 'none', 'FontSize', 20)
-   
    % xlabel('\fontsize{14}Resolution (ms)')
-    
-   
    set(gcf,'Units','inches') 
    set(gcf,'position',[1 1 15 11])
+   filename = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_troughs_03032020\plots\',strcat(sprintf('v_common_origin_data_aligned_%s_cells_cmap',cellclass(nc))));
+   saveas(gcf, strcat(filename, '.svg')); 
    
-   
-   filename = strcat('C:\Users\daumail\Documents\LGN_data\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_troughs_03032020\plots\',strcat(sprintf('v_common_origin_data_aligned_%s_cells_cmap',cellclass(nc))));
-   %saveas(gcf, strcat(filename, '.svg')); 
    %saveas(gcf, strcat(filename, '.png')); 
 end
 
