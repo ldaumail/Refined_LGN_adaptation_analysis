@@ -588,13 +588,227 @@ xlabel('Monocular adaptation index')
 ylabel('Binocular adaptation index')
 title('K cells adaptation indices')
 
+
+
+%% Make adaptation index plots of first (old), monocular analysis showing both cell class and monkey
+
+channeldir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\orig_peak_values\all_units\';
+peakvals = load([channeldir 'all_data_peaks']);
+
+layer = {'K','M','P','K','K','K','M','P','P','','M','M','','','M','','','P','','M','','M','M','','P','M','','P', ...
+'P','','','K','P','M','M','M','P','','P','K','P','P','','P','P','M','','P','M','P','M','P','','P','M','M','P','','M','M','P','M', ...
+'','','M','M','M','P','M','M','M','M','P','P'};
+layer([1,46,55]) = [];
+cellclass = [ 'M', 'P', 'K'];
+
+% get monkey name
+metaDat = load([channeldir,'selected_units_sessions']);
+monkey = char(1,length(metaDat.selectedfilenames));
+for i =1: length(metaDat.selectedfilenames)
+    if ~isempty(metaDat.selectedfilenames{i})
+    sess =char(metaDat.selectedfilenames(i));
+    monkey(i) = sess(8);
+    end
+end
+
+%compute mean peak value
+monk = {'I','B'};
+class ={'M','P','K'};
+bins =[1,6];
+
+mean_pk1 = nan(length(peakvals.peak_vals),length(monk),length(class));
+mean_pk4 = nan(length(peakvals.peak_vals),length(monk),length(class));
+
+for c = 1:length(class)
+    for i =1:length(peakvals.peak_vals)
+        % filename = filenames{i};
+        if strcmp(layer(i), class{c})
+            if ~isempty(peakvals.peak_vals(i).peak)
+                %             if nnz(strcmp(fieldnames(meanPks.mean_peaks.(filename)),'bin1')) && nnz(strcmp(fieldnames(meanPks.mean_peaks.(filename)),'bin6'))
+                for bin = 1:length(monk)
+                    %                     binNb = sprintf('bin%d',bins(bin));
+                    if strcmp(monkey(i),monk{bin})
+                        mean_pk1(i,bin,c) = nanmean(peakvals.peak_vals(i).peak(1,:));
+                        mean_pk4(i,bin,c) = nanmean(peakvals.peak_vals(i).peak(4,:));
+                    end
+                end
+            end
+        end
+    end
+end
+ 
+ %2) Compute index
+ adapt_idx = nan(length(peakvals.peak_vals),length(class));
+ for i = 1:length(mean_pk1(1,1,:))
+    for j = 1:length(mean_pk1(1,:,1))
+        for k = 1:length(mean_pk1(:,1,1))
+            adapt_idx(k,j,i) = 2*(mean_pk1(k,j,i) - mean_pk4(k,j,i))/(mean_pk1(k,j,i) + mean_pk4(k,j,i));
+        end
+    end
+ end
+ 
+
+%first need to convert data in the right structure for gramm toolbox
+%standards
+unit =  nan(2*length(adapt_idx(:,1,1)),1);
+condition = cell(2*length(adapt_idx(:,1,1)),1); %monkey index
+cellclass = cell(2*length(adapt_idx(:,1,1)),1);
+index =  nan(2*length(adapt_idx(:,1,1)),1);
+
+for k = 1:length(adapt_idx(:,1,1))
+    for j = 1:length(adapt_idx(1,:,1))
+        for i = 1:length(adapt_idx(1,1,:))
+            
+            if ~isnan(adapt_idx(k,j,i))
+                
+                if j == 1
+                    unit(k) = k;
+                    condition{k} = 'I';
+                    index(k) = adapt_idx(k,j,i);
+                    if i == 1
+                        cellclass{k} = class{1};
+                    else
+                        if i == 2
+                            cellclass{k} = class{2};
+                        else
+                            if i == 3
+                                cellclass{k} = class{3};
+                            end
+                        end
+                    end
+                    %{
+                    if isempty(condition{k})
+                        condition{k} = char();
+                        cellclass{k} = char();
+                    end
+                    %}
+                else
+                    if j == 2
+                        unit(length(adapt_idx(:,1,1))+k) = k;
+                        condition{length(adapt_idx(:,1,1))+k} = 'B';
+                        index(length(adapt_idx(:,1,1))+k) = adapt_idx(k,j,i);
+                        if i == 1
+                            cellclass{length(adapt_idx(:,1,1))+ k} = class{1};
+                        else
+                            if i == 2
+                                cellclass{length(adapt_idx(:,1,1))+ k} = class{2};
+                            else
+                                if i == 3
+                                    cellclass{length(adapt_idx(:,1,1))+ k} = class{3};
+                                end
+                            end
+                        end
+                        %{
+                        if isempty(condition{length(adapt_idx(:,1,1))+ k})
+                            condition{length(adapt_idx(:,1,1))+ k} = char();
+                            cellclass{length(adapt_idx(:,1,1))+ k} = char();
+                        end
+                        %}
+                    end
+                    
+                end
+            end
+            
+        end
+    end
+end
+
+for n = 1:length(condition)
+    if isempty(condition{n})
+        condition{n} = char();
+        cellclass{n} = char();
+        
+    end
+end
+
+%% Histogram + density function
+%(1) subplots for individual cell classes
+clear g
+g(1,1)=gramm('x',index,'y',unit,'color',condition);
+%g(1,2)=copy(g(1));
+%g(1,3)=copy(g(1));
+%g(2,2)=copy(g(1));
+
+%Histogram
+g(1,1).facet_grid(cellclass,[]);
+g(1,1).stat_bin('nbins',25);
+g(1,1).stat_density();
+g(1,1).set_title({'Adaptation index distributions of each cell class', 'in the monocular and binocular conditions'});
+g(1,1).set_names('x','Adaptation Index','color','Legend','row','','y','Count');
+
+f = figure('Position',[100 100 1400 550]);
+g.draw();
+set(f,'position',get(f,'position').*[1 1 1.15 1])
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_rast_sdf_mono_bino_cells_05022021');
+saveas(gcf,strcat(plotdir, '.png'));
+saveas(gcf,strcat(plotdir, '.svg'));
+
+
+%% Histogram + Density + raster plot
+%colors
+% nlines = 7;
+% cmaps = struct();
+% cmaps(1).map =cbrewer2('BuPu', nlines);
+% cmap = flip(cmaps(1).map) ;
+% colormap(cmap);
+
+%col(1,:) =[30/255 30/255 30/255] ; %--dark grey
+%col(2,:) = [251/255 154/255 153/255]; % -- red
+%col(3,:) = [146/255 197/255 222/255]; % -- blue
+col(4,:) =[175/255 175/255 175/255] ;
+col(5,:)= [145/255 207/255 93/255];
+col(6,:) = [255/255 225/255 135/255];
+
+xlim(1,:) = [0 7];
+xlim(2,:) = [0 5];
+xlim(3,:) = [0 5];
+
+for c =1:length(class)
+    
+clear g ci_low ci_high
+f = figure('Position',[100 100 800 1000]);
+set(f,'position',get(f,'position').*[1 1 1.15 1])
+  %jitter
+ %g(1,1)=gramm('x',index,'y',unit,'color',condition);
+g(1,1) = gramm('x',condition,'y',index, 'color',condition, 'subset', strcmp(cellclass,class{c})); 
+g(1,1).geom_jitter('width',0.4,'height',0); %Scatter plot
+g(1,1).set_color_options('map',[col(5,:); col(6,:)]); 
+g(1,1).axe_property( 'xlim',[0 4] , 'ylim',[-0.3 0.5]); 
+% add confidence interval 95%
+mIdxI = nanmean(index(strcmp(condition, 'I') & strcmp(cellclass,class{c})));
+stdIdxI = std(index(strcmp(condition, 'I') & strcmp(cellclass,class{c})),0,'omitnan');
+lenIdxI = length(index(strcmp(condition, 'I') & strcmp(cellclass,class{c})));
+mIdxB = nanmean(index(strcmp(condition, 'B') & strcmp(cellclass,class{c})));
+stdIdxB = std(index(strcmp(condition, 'B') & strcmp(cellclass,class{c})),0,'omitnan');
+lenIdxB = length(index(strcmp(condition, 'B') & strcmp(cellclass,class{c})));
+ci_low = [mIdxB - stdIdxB/sqrt(lenIdxB); mIdxI - stdIdxI/sqrt(lenIdxI)];
+ci_high = [mIdxB + stdIdxB/sqrt(lenIdxB); mIdxI + stdIdxI/sqrt(lenIdxI)];
+g(1,1).update('x',[1;2], 'y', [mIdxB; mIdxI],...
+    'ymin',ci_low,'ymax',ci_high,'color',[1;2]);
+g(1,1).geom_point('dodge',0.5);
+g(1,1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+g(1,1).set_color_options('map',[col(5,:); col(6,:)]); 
+g(1,1).axe_property('xlim',[0 4]); 
+g(1,1).set_point_options('base_size',7);
+%}
+%bar
+g(1,2)=gramm('x',index,'y',unit, 'color',condition,'subset', strcmp(cellclass,class{c}));
+g(1,2).stat_bin('nbins',25,'geom','overlaid_bar');
+%g(1,2).stat_bin('normalization','probability','nbins',20,'geom','overlaid_bar');
+g(1,2).stat_density();
+g(1,2).set_color_options('map',[col(5,:); col(6,:)]); 
+g(1,2).axe_property('xlim',[-0.3 0.5], 'ylim', xlim(c,:)); 
+g(1,2).set_names('x','Adaptation index','color','Legend','row','','y','Count');
+g(1,2).coord_flip();
+g.draw();
+
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_rast_sdf_idx_cells_08262022');
+saveas(gcf,strcat(plotdir,class{c}, '.png'));
+saveas(gcf,strcat(plotdir,class{c}, '.svg'));
+end
+
+
 %% Compute adaptation index difference in the binocular versus monocular condition
-
-
-
-
-
-
 
 %{
 %% ROC analyis of distributions in the monocular versus binocular condition
