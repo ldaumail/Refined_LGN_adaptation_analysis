@@ -684,6 +684,7 @@ end
 %% Plot main sequence 
 
 xcluster ='x180827_I_p02_uclust8_cinterocdrft_stab_fft_sig';
+%xcluster = 'x180813_I_p01_uclust14_cinterocdrft_stab_fft_sig';
 ampl = [];
 veloc = [];
 fieldn = fieldnames(eyeMovData.(xcluster));
@@ -1189,3 +1190,199 @@ nlines =7;
        % saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\peaktrigg_diffmean_response_accounting_msaccs_',xcluster,'.svg'));
        end
    end
+
+   %% Microsaccade statistics
+   %% isolate microsaccades (same code as above)
+   
+indexdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\analysis\';
+concat_filenames = load( [indexdir, 'concat_filenames_completenames']); %cluster filenames
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
+
+trialsTraces =load([newdatadir 'NoFiltMultiContSUA_06212021']); %neural data +peaklocs + trial numbers obtained with  "BinocularAdaptationTrialSelection.m"
+% peak triggered data
+peak_trig_traces = suaPeakTrigResps(trialsTraces.NoFiltMultiContSUA);
+
+xfilenames = fieldnames(peak_trig_traces); %these filenames are the ones we are interested in since they are the one that include neuronal data
+cnt = 0;
+eyeMovData = struct();
+for i =1:length(xfilenames)
+    try
+        xcluster =xfilenames{i};
+        cluster = xcluster(2:end);
+        underscore = strfind(cluster, '_');
+        session =  cluster(1:underscore(2)-1);
+        directory = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\concat2_bhv_selected_units\',cluster,'\');
+        xBRdatafiles = concat_filenames.(xcluster);
+        eye_info =[];
+        all_codes = [];
+        all_times = [];
+        all_analogData =[];
+        for fn =1:length(xBRdatafiles)
+            xBRdatafile = xBRdatafiles{fn};
+            filename   = [directory xBRdatafile(2:end)];
+            if exist(strcat(filename, '.bhv'),'file')
+                eye_info.(strcat(xBRdatafile,'_bhvfile')) = concatBHV(strcat(filename,'.bhv'));
+                all_codes = [all_codes, eye_info.(strcat(xBRdatafile,'_bhvfile')).CodeNumbers];
+                all_times = [all_times, eye_info.(strcat(xBRdatafile,'_bhvfile')).CodeTimes];
+                all_analogData = [all_analogData,eye_info.(strcat(xBRdatafile,'_bhvfile')).AnalogData];
+                xBaseline = eye_info.(strcat(xBRdatafile,'_bhvfile')).ScreenXresolution/4/eye_info.(strcat(xBRdatafile,'_bhvfile')).PixelsPerDegree; %since the screen monitor is split in 2 parts with the stereoscope, the center for each eye becomes the center for each side of the stereoscope (half of the half, justifying dividing by 4
+            end
+            
+        end
+        samplerate = 1000;
+        %trialindex = condSelectedTrialsIdx.(xcluster);
+        trialindex = trialsTraces.NoFiltMultiContSUA.(xcluster).bin1.trials; %only take trial indices of monocular stimulation
+        
+        ampl = [];
+        veloc = [];
+        ntr =0; %number of trials in which microsaccades were detected
+        msaccTrials = zeros(length(trialindex),1);
+        nprocTrials = zeros(length(trialindex),1);
+        trialSaccs = nan(20,length(trialindex),1); %to save microsaccade onset times
+        trialAmps = nan(20,length(trialindex),1); %save microsaccade amplitudes
+       
+        
+        for tr = 1:length(trialindex)
+            
+            codes                 = all_codes{trialindex(tr)};
+            times                 = all_times{trialindex(tr)};
+            
+            if nnz(find( codes == 23))
+                samples = [];
+                %samples(:,1) = (-1*times(codes == 23)+1) : 1 : 0 : (length(all_analogData{trialindex(tr)}.EyeSignal(:,1)) - times(codes == 23)); %trigger time points on stimulus onset time for it to be 0. Everything before that point is then negative %23 = stimulus onset time, time is measured relative to each trial onset recorded %24 = trial/stimulus offset time
+                %onsetT = times(codes ==23);
+                
+                samples(:,1) = (-1*times(find(codes == 9,1))+1) : 1 : 0 : (length(all_analogData{trialindex(tr)}.EyeSignal(:,1)) - times(find(codes == 9,1))); %trigger time points on stimulus onset time for it to be 0. Everything before that point is then negative %23 = stimulus onset time, time is measured relative to each trial onset recorded %24 = trial/stimulus offset time
+
+                if ~isempty(samples)
+                    samples(:,2) = all_analogData{trialindex(tr)}.EyeSignal(:,1)+xBaseline; %horizontal position of the left eye in degrees baseline corrected
+                    samples(:,3) = all_analogData{trialindex(tr)}.EyeSignal(:,2); %vertical position of the left eye in degrees
+                    samples(:,4) = nan();
+                    samples(:,5) = nan();
+                    blinks = zeros(length(samples(:,1)),1);
+                    recording = ClusterDetection.EyeMovRecording.Create(directory, session, samples, blinks, samplerate);
+                    
+                    % Runs the saccade detection
+                    try
+                        [saccades, stats] = recording.FindSaccades();
+                        enum = ClusterDetection.SaccadeDetector.GetEnum;
+                        
+                        for s =1:length(saccades(:,enum.startIndex)) %loop through all microssaccades/ saccades found in one trial
+                            
+                            if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0+times(codes == 23) - times(find(codes==9,1)) -250 && saccades(s,enum.startIndex) < times(codes == 24)- times(find(codes==9,1))) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
+                                msaccTrials(tr) = msaccTrials(tr)+1; %trials to exclude since they have microsaccades between stim  onset and stim offset
+                                trialSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccade onset time
+                                trialAmps(s,tr) = saccades(s,enum.amplitude); %save microsaccade amplitude
+                           
+                            end
+                        end
+                    catch
+                        nprocTrials(tr) =nprocTrials(tr)+1; %trials for which the saccade detection above did not work
+                        disp(strcat({'Bad Trial',xBRdatafile}))
+                    end
+                    
+                 % Plots a main sequence
+                ampl = [ampl; saccades(:,enum.amplitude)];
+                veloc = [veloc; saccades(:,enum.peakVelocity)];
+                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).stats = stats;
+                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).saccades = saccades;
+                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).enum = enum;
+                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).samples = samples;
+                if ~all(isnan((saccades(:,enum.startIndex))))
+                    ntr =ntr+1;
+                end
+                   
+                end
+                 
+            end
+        end
+        eyeMovData.(xcluster).nprocTrials = nprocTrials; 
+        eyeMovData.(xcluster).msaccTrials = msaccTrials;
+        eyeMovData.(xcluster).msaccOn = trialSaccs;
+        eyeMovData.(xcluster).msaccAmp = trialAmps;
+        eyeMovData.(xcluster).cellclass = trialsTraces.NoFiltMultiContSUA.(xcluster).cellclass;
+        %end
+        catch
+        cnt = cnt+1;
+        disp(strcat({'missing data ' xBRdatafile}))
+    end
+end
+
+%% Plots
+   
+   %1) Plot distribution of microsaccades over the course of a trial (if
+   %possible also before stimulus onset time..
+   
+%filenames = fieldnames(peak_trig_traces);
+filenames = fieldnames(eyeMovData);
+bmsaccOn = []; %msacc onset time monkey b
+imsaccOn = []; %msacc onset time monkey I
+clustMsaccAmpB = []; %msacc amplitude monkey b
+clustMsaccAmpI = []; %msacc amplitude monkey I
+
+icnt =0;
+bcnt=0;
+for i = 1:length(filenames)
+    xcluster = filenames{i};
+    %if isfield(peak_trig_traces, xcluster) && isfield(eyeMovData,xcluster)
+    if isfield(eyeMovData,xcluster)
+        if contains(xcluster,'_B_')  
+            %store microsaccade amplitudes
+            bcnt = bcnt+1;
+            clustMsaccAmp = reshape(eyeMovData.(xcluster).msaccAmp, size(eyeMovData.(xcluster).msaccAmp,1)*size(eyeMovData.(xcluster).msaccAmp,2),1);
+            clustMsaccAmp = clustMsaccAmp(~isnan(clustMsaccAmp));
+            clustMsaccAmpB = [clustMsaccAmpB;clustMsaccAmp]; %loop through units/sessions
+
+            %store microsaccade onset times
+            clustMsaccOn = reshape(eyeMovData.(xcluster).msaccOn, size(eyeMovData.(xcluster).msaccOn,1)*size(eyeMovData.(xcluster).msaccOn,2),1);
+            clustMsaccOn = clustMsaccOn(~isnan(clustMsaccOn));
+            bmsaccOn = [bmsaccOn; clustMsaccOn];
+        elseif contains(xcluster,'_I_')
+            %store microsaccade amplitudes for monkey I
+            icnt = icnt+1;
+            clustMsaccAmp = reshape(eyeMovData.(xcluster).msaccAmp, size(eyeMovData.(xcluster).msaccAmp,1)*size(eyeMovData.(xcluster).msaccAmp,2),1);
+            clustMsaccAmp = clustMsaccAmp(~isnan(clustMsaccAmp));
+            clustMsaccAmpI = [clustMsaccAmpI;clustMsaccAmp]; %loop through units/sessions
+
+            %store microsaccade onset times for monkey I
+            clustMsaccOn = reshape(eyeMovData.(xcluster).msaccOn, size(eyeMovData.(xcluster).msaccOn,1)*size(eyeMovData.(xcluster).msaccOn,2),1);
+            clustMsaccOn = clustMsaccOn(~isnan(clustMsaccOn));
+            imsaccOn = [imsaccOn; clustMsaccOn];
+        end
+    end
+end
+
+
+% Plot horizontal histogram with density plot of microsaccades onset times
+% broken down by monkey
+
+linOn = [imsaccOn(clustMsaccAmpI<2); bmsaccOn( clustMsaccAmpB<2)]';
+animal = [repmat({'I'}, [length(clustMsaccAmpI(clustMsaccAmpI<2)),1]);repmat({'B'}, [length(clustMsaccAmpB(clustMsaccAmpB<2)),1])]';
+animal = animal(isfinite(linOn));
+msacc = [1:length(imsaccOn(clustMsaccAmpI<2)),1:length(bmsaccOn(clustMsaccAmpB<2))];
+msacc = msacc(isfinite(linOn));
+linOn = linOn(isfinite(linOn));
+
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('GnBu', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
+clear g
+g(1,1)=gramm('x',linOn,'y',msacc,'color',animal);
+%g(1,1).stat_bin('nbins',25,'geom','overlaid_bar');
+g(1,1).stat_bin('normalization','probability','nbins',50,'geom','overlaid_bar');
+g(1,1).stat_density();
+g(1,1).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
+g(1,1).set_names('x','Microsaccade onset time (ms)','color','Legend','row','','y','Count');
+g(1,1).set_title({'Microsaccade onset time distribution per animal'});
+
+f = figure('Position',[100 100 800 1000]);
+g.draw();
+   
+   
+   
+   
