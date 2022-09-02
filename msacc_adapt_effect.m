@@ -1249,8 +1249,8 @@ for i =1:length(xfilenames)
             
             if nnz(find( codes == 23))
                 samples = [];
-        %        samples(:,1) = (-1*times(codes == 23)+1) : 1 : 0 : (length(all_analogData{trialindex(tr)}.EyeSignal(:,1)) - times(codes == 23)); %trigger time points on stimulus onset time for it to be 0. Everything before that point is then negative %23 = stimulus onset time, time is measured relative to each trial onset recorded %24 = trial/stimulus offset time
-                samples(:,1) = (-1*(times(codes == 23)-250)+1) : 1 : 0 : (length(all_analogData{trialindex(tr)}.EyeSignal(:,1)) - (times(codes == 23)-250)); %trigger time points on stimulus onset time for it to be 0. Everything before that point is then negative %23 = stimulus onset time, time is measured relative to each trial onset recorded %24 = trial/stimulus offset time
+                samples(:,1) = (-1*times(codes == 23)+1) : 1 : 0 : (length(all_analogData{trialindex(tr)}.EyeSignal(:,1)) - times(codes == 23)); %trigger time points on stimulus onset time for it to be 0. Everything before that point is then negative %23 = stimulus onset time, time is measured relative to each trial onset recorded %24 = trial/stimulus offset time
+        %        samples(:,1) = (-1*(times(codes == 23)-250)+1) : 1 : 0 : (length(all_analogData{trialindex(tr)}.EyeSignal(:,1)) - (times(codes == 23)-250)); %trigger time points on stimulus onset time for it to be 0. Everything before that point is then negative %23 = stimulus onset time, time is measured relative to each trial onset recorded %24 = trial/stimulus offset time
 
                 if ~isempty(samples)
                     samples(:,2) = all_analogData{trialindex(tr)}.EyeSignal(:,1)+xBaseline; %horizontal position of the left eye in degrees baseline corrected
@@ -1268,13 +1268,14 @@ for i =1:length(xfilenames)
                         for s =1:length(saccades(:,enum.startIndex)) %loop through all microssaccades/ saccades found in one trial
                             
                            % if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- (times(codes==23)-250)) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
-                            if  ~isempty(find(saccades(s,enum.startIndex),1)) &&  saccades(s,enum.startIndex) < times(codes == 24)- (times(codes==23)-250) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
+                        %    if  ~isempty(find(saccades(s,enum.startIndex),1)) &&  saccades(s,enum.startIndex) < times(codes == 24)- (times(codes==23)-250) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
+                             if  ~isempty(find(saccades(s,enum.startIndex),1)) && ( saccades(s,enum.startIndex)>times(codes==23)-times(1)-250 &&  saccades(s,enum.startIndex) < times(codes == 24)- times(1)) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
 
                      %       if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- times(codes==23)) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
                         %     if  ~isempty(find(saccades(s,enum.startIndex),1)) && saccades(s,enum.startIndex) < times(codes == 24)- times(codes==23) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
                        
                                 msaccTrials(tr) = msaccTrials(tr)+1; %trials to exclude since they have microsaccades between stim  onset and stim offset
-                                trialSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccade onset time
+                                trialSaccs(s,tr) = saccades(s,enum.startIndex)- (times(codes==23)-times(1)); %save microsaccade onset time
                                 trialAmps(s,tr) = saccades(s,enum.amplitude); %save microsaccade amplitude
                            
                             end
@@ -1375,14 +1376,14 @@ cmap = flip(cmaps(2).map) ;
 colormap(cmap);
 
 clear g
-g(1,1)=gramm('x',linOn-250,'y',msacc,'color',animal);
+g(1,1)=gramm('x',linOn,'y',msacc,'color',animal);
 %g(1,1).stat_bin('nbins',25,'geom','overlaid_bar');
 g(1,1).stat_bin('normalization','probability','nbins',50,'geom','overlaid_bar');
 g(1,1).stat_density();
 g(1,1).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
 g(1,1).set_names('x','time from stimulus onset (ms)','color','Legend','row','','y','Count');
 g(1,1).set_title({'Microsaccade onset time distribution per animal'});
-
+g(1,1).axe_property('xlim',[-250 1150]); 
 f = figure('Position',[100 100 800 1000]);
 g.draw();
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem_timeline_trial.svg'));
