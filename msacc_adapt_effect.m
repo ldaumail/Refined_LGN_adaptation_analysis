@@ -1250,8 +1250,8 @@ for i =1:length(xfilenames)
             if nnz(find( codes == 23))
                 samples = [];
                 samples(:,1) = (-1*times(codes == 23)+1) : 1 : 0 : (length(all_analogData{trialindex(tr)}.EyeSignal(:,1)) - times(codes == 23)); %trigger time points on stimulus onset time for it to be 0. Everything before that point is then negative %23 = stimulus onset time, time is measured relative to each trial onset recorded %24 = trial/stimulus offset time
-        %        samples(:,1) = (-1*(times(codes == 23)-250)+1) : 1 : 0 : (length(all_analogData{trialindex(tr)}.EyeSignal(:,1)) - (times(codes == 23)-250)); %trigger time points on stimulus onset time for it to be 0. Everything before that point is then negative %23 = stimulus onset time, time is measured relative to each trial onset recorded %24 = trial/stimulus offset time
-
+            %     samples(:,1) =  1:length(all_analogData{trialindex(tr)}.EyeSignal(:,1));     %timing doesn't matter here as long at sample(:,1) is the
+            %     size of the trial time series data
                 if ~isempty(samples)
                     samples(:,2) = all_analogData{trialindex(tr)}.EyeSignal(:,1)+xBaseline; %horizontal position of the left eye in degrees baseline corrected
                     samples(:,3) = all_analogData{trialindex(tr)}.EyeSignal(:,2); %vertical position of the left eye in degrees
@@ -1275,7 +1275,7 @@ for i =1:length(xfilenames)
                         %     if  ~isempty(find(saccades(s,enum.startIndex),1)) && saccades(s,enum.startIndex) < times(codes == 24)- times(codes==23) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
                        
                                 msaccTrials(tr) = msaccTrials(tr)+1; %trials to exclude since they have microsaccades between stim  onset and stim offset
-                                trialSaccs(s,tr) = saccades(s,enum.startIndex)- (times(codes==23)-times(1)); %save microsaccade onset time
+                                trialSaccs(s,tr) = saccades(s,enum.startIndex)- (times(codes==23)-times(1)); %save microsaccade onset time retiggered to stimulus onset time 
                                 trialAmps(s,tr) = saccades(s,enum.amplitude); %save microsaccade amplitude
                            
                             end
