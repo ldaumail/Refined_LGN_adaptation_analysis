@@ -517,13 +517,14 @@ for i =1:length(xfilenames)
                         enum = ClusterDetection.SaccadeDetector.GetEnum;
                         
                         for s =1:length(saccades(:,enum.startIndex)) %loop through all microssaccades/ saccades found in one trial
-                            if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- times(codes == 23)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
+                            % if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- times(codes == 23)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
+                            if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > (times(codes == 23)) && saccades(s,enum.startIndex) < times(codes == 24)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
                                 excludeTrials(tr) = excludeTrials(tr)+1; %trials to exclude since they have microsaccades between stim  onset and stim offset
                                 excluSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccade onset time
-                            else
-                                if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < 0 || saccades(s,enum.startIndex) > times(codes == 24)- times(codes == 23))
-                                    sparedSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccades occurring outside of stim onset-stim offset time
-                                end
+                                %elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < 0 || saccades(s,enum.startIndex) > times(codes == 24)- times(codes == 23))
+                            elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < (times(codes == 23)) || saccades(s,enum.startIndex) > times(codes == 24))
+                                sparedSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccades occurring outside of stim onset-stim offset time
+                                
                             end
                         end
                     catch
@@ -786,7 +787,7 @@ set(f,'position',get(f,'position').*[1 1 1.15 1])
 g(1,1) = gramm('x',animal,'y', linFreq, 'color',animal); %[unitnb,1:length(unitnb(adapType(:,t)))]
 g(1,1).geom_jitter('width',0.4,'height',0); %Scatter plot
 g(1,1).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
-g(1,1).axe_property( 'xlim',[0 4] , 'ylim',[0 3.5]); 
+g(1,1).axe_property( 'xlim',[0 4] , 'ylim',[0 1.4]); 
 % add confidence interval 95%
 
 ci_low = [nanmean(linFreq(strcmp(animal, 'B'))) - std(linFreq(strcmp(animal, 'B')),0,'omitnan')/sqrt(length(linFreq(strcmp(animal, 'B')))); nanmean(linFreq(strcmp(animal, 'I'))) - std(linFreq(strcmp(animal, 'I')),0,'omitnan')/sqrt(length( linFreq(strcmp(animal, 'I')))) ];
@@ -804,11 +805,80 @@ g(1,2)=gramm('x',linFreq,'y',unit, 'color',animal);
 g(1,2).stat_bin('nbins',25,'geom','overlaid_bar');
 g(1,2).stat_density();
 g(1,2).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
-g(1,2).axe_property('xlim',[0 3.5], 'ylim', [0 6]); 
+g(1,2).axe_property('xlim',[0 1.4], 'ylim', [0 6]); 
 g(1,2).set_names('x','Microsaccade Frequency (normalized per trial)','color','Legend','row','','y','Count');
 g(1,2).coord_flip();
 g.draw();
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_frequency_per_trial_I_B_scatter.svg'));
+
+%% Percentage of trials with microsaccades
+filenames = fieldnames(eyeMovData);
+perc = nan(length(fieldnames(eyeMovData)), 2); %2 = 2 monkeys
+icnt = 0;
+bcnt = 0;
+for i = 1:length(fieldnames(eyeMovData))
+    xcluster = filenames{i};
+    if contains(xcluster,'_I_')
+        icnt = icnt+1;
+        perc(i,1) = length(find(eyeMovData.(xcluster).msaccTrials))/(length(find(~eyeMovData.(xcluster).nprocTrials)));
+    else 
+        if contains(xcluster,'_B_')
+            bcnt = bcnt+1;
+           perc(i,2) = length(find(eyeMovData.(xcluster).msaccTrials))/(length(find(~eyeMovData.(xcluster).nprocTrials)));
+ 
+        end
+    end
+    
+end
+
+%linFreq = [freq(~isnan(freq(:,1)),1);freq(~isnan(freq(:,2)),2)];
+linPerc = [perc(:,1);perc(:,2)]';
+%animal = [repmat('I', [length(find(~isnan(freq(:,1)))),1]);repmat('B', [length(find(~isnan(freq(:,2)))),1])];
+animal = [repmat({'I'}, [length(perc(:,1)),1]);repmat({'B'}, [length(perc(:,2)),1])]';
+
+%unit = [1:length(find(~isnan(freq(:,1)))),1:length(find(~isnan(freq(:,2))))];
+unit = [1:length(perc(:,1)),1:length(perc(:,2))];
+%colors
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('GnBu', nlines);
+cmap = flip(cmaps(2).map) ;
+colormap(cmap);
+
+clear g
+f = figure('Position',[100 100 800 1000]);
+set(f,'position',get(f,'position').*[1 1 1.15 1])
+
+  %jitter
+  %gramm('x',linFreq,'y',unit,'color',animal);
+g(1,1) = gramm('x',animal,'y', linPerc, 'color',animal); %[unitnb,1:length(unitnb(adapType(:,t)))]
+g(1,1).geom_jitter('width',0.4,'height',0); %Scatter plot
+g(1,1).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
+g(1,1).axe_property( 'xlim',[0 4] , 'ylim',[0 0.8]); 
+% add confidence interval 95%
+
+ci_low = [nanmean(linPerc(strcmp(animal, 'B'))) - std(linPerc(strcmp(animal, 'B')),0,'omitnan')/sqrt(length(linPerc(strcmp(animal, 'B')))); nanmean(linPerc(strcmp(animal, 'I'))) - std(linPerc(strcmp(animal, 'I')),0,'omitnan')/sqrt(length( linPerc(strcmp(animal, 'I')))) ];
+ci_high = [nanmean(linPerc(strcmp(animal, 'B'))) + std(linPerc(strcmp(animal, 'B')),0,'omitnan')/sqrt(length(linPerc(strcmp(animal, 'B')))); nanmean(linPerc(strcmp(animal, 'I'))) + std(linPerc(strcmp(animal, 'I')),0,'omitnan')/sqrt(length( linPerc(strcmp(animal, 'I')))) ];
+g(1,1).update('x',[1;2], 'y', [nanmean(linPerc(strcmp(animal, 'B'))); nanmean(linPerc(strcmp(animal, 'I')))],...
+    'ymin',ci_low,'ymax',ci_high,'color',[1;2]);
+g(1,1).geom_point('dodge',0.5);
+g(1,1).geom_interval('geom','errorbar','dodge',0.2,'width',0.8);
+g(1,1).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
+g(1,1).axe_property('xlim',[0 4]); 
+g(1,1).set_point_options('base_size',7);
+%}
+%bar
+g(1,2)=gramm('x',linPerc,'y',unit, 'color',animal);
+g(1,2).stat_bin('nbins',25,'geom','overlaid_bar');
+g(1,2).stat_density();
+g(1,2).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
+g(1,2).axe_property('xlim',[0 0.8], 'ylim', [0 7]); 
+g(1,2).set_names('x','Percent of trials with microsaccade(s) ','color','Legend','row','','y','Count');
+g(1,2).coord_flip();
+g.draw();
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\perc_trials_with_msacc_I_B_scatter.svg'));
 
 
 %% Microsaccade amplitude distributions broken down by monkey
