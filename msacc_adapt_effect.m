@@ -1417,12 +1417,12 @@ saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042
 % plot
 
 meanPosStd = squeeze(nanmean(eyePosStd,2));
-ci_low =  squeeze(meanPosStd - 1.96*squeeze(std(eyePosStd,0,2, 'omitnan'))./sqrt(length(find(~isnan(eyePosStd(1,:))))));
-ci_high =  squeeze(meanPosStd + 1.96*squeeze(std(eyePosStd,0,2, 'omitnan'))./sqrt(length(find(~isnan(eyePosStd(1,:))))));
+ci_low =  squeeze(meanPosStd - 1.96*squeeze(std(eyePosStd,0,2, 'omitnan'))./sqrt([length(find(~isnan(eyePosStd(1,:,1)))), length(find(~isnan(eyePosStd(1,:,2))))]));
+ci_high =  squeeze(meanPosStd + 1.96*squeeze(std(eyePosStd,0,2, 'omitnan'))./sqrt([length(find(~isnan(eyePosStd(1,:,1)))), length(find(~isnan(eyePosStd(1,:,2))))]));
 
 meanPos =  squeeze(nanmean(eyePos,2));
-mci_low =  squeeze(meanPos - 1.96*squeeze(std(eyePos,0,2, 'omitnan'))./sqrt(length(find(~isnan(eyePos(1,:))))));
-mci_high =  squeeze(meanPos + 1.96*squeeze(std(eyePos,0,2, 'omitnan'))./sqrt(length(find(~isnan(eyePos(1,:))))));
+mci_low =  squeeze(meanPos - 1.96*squeeze(std(eyePos,0,2, 'omitnan'))./sqrt([length(find(~isnan(eyePos(1,:,1)))), length(find(~isnan(eyePos(1,:,2))))]));
+mci_high =  squeeze(meanPos + 1.96*squeeze(std(eyePos,0,2, 'omitnan'))./sqrt([length(find(~isnan(eyePos(1,:,1)))), length(find(~isnan(eyePos(1,:,2))))]));
 
 nlines = 7;
 cmaps = struct();
@@ -1461,6 +1461,6 @@ ylabel('standard deviation (dva)')
 xlim([-250 1150])
 set(gca, 'linewidth',2)
 set(gca,'box','off')
-legend('','','B','I')
+%legend('','','B','I')
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\mean_std_eye_pos_bymonkey.svg'));
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\mean_std_eye_pos_bymonkey.png'));
