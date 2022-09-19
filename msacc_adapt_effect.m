@@ -1193,7 +1193,7 @@ nlines =7;
 
    %% Microsaccade statistics
    %% isolate microsaccades (same code as above, but capturing eye movements before stimulus onset time)
-   
+   %% triggering was wrong before that point, the code below is the only valid code to isolate microsaccades
 indexdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\analysis\';
 concat_filenames = load( [indexdir, 'concat_filenames_completenames']); %cluster filenames
 newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
@@ -1267,15 +1267,12 @@ for i =1:length(xfilenames)
                         
                         for s =1:length(saccades(:,enum.startIndex)) %loop through all microssaccades/ saccades found in one trial
                             
-                           % if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- (times(codes==23)-250)) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
-                        %    if  ~isempty(find(saccades(s,enum.startIndex),1)) &&  saccades(s,enum.startIndex) < times(codes == 24)- (times(codes==23)-250) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
-                             if  ~isempty(find(saccades(s,enum.startIndex),1)) && ( saccades(s,enum.startIndex)>times(codes==23)-times(1)-250 &&  saccades(s,enum.startIndex) < times(codes == 24)- times(1)) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
-
-                     %       if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- times(codes==23)) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
-                        %     if  ~isempty(find(saccades(s,enum.startIndex),1)) && saccades(s,enum.startIndex) < times(codes == 24)- times(codes==23) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
-                       
+                       %      if  ~isempty(find(saccades(s,enum.startIndex),1)) && ( saccades(s,enum.startIndex)>times(codes==23)-times(1)-250 &&  saccades(s,enum.startIndex) < times(codes == 24)- times(1)) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
+                             if  ~isempty(find(saccades(s,enum.startIndex),1)) && ( saccades(s,enum.startIndex)>times(codes==23)-250 &&  saccades(s,enum.startIndex) < times(codes == 24)) %if there is at least 1 microsaccade and it occurs between trial onset and stim offset
+  
                                 msaccTrials(tr) = msaccTrials(tr)+1; %trials to exclude since they have microsaccades between stim  onset and stim offset
-                                trialSaccs(s,tr) = saccades(s,enum.startIndex)- (times(codes==23)-times(1)); %save microsaccade onset time retiggered to stimulus onset time 
+                                %trialSaccs(s,tr) = saccades(s,enum.startIndex)- (times(codes==23)-times(1)); %save microsaccade onset time retiggered to stimulus onset time 
+                                trialSaccs(s,tr) = saccades(s,enum.startIndex)- (times(codes==23)); %save microsaccade onset time retiggered to stimulus onset time 
                                 trialAmps(s,tr) = saccades(s,enum.amplitude); %save microsaccade amplitude
                            
                             end
@@ -1291,7 +1288,8 @@ for i =1:length(xfilenames)
                 eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).stats = stats;
                 eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).saccades = saccades;
                 eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).enum = enum;
-                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).samples = samples;
+                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).samples = samples(times(codes==23)-250:times(codes == 24),1:3);
+                
                 if ~all(isnan((saccades(:,enum.startIndex))))
                     ntr =ntr+1;
                 end
@@ -1383,12 +1381,86 @@ g(1,1).stat_density();
 g(1,1).set_color_options('map',[cmaps(3).map(4,:);cmaps(1).map(4,:)]); 
 g(1,1).set_names('x','time from stimulus onset (ms)','color','Legend','row','','y','Count');
 g(1,1).set_title({'Microsaccade onset time distribution per animal'});
-g(1,1).axe_property('xlim',[-250 1150]); 
+%g(1,1).axe_property('xlim',[-250 1150]); 
 f = figure('Position',[100 100 800 1000]);
 g.draw();
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem_timeline_trial.svg'));
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem_timeline_trial.png'));
     
-   
-   
-   
+ %% plot mean and standard deviation of eye position over time  
+ 
+ %prepare data
+ sfilenames = fieldnames(eyeMovData); %these filenames are the ones we are interested in since they are the one that include neuronal data
+ eyePosStd = nan(length(-249:1200), length(sfilenames),2); 
+ eyePos = nan(length(-249:1200), length(sfilenames),2); 
+ for i =1:length(sfilenames)
+     xcluster =sfilenames{i};
+     datLab = fieldnames(eyeMovData.(xcluster));
+     allSamples = nan(length(-249:1200),length(datLab));
+     for n =1:length(datLab)
+         if contains(datLab{n}, 't')
+            x = eyeMovData.(xcluster).(datLab{n}).samples(:,2) - nanmean(eyeMovData.(xcluster).(datLab{n}).samples(:,2));
+            y = eyeMovData.(xcluster).(datLab{n}).samples(:,3) - nanmean(eyeMovData.(xcluster).(datLab{n}).samples(:,3));
+           displacement =  sqrt((x).^2+(y).^2);
+           allSamples(1:length(displacement),n) = displacement;   
+         end
+     end
+     if contains(xcluster,'_B_')
+         eyePosStd(:,i,1) = std(allSamples,[],2, 'omitnan');
+         eyePos(:,i,1) = nanmean(allSamples,2);
+     elseif contains(xcluster,'_I_')
+         eyePosStd(:,i,2) = std(allSamples,[],2, 'omitnan');
+         eyePos(:,i,2) = nanmean(allSamples,2);
+      end
+ end
+
+% plot
+
+meanPosStd = squeeze(nanmean(eyePosStd,2));
+ci_low =  squeeze(meanPosStd - 1.96*squeeze(std(eyePosStd,0,2, 'omitnan'))./sqrt(length(find(~isnan(eyePosStd(1,:))))));
+ci_high =  squeeze(meanPosStd + 1.96*squeeze(std(eyePosStd,0,2, 'omitnan'))./sqrt(length(find(~isnan(eyePosStd(1,:))))));
+
+meanPos =  squeeze(nanmean(eyePos,2));
+mci_low =  squeeze(meanPos - 1.96*squeeze(std(eyePos,0,2, 'omitnan'))./sqrt(length(find(~isnan(eyePos(1,:))))));
+mci_high =  squeeze(meanPos + 1.96*squeeze(std(eyePos,0,2, 'omitnan'))./sqrt(length(find(~isnan(eyePos(1,:))))));
+
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('GnBu', nlines); 
+cmaps(2).map =cbrewer2('OrRd', nlines);
+colors = [cmaps(1).map(4,:);cmaps(2).map(4,:)];
+figure('Position',[100 100 800 1000]);
+subplot(2,1,1)
+plot(-249:1150, meanPos(1:1400,:),'LineWidth',2, 'Color', [40/255 40/255 40/255] )
+hold on
+for i=1:2
+h1= ciplot(mci_low(1:1400,i), mci_high(1:1400,i),[-249:1150],colors(i,:),0.5); %
+set(h1, 'edgecolor','none')
+hold on
+end
+set(gca,'position',get(gca,'position').*[1 1 1.15 1])
+
+ylabel('mean distance (dva)')
+%ylim(ylims(nc,:))
+xlim([-250 1150])
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+
+subplot(2,1,2)
+plot(-249:1150, meanPosStd(1:1400,:),'LineWidth',2, 'Color',[40/255 40/255 40/255] )
+hold on
+for i = 1:2
+h1= ciplot(ci_low(1:1400,i), ci_high(1:1400,i),[-249:1150],colors(i,:),0.5);
+set(h1, 'edgecolor','none')
+hold on
+end
+set(gca,'position',get(gca,'position').*[1 1 1.15 1])
+xlabel('time from stimulus onset (ms)')
+ylabel('standard deviation (dva)')
+%ylim(ylims(nc,:))
+xlim([-250 1150])
+set(gca, 'linewidth',2)
+set(gca,'box','off')
+legend('','','B','I')
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\mean_std_eye_pos_bymonkey.svg'));
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\mean_std_eye_pos_bymonkey.png'));
