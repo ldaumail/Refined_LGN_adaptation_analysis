@@ -980,6 +980,80 @@ g(2,1).coord_flip();
 %bar
 g.draw();
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_amplitudes_density_I_B_scatter_horizontal.svg'));
+%% Same plot of microsacade amplitudes with custom code
+
+cols = [cmaps(1).map(4,:);cmaps(3).map(4,:)];
+figure('Position',[100 100 800 1000]);
+subplot(3,1,1)
+h = histogram(linAmp(strcmp(animal, 'I')), 'NumBins', 50, 'Normalization','probability', 'EdgeColor', cmaps(1).map(4,:), 'FaceColor', cmaps(1).map(4,:));
+binWidth = get(h,'BinWidth');
+hts = get(h, 'Values');
+hold on
+area = sum(hts) * (binWidth);
+[f,xi] = ksdensity(linAmp(strcmp(animal, 'I')), 'Function','pdf') ;
+plot(xi, area*f, 'Color', cmaps(1).map(4,:), 'LineWidth', 2)
+set(gca, 'box', 'off')
+set(gca, 'LineWidth', 2)
+xlabel('Amplitude (log10(deg))')
+ylabel('Probability')
+title('Animal I')
+xlim([-3 1])
+
+subplot(3,1,2)
+h = histogram(linAmp(strcmp(animal, 'B')), 'NumBins', 50, 'Normalization','probability', 'EdgeColor', cmaps(3).map(4,:), 'FaceColor', cmaps(3).map(4,:));
+binWidth = get(h,'BinWidth');
+hts = get(h, 'Values');
+hold on
+area = sum(hts) * (binWidth);
+[f,xi] = ksdensity(linAmp(strcmp(animal, 'B')), 'Function','pdf') ;
+plot(xi, area*f, 'Color', cmaps(3).map(4,:), 'LineWidth', 2)
+set(gca, 'box', 'off')
+set(gca, 'LineWidth', 2)
+xlabel('Amplitude (log10(deg))')
+ylabel('Probability')
+title('Animal B')
+xlim([-3 1])
+
+subplot(3,1,3)
+yvar = nan(length(linAmp(strcmp(animal, 'I'))),2);
+yvar(:,1) = linAmp(strcmp(animal, 'I'));
+yvar(1:length(linAmp(strcmp(animal, 'B'))),2) = linAmp(strcmp(animal, 'B'));
+mYvar = [nanmean(linAmp(strcmp(animal, 'I'))); nanmean(linAmp(strcmp(animal, 'B')))];
+
+%95% CI
+ci_high = [nanmean(linAmp(strcmp(animal, 'I'))) + 1.96*std(linAmp(strcmp(animal, 'I')))/sqrt(length(linAmp(strcmp(animal, 'I'))));  nanmean(linAmp(strcmp(animal, 'B'))) + 1.96*std(linAmp(strcmp(animal, 'B')))/sqrt(length(linAmp(strcmp(animal, 'B'))))];
+ci_low = [nanmean(linAmp(strcmp(animal, 'I'))) - 1.96*std(linAmp(strcmp(animal, 'I')))/sqrt(length(linAmp(strcmp(animal, 'I'))));  nanmean(linAmp(strcmp(animal, 'B'))) - 1.96*std(linAmp(strcmp(animal, 'B')))/sqrt(length(linAmp(strcmp(animal, 'B'))))];
+
+jit = 0.3;
+for c =1:length(unique(animal))
+    jitter = rand(length(yvar(:,c)),1)*jit;
+    x = c*ones(length(yvar(:,c)),1)+jitter-jit/2;
+    scatter(yvar(:,c),x,20,'MarkerFaceColor',cols(c,:), 'MarkerEdgeColor',cols(c,:),'LineWidth',0.5);
+    hold on;
+    scatter(mYvar(c),c*1,60,'MarkerFaceColor','k', 'MarkerEdgeColor','k','LineWidth',0.5); %mean
+    hold on
+    line([ci_low(c) ci_high(c)],[c*1 c*1],  'Color', 'k', 'LineWidth', 2); %95%CI vertical
+    hold on
+    line([ci_low(c) ci_low(c)],[c*1-0.05 c*1+0.05],  'Color', 'k', 'LineWidth', 2); %95%CI whiskers
+    hold on
+    line( [ci_high(c) ci_high(c)],[c*1-0.05 c*1+0.05], 'Color', 'k', 'LineWidth', 2); %95%CI whiskers
+    hold on
+end
+% Set up axes.
+xlim([-3, 1]);
+ylim([0, 3]);
+ax = gca;
+ax.YTick = [1, 2];
+set(gca, 'YDir','reverse')
+ax.YTickLabels = unique(animal);
+xlabel('Amplitude (log10(deg))','fontweight','bold','fontsize',16)
+ylabel('Animal','fontweight','bold','fontsize',16)
+yticklab = get(gca,'YTickLabel');
+set(gca,'YTickLabel',yticklab,'fontsize',12)
+set(gca, 'LineWidth', 2)
+%title('Distribution of microsaccade amplitudes')
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_amplitudes_density_I_B_scatter_custom.svg'));
+
 
 %% New Idea: assess correlation between frequency of microsaccades and adaptation index
 
@@ -1462,28 +1536,77 @@ cmaps(3).map =cbrewer2('GnBu', nlines);
 cmap = flip(cmaps(2).map) ;
 colormap(cmap);
 
-clear g
-f = figure('Position',[100 100 800 1000]);
-set(f,'position',get(f,'position').*[1 1 1.15 1])
-g(1,1)=gramm('x',linOnI,'y',msacc_I,'color',animal_I);
-g(1,1).stat_bin('normalization','countdensity','nbins',50,'geom','overlaid_bar');
-%g(1,1).stat_bin('nbins',50,'geom','overlaid_bar');
-g(1,1).stat_density();
-g(1,1).set_color_options('map',cmaps(3).map(4,:)); 
-g(1,1).set_names('x','time from stimulus onset (ms)','color','Legend','row','','y','Count');
-g(1,1).set_title({'Microsaccade onset time distribution per animal'});
-g(1,1).axe_property('ylim',[0 1.5]); 
-g(2,1)=gramm('x',linOnB,'y',msacc_B,'color',animal_B);
-g(2,1).stat_bin('normalization','countdensity','nbins',50,'geom','overlaid_bar');
-%g(2,1).stat_bin('nbins',50,'geom','overlaid_bar');
-g(2,1).stat_density();
-g(2,1).set_color_options('map',cmaps(1).map(4,:));
-g(2,1).set_names('x','time from stimulus onset (ms)','color','Legend','row','','y','Count');
-g(2,1).axe_property('ylim',[0 1]); 
-g.draw();
-saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem_timeline_trial_story.svg'));
-saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem_timeline_trial_story.png'));
-    
+% clear g
+% f = figure('Position',[100 100 800 1000]);
+% set(f,'position',get(f,'position').*[1 1 1.15 1])
+% g(1,1)=gramm('x',linOnI,'y',msacc_I,'color',animal_I);
+% g(1,1).stat_bin('normalization','countdensity','nbins',50,'geom','overlaid_bar');
+% %g(1,1).stat_bin('nbins',50,'geom','overlaid_bar');
+% g(1,1).stat_density();
+% g(1,1).set_color_options('map',cmaps(3).map(4,:)); 
+% g(1,1).set_names('x','time from stimulus onset (ms)','color','Legend','row','','y','Count');
+% g(1,1).set_title({'Microsaccade onset time distribution per animal'});
+% g(1,1).axe_property('ylim',[0 1.5]); 
+% g(2,1)=gramm('x',linOnB,'y',msacc_B,'color',animal_B);
+% g(2,1).stat_bin('normalization','countdensity','nbins',50,'geom','overlaid_bar');
+% %g(2,1).stat_bin('nbins',50,'geom','overlaid_bar');
+% g(2,1).stat_density();
+% g(2,1).set_color_options('map',cmaps(1).map(4,:));
+% g(2,1).set_names('x','time from stimulus onset (ms)','color','Legend','row','','y','Count');
+% g(2,1).axe_property('ylim',[0 1]); 
+% g.draw();
+% saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem_timeline_trial_story.svg'));
+% saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem_timeline_trial_story.png'));
+%   
+
+%% custom density histogram
+
+
+figure('Position',[100 100 800 1000]);
+%bar(ctrs,hts,'hist', 'EdgeColor', cmaps(3).map(4,:), 'FaceColor', cmaps(3).map(4,:)) %,'BarWidth',1
+subplot(2,1,1)
+h = histogram(linOnI, 'NumBins', 50, 'Normalization','probability', 'EdgeColor', cmaps(1).map(4,:), 'FaceColor', cmaps(1).map(4,:));
+binWidth = get(h,'BinWidth');
+hts = get(h, 'Values');
+hold on
+area = sum(hts) * (binWidth);
+[f,xi] = ksdensity(linOnI, 'Function','pdf') ;
+plot(xi, area*f, 'Color', cmaps(1).map(4,:), 'LineWidth', 2)
+set(gca, 'box', 'off')
+set(gca, 'LineWidth', 2)
+xlabel('Time from Stimulus Onset (ms)')
+ylabel('Probability')
+title('Animal I')
+xlim([-270 1170])
+subplot(2,1,2)
+h = histogram(linOnB, 'NumBins', 50, 'Normalization','probability', 'EdgeColor', cmaps(3).map(4,:), 'FaceColor', cmaps(3).map(4,:));
+binWidth = get(h,'BinWidth');
+hts = get(h, 'Values');
+hold on
+area = sum(hts) * (binWidth);
+[f,xi] = ksdensity(linOnB, 'Function','pdf') ;
+plot(xi, area*f, 'Color', cmaps(3).map(4,:), 'LineWidth', 2)
+set(gca, 'box', 'off')
+set(gca, 'LineWidth', 2)
+xlabel('Time from Stimulus Onset (ms)')
+ylabel('Probability')
+title('Animal B')
+xlim([-270 1170])
+
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem_timeline_trial_custom.svg'));
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem_timeline_trial_custom.png'));
+  
+%% stats on each monkey
+
+%t-test 25 bins from 0 to 500 ms and 25 bins from 500 to 1000
+sLinOnI = linOnI(linOnI > 0 & linOnI<1000);
+[hts, edges]=histcounts(linOnI,50);
+[h,p, CI, stats] = ttest(hts(1:25), hts(26:50));
+
+sLinOnB = linOnB(linOnB > 0 & linOnB<1000);
+[hts, edges]=histcounts(linOnB,50);
+[h,p, CI, stats] = ttest(hts(1:25), hts(26:50));
+
  %% plot mean and standard deviation of eye position over time  
  
  %prepare data
@@ -1561,8 +1684,44 @@ set(gca,'box','off')
 %legend('','','B','I')
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\mean_std_eye_pos_bymonkey.svg'));
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\mean_std_eye_pos_bymonkey.png'));
+%% Perform stats on eye positions over time
 
-%%
+%std
+%monkey B
+w1 = nanmean(eyePosStd(250:749,:,1),1);
+w2 = nanmean(eyePosStd(750:1250,:,1),1);
+[h,p, ci, stats] = ttest(w1,w2);
+
+mdw = nanmean(w1-w2);
+ciw = 1.96*std(w1-w2,[], 'omitnan')/sqrt(length(find(~isnan(w1))));
+
+
+%monkey I
+w1 = nanmean(eyePosStd(250:749,:,2),1);
+w2 = nanmean(eyePosStd(750:1250,:,2),1);
+[h,p, ci, stats] = ttest(w1,w2);
+
+mdw = nanmean(w1-w2);
+ciw = 1.96*std(w1-w2,[], 'omitnan')/sqrt(length(find(~isnan(w1))));
+
+%eye position
+%monkey B
+w1 = nanmean(eyePos(250:749,:,1),1);
+w2 = nanmean(eyePos(750:1250,:,1),1);
+[h,p, ci, stats] = ttest(w1,w2);
+mdw = nanmean(w1-w2);
+ciw = 1.96*std(w1-w2,[], 'omitnan')/sqrt(length(find(~isnan(w1))));
+
+
+%monkey I
+w1 = nanmean(eyePos(250:749,:,2),1);
+w2 = nanmean(eyePos(750:1250,:,2),1);
+[h,p, ci, stats] = ttest(w1,w2);
+mdw = nanmean(w1-w2);
+ciw = 1.96*std(w1-w2,[], 'omitnan')/sqrt(length(find(~isnan(w1))));
+
+
+%% Look at overall duration of trials
 durI =[];
 durB=[];
 icnt =0;
