@@ -817,6 +817,81 @@ g(1,2).coord_flip();
 g.draw();
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_frequency_per_trial_I_B_scatter.svg'));
 
+%% Same frequency plot with custom code
+
+cols = [cmaps(1).map(4,:);cmaps(3).map(4,:)];
+figure('Position',[100 100 800 1000]);
+subplot(3,1,1)
+h = histogram(linFreq(strcmp(animal, 'I')), 'NumBins', 50, 'Normalization','probability', 'EdgeColor', cmaps(1).map(4,:), 'FaceColor', cmaps(1).map(4,:));
+binWidth = get(h,'BinWidth');
+hts = get(h, 'Values');
+hold on
+area = sum(hts) * (binWidth);
+[f,xi] = ksdensity( linFreq(strcmp(animal, 'I')), 'Function','pdf') ;
+plot(xi, area*f, 'Color', cmaps(1).map(4,:), 'LineWidth', 2)
+set(gca, 'box', 'off')
+set(gca, 'LineWidth', 2)
+xlabel('Frequency (/trial)')
+ylabel('Probability')
+title('Animal I')
+xlim([0 1.4])
+
+subplot(3,1,2)
+h = histogram(linAmp(strcmp(animal, 'B')), 'NumBins', 50, 'Normalization','probability', 'EdgeColor', cmaps(3).map(4,:), 'FaceColor', cmaps(3).map(4,:));
+binWidth = get(h,'BinWidth');
+hts = get(h, 'Values');
+hold on
+area = sum(hts) * (binWidth);
+[f,xi] = ksdensity(linFreq(strcmp(animal, 'B')), 'Function','pdf') ;
+plot(xi, area*f, 'Color', cmaps(3).map(4,:), 'LineWidth', 2)
+set(gca, 'box', 'off')
+set(gca, 'LineWidth', 2)
+xlabel('Frequency (/trial)')
+ylabel('Probability')
+title('Animal B')
+xlim([0 1.4])
+
+subplot(3,1,3)
+yvar = nan(length( linFreq(strcmp(animal, 'I'))),2);
+yvar(:,1) =  linFreq(strcmp(animal, 'I'));
+yvar(1:length(linFreq(strcmp(animal, 'B'))),2) = linFreq(strcmp(animal, 'B'));
+mYvar = [nanmean( linFreq(strcmp(animal, 'I'))); nanmean( linFreq(strcmp(animal, 'B')))];
+
+%95% CI
+ci_high = [nanmean( linFreq(strcmp(animal, 'I'))) + 1.96*std( linFreq(strcmp(animal, 'I')),[], 'omitnan')/sqrt(length( linFreq(strcmp(animal, 'I'))));  nanmean( linFreq(strcmp(animal, 'B'))) + 1.96*std( linFreq(strcmp(animal, 'B')),'omitnan')/sqrt(length( linFreq(strcmp(animal, 'B'))))];
+ci_low = [nanmean( linFreq(strcmp(animal, 'I'))) - 1.96*std( linFreq(strcmp(animal, 'I')),[],'omitnan')/sqrt(length( linFreq(strcmp(animal, 'I'))));  nanmean( linFreq(strcmp(animal, 'B'))) - 1.96*std( linFreq(strcmp(animal, 'B')),'omitnan')/sqrt(length( linFreq(strcmp(animal, 'B'))))];
+
+jit = 0.3;
+for c =1:length(unique(animal))
+    jitter = rand(length(yvar(:,c)),1)*jit;
+    x = c*ones(length(yvar(:,c)),1)+jitter-jit/2;
+    scatter(yvar(:,c),x,20,'MarkerFaceColor',cols(c,:), 'MarkerEdgeColor',cols(c,:),'LineWidth',0.5);
+    hold on;
+    scatter(mYvar(c),c*1,60,'MarkerFaceColor','k', 'MarkerEdgeColor','k','LineWidth',0.5); %mean
+    hold on
+    line([ci_low(c) ci_high(c)],[c*1 c*1],  'Color', 'k', 'LineWidth', 2); %95%CI vertical
+    hold on
+    line([ci_low(c) ci_low(c)],[c*1-0.05 c*1+0.05],  'Color', 'k', 'LineWidth', 2); %95%CI whiskers
+    hold on
+    line( [ci_high(c) ci_high(c)],[c*1-0.05 c*1+0.05], 'Color', 'k', 'LineWidth', 2); %95%CI whiskers
+    hold on
+end
+% Set up axes.
+xlim([0, 1.4]);
+ylim([0, 3]);
+ax = gca;
+ax.YTick = [1, 2];
+set(gca, 'YDir','reverse')
+ax.YTickLabels = unique(animal);
+xlabel('Frequency (/trial)','fontweight','bold','fontsize',16)
+ylabel('Animal','fontweight','bold','fontsize',16)
+yticklab = get(gca,'YTickLabel');
+set(gca,'YTickLabel',yticklab,'fontsize',12)
+set(gca, 'LineWidth', 2)
+%title('Distribution of microsaccade amplitudes')
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_frequency_per_trial_I_B_scatter_custom.svg'));
+
+
 %% Percentage of trials with microsaccades
 filenames = fieldnames(eyeMovData);
 perc = nan(length(fieldnames(eyeMovData)), 2); %2 = 2 monkeys
@@ -1751,4 +1826,158 @@ for i = 1:length(filenames)
         end
     end
 end
+
+%% Last analysis: select neurphysiological data based on amplitude of microsaccades
+%generated under stimulation and compare neural responses based on
+%exclusion of microsaccades
+
+indexdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\analysis\';
+concat_filenames = load( [indexdir, 'concat_filenames_completenames']); %cluster filenames
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
+%trialsTraces =load([newdatadir 'all_orig_bs_zscore_trials_05022021_mono_bino']); %neural data
+trialsTraces =load([newdatadir 'NoFiltMultiContSUA_06212021']); %neural data +peaklocs + trial numbers obtained with  "BinocularAdaptationTrialSelection.m"
+% peak triggered data
+
+peak_trig_traces = suaPeakTrigResps(trialsTraces.NoFiltMultiContSUA);
+
+xfilenames = fieldnames(peak_trig_traces);
+cnt = 0;
+eyeMovData = struct();
+for i =1:length(xfilenames)
+    try
+        xcluster =xfilenames{i};
+        cluster = xcluster(2:end);
+        underscore = strfind(cluster, '_');
+        session =  cluster(1:underscore(2)-1);
+        directory = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\concat2_bhv_selected_units\',cluster,'\');
+        xBRdatafiles = concat_filenames.(xcluster);
+        eye_info =[];
+        all_codes = [];
+        all_times = [];
+        all_analogData =[];
+        for fn =1:length(xBRdatafiles)
+            xBRdatafile = xBRdatafiles{fn};
+            filename   = [directory xBRdatafile(2:end)];
+            if exist(strcat(filename, '.bhv'),'file')
+                eye_info.(strcat(xBRdatafile,'_bhvfile')) = concatBHV(strcat(filename,'.bhv'));
+                all_codes = [all_codes, eye_info.(strcat(xBRdatafile,'_bhvfile')).CodeNumbers];
+                all_times = [all_times, eye_info.(strcat(xBRdatafile,'_bhvfile')).CodeTimes];
+                all_analogData = [all_analogData,eye_info.(strcat(xBRdatafile,'_bhvfile')).AnalogData];
+                xBaseline = eye_info.(strcat(xBRdatafile,'_bhvfile')).ScreenXresolution/4/eye_info.(strcat(xBRdatafile,'_bhvfile')).PixelsPerDegree; %since the screen monitor is split in 2 parts with the stereoscope, the center for each eye becomes the center for each side of the stereoscope (half of the half, justifying dividing by 4
+            end
+            
+        end
+        samplerate = 1000;
+        %trialindex = condSelectedTrialsIdx.(xcluster);
+        trialindex = trialsTraces.NoFiltMultiContSUA.(xcluster).bin1.trials; %only take trial indices of monocular stimulation
+        
+        ampl = [];
+        veloc = [];
+        ntr =0; %number of trials in which microsaccades were detected
+        excludeTrials = zeros(length(trialindex),1);
+        nprocTrials = zeros(length(trialindex),1);
+        excluSaccs = nan(20,length(trialindex),1);
+        sparedSaccs = nan(20,length(trialindex),1);
+        
+        for tr = 1:length(trialindex)
+            
+            codes                 = all_codes{trialindex(tr)};
+            times                 = all_times{trialindex(tr)};
+            
+            if nnz(find( codes == 23))
+                samples = [];
+                samples(:,1) = (-1*times(codes == 23)+1) : 1 : 0 : (length(all_analogData{trialindex(tr)}.EyeSignal(:,1)) - times(codes == 23)); %trigger time points on stimulus onset time for it to be 0. Everything before that point is then negative %23 = stimulus onset time, time is measured relative to each trial onset recorded %24 = trial/stimulus offset time
+                %samples(:,1) = 1:length(all_analogData{trialindex(tr)}.EyeSignal(:,1));
+                if ~isempty(samples)
+                    samples(:,2) = all_analogData{trialindex(tr)}.EyeSignal(:,1)+xBaseline; %horizontal position of the left eye in degrees baseline corrected
+                    samples(:,3) = all_analogData{trialindex(tr)}.EyeSignal(:,2); %vertical position of the left eye in degrees
+                    samples(:,4) = nan();
+                    samples(:,5) = nan();
+                    blinks = zeros(length(samples(:,1)),1);
+                    recording = ClusterDetection.EyeMovRecording.Create(directory, session, samples, blinks, samplerate);
+                    
+                    % Runs the saccade detection
+                    try
+                        [saccades, stats] = recording.FindSaccades();
+                        enum = ClusterDetection.SaccadeDetector.GetEnum;
+                        
+                        for s =1:length(saccades(:,enum.startIndex)) %loop through all microssaccades/ saccades found in one trial
+                            % if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- times(codes == 23)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
+                            if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > (times(codes == 23)) && saccades(s,enum.startIndex) < times(codes == 24)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
+                                if  saccades(s,enum.amplitude) > 0.05 &&  saccades(s,enum.amplitude) < 2
+                                    excludeTrials(tr) = excludeTrials(tr)+1; %trials to exclude since they have microsaccades between stim  onset and stim offset
+                                    excluSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccade onset time
+                                end
+                                %elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < 0 || saccades(s,enum.startIndex) > times(codes == 24)- times(codes == 23))
+                            elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < (times(codes == 23)) || saccades(s,enum.startIndex) > times(codes == 24))
+                                if  saccades(s,enum.amplitude) > 0.05 &&  saccades(s,enum.amplitude) < 2
+                                    sparedSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccades occurring outside of stim onset-stim offset time
+                                end
+                            end
+                        end
+                    catch
+                        nprocTrials(tr) =nprocTrials(tr)+1; %trials for which the saccade detection above did not work
+                        disp(strcat({'Bad Trial',xBRdatafile}))
+                    end
+                    
+                 % Plots a main sequence
+                ampl = [ampl; saccades(:,enum.amplitude)];
+                veloc = [veloc; saccades(:,enum.peakVelocity)];
+                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).stats = stats;
+                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).saccades = saccades;
+                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).enum = enum;
+                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).samples = samples;
+                if ~all(isnan((saccades(:,enum.startIndex))))
+                    ntr =ntr+1;
+                end
+                   
+                end
+                 
+            end
+        end
+        eyeMovData.(xcluster).nprocTrials = nprocTrials; 
+        eyeMovData.(xcluster).msaccTrials = excludeTrials;
+        eyeMovData.(xcluster).msaccOn = excluSaccs;
+        eyeMovData.(xcluster).cellclass = trialsTraces.NoFiltMultiContSUA.(xcluster).cellclass;
+        %end
+        catch
+        cnt = cnt+1;
+        disp(strcat({'missing data ' xBRdatafile}))
+    end
+end
+
+%% exclude trials of peak_trig_traces that include microsaccades of a certain range,
+%%plot resulting population mean traces
+
+%1) loop through eyeMovData.
+%2) save trial numbers from the fieldnames that are part of excludeTrials
+%(loop through excludeTrials, if excludeTrials == 1 --> 3)
+%3) assess maximum microsaccade amplitude of this trial
+%4) If max amplitude is above threshold, exclude trial
+%5) store remaining trials in a structure, in a field specific to each
+%threshold, broken down by animal
+
+thrTraces = struct(); %structure to store selected neuronal data based on thresholds
+filenames = fieldnames(eyeMovData);
+for i = 1:length(fieldnames(eyeMovData))
+    filename = filenames{i};
+    msaccTrials = find(eyeMovData.(filename).msaccTrials);
+    
+    clustfields = fieldnames(eyeMovData.(filename));
+    for t = msaccTrials
+        trial = clustfields{t};
+        %select microsaccades of interest based on timing and amplitude
+        %range (already selected above with msaccOn
+                
+        if max(eyeMovData.(filename).(trial).saccades(find(~isnan(eyeMovData.(filename).msaccOn(:,t))),eyeMovData.(filename).(trial).enum.amplitude)) > 1 %if max msacc is above 1 deg
+           thrTraces.thresh1.(filename)(:,t) = NaN;
+        else
+           thrTraces.thresh1.(filename)(:,t) = [peak_trig_traces.(filename).originSUA.bin1.pk1(:,t); ...
+                                                                    peak_trig_traces.(filename).originSUA.bin1.pk2(:,t); ...
+                                                                    peak_trig_traces.(filename).originSUA.bin1.pk3(:,t); ...
+                                                                    peak_trig_traces.(filename).originSUA.bin1.pk4(:,t)];
+        end
+    end
+end
+
 
