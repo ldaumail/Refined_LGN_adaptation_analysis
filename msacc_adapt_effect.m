@@ -2070,42 +2070,43 @@ for th =1:4
 end
 
 %plot population mean +-95%CI for each peak and each threshold
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmap = flip(cmaps(1).map) ;
 
-yvar = nan(length(linAmp(strcmp(animal, 'I'))),2);
-yvar(:,1) = linAmp(strcmp(animal, 'I'));
-yvar(1:length(linAmp(strcmp(animal, 'B'))),2) = linAmp(strcmp(animal, 'B'));
-mYvar = [nanmean(linAmp(strcmp(animal, 'I'))); nanmean(linAmp(strcmp(animal, 'B')))];
-
+mYvar = squeeze(mean(pk,2));
 %95% CI
-ci_high = [nanmean(linAmp(strcmp(animal, 'I'))) + 1.96*std(linAmp(strcmp(animal, 'I')))/sqrt(length(linAmp(strcmp(animal, 'I'))));  nanmean(linAmp(strcmp(animal, 'B'))) + 1.96*std(linAmp(strcmp(animal, 'B')))/sqrt(length(linAmp(strcmp(animal, 'B'))))];
-ci_low = [nanmean(linAmp(strcmp(animal, 'I'))) - 1.96*std(linAmp(strcmp(animal, 'I')))/sqrt(length(linAmp(strcmp(animal, 'I'))));  nanmean(linAmp(strcmp(animal, 'B'))) - 1.96*std(linAmp(strcmp(animal, 'B')))/sqrt(length(linAmp(strcmp(animal, 'B'))))];
+ci_high = mYvar + 1.96*std(pk,[],2)./sqrt(size(pk,2)); 
+ci_low = mYvar - 1.96*std(pk,[],2)./sqrt(size(pk,2)); 
 
-spacing = 0.3;
-for c =1:length(unique(animal))
-    %jitter = rand(length(yvar(:,c)),1)*jit;
-    %x = c*ones(length(yvar(:,c)),1)+jitter-jit/2;
-    %scatter(yvar(:,c),x,20,'MarkerFaceColor',cols(c,:), 'MarkerEdgeColor',cols(c,:),'LineWidth',0.5);
-    hold on;
-    scatter(mYvar(c),c*1,60,'MarkerFaceColor','k', 'MarkerEdgeColor','k','LineWidth',0.5); %mean
-    hold on
-    line([ci_low(c) ci_high(c)],[c*1 c*1],  'Color', 'k', 'LineWidth', 2); %95%CI vertical
-    hold on
-    line([ci_low(c) ci_low(c)],[c*1-0.05 c*1+0.05],  'Color', 'k', 'LineWidth', 2); %95%CI whiskers
-    hold on
-    line( [ci_high(c) ci_high(c)],[c*1-0.05 c*1+0.05], 'Color', 'k', 'LineWidth', 2); %95%CI whiskers
-    hold on
+figure('Position',[100 100 1000 800]);
+spacing = 0.15;
+centre = 0.30; 
+for c =1:size(pk,1)
+    for th=1:size(pk,3)
+        scatter(c*1+spacing*(th-1)-centre, mYvar(c,th),60,'MarkerFaceColor',cmap(th,:), 'MarkerEdgeColor',cmap(th,:),'LineWidth',0.5); %mean
+        hold on
+        line([c*1+spacing*(th-1)-centre c*1+spacing*(th-1)-centre], [ci_low(c,th) ci_high(c,th)],  'Color', cmap(th,:), 'LineWidth', 2); %95%CI vertical
+        hold on
+        line([c*1+spacing*(th-1)-0.03-centre c*1+spacing*(th-1)+0.03-centre], [ci_low(c,th) ci_low(c,th)],  'Color',cmap(th,:), 'LineWidth', 2); %95%CI whiskers
+        hold on
+        line([c*1+spacing*(th-1)-0.03-centre c*1+spacing*(th-1)+0.03-centre], [ci_high(c,th) ci_high(c,th)], 'Color', cmap(th,:), 'LineWidth', 2); %95%CI whiskers
+        hold on
+    end
 end
 % Set up axes.
-ylim([0, 1]);
+ylim([0.8, 1]);
 xlim([0, 5]);
 ax = gca;
-ax.YTick = [1, 2];
-set(gca, 'YDir','reverse')
-ax.YTickLabels = unique(animal);
-xlabel('Amplitude (log10(deg))','fontweight','bold','fontsize',16)
-ylabel('Animal','fontweight','bold','fontsize',16)
+ax.XTick = [1, 2, 3, 4];
+%set(gca, 'YDir','reverse')
+ax.XTickLabels = [{'Pk1'}, {'Pk2'}, {'Pk3'}, {'Pk4'}];
+ylabel('Spike rate (normalized)','fontweight','bold','fontsize',16)
+xlabel('Peak #','fontweight','bold','fontsize',16)
 yticklab = get(gca,'YTickLabel');
 set(gca,'YTickLabel',yticklab,'fontsize',12)
 set(gca, 'LineWidth', 2)
+legend('', '', '', 'Qmsacc = 100%','','','', 'Qmsacc = 80%','','','', 'Qmsacc = 30%','','','', 'Qmsacc = 0%')
 %title('Distribution of microsaccade amplitudes')
-saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_amplitudes_density_I_B_scatter_custom.svg'));
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\threshold_spike_rate_normalized.svg'));
