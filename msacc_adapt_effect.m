@@ -522,13 +522,13 @@ for i =1:length(xfilenames)
                         for s =1:length(saccades(:,enum.startIndex)) %loop through all microssaccades/ saccades found in one trial
                             % if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- times(codes == 23)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
                             if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > (times(codes == 23)) && saccades(s,enum.startIndex) < times(codes == 24)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
-                                if  saccades(s,enum.amplitude) > 0.05 &&  saccades(s,enum.amplitude) < 2
+                                if  abs(saccades(s,enum.amplitude)) > 0.05 &&  abs(saccades(s,enum.amplitude)) < 2
                                     excludeTrials(tr) = excludeTrials(tr)+1; %trials to exclude since they have microsaccades between stim  onset and stim offset
                                     excluSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccade onset time
                                 end
                                 %elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < 0 || saccades(s,enum.startIndex) > times(codes == 24)- times(codes == 23))
                             elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < (times(codes == 23)) || saccades(s,enum.startIndex) > times(codes == 24))
-                                if  saccades(s,enum.amplitude) > 0.05 &&  saccades(s,enum.amplitude) < 2
+                                if  abs(saccades(s,enum.amplitude)) > 0.05 &&  abs(saccades(s,enum.amplitude)) < 2
                                     sparedSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccades occurring outside of stim onset-stim offset time
                                 end
                             end
@@ -991,7 +991,8 @@ for i = 1:length(fieldnames(eyeMovData))
     end
     
 end
-
+ampI = abs(ampI);
+ampB = abs(ampB);
 linAmp = log([ampI(ampI>0.05 & ampI<2);ampB(ampB>0.05 & ampB<2)])';
 animal = [repmat({'I'}, [length(ampI(ampI>0.05 & ampI<2)),1]);repmat({'B'}, [length(ampB(ampB>0.05 & ampB<2)),1])]';
 animal = animal(isfinite(linAmp));
@@ -1634,7 +1635,7 @@ colormap(cmap);
 % saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem_timeline_trial_story.png'));
 %   
 
-%% custom density histogram
+%% custom density /histogram plot
 
 
 figure('Position',[100 100 800 1000]);
@@ -1830,7 +1831,17 @@ end
 %% Last analysis: select neurphysiological data based on amplitude of microsaccades
 %generated under stimulation and compare neural responses based on
 %exclusion of microsaccades
+%%determine quantiles and thresholds to set (based on amplitudes)
+rawAmp = [ampI(ampI>0.05 & ampI<2);ampB(ampB>0.05 & ampB<2)];
+quants = quantile(abs(rawAmp), [0.3 0.8]);
 
+%1) loop through eyeMovData.
+%2) save trial numbers from the fieldnames that are part of excludeTrials
+%(loop through excludeTrials, if excludeTrials == 1 --> 3)
+%3) assess maximum microsaccade amplitude of this trial
+%4) If max amplitude is above threshold, exclude trial
+%5) store remaining trials in a structure, in a field specific to each
+%threshold, broken down by animal
 indexdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\analysis\';
 concat_filenames = load( [indexdir, 'concat_filenames_completenames']); %cluster filenames
 newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
@@ -1843,6 +1854,8 @@ peak_trig_traces = suaPeakTrigResps(trialsTraces.NoFiltMultiContSUA);
 xfilenames = fieldnames(peak_trig_traces);
 cnt = 0;
 eyeMovData = struct();
+thrTraces = struct(); %structure to store selected neuronal data based on thresholds
+
 for i =1:length(xfilenames)
     try
         xcluster =xfilenames{i};
@@ -1898,20 +1911,22 @@ for i =1:length(xfilenames)
                     
                     % Runs the saccade detection
                     try
+                        %clear saccades
                         [saccades, stats] = recording.FindSaccades();
                         enum = ClusterDetection.SaccadeDetector.GetEnum;
-                        
-                        for s =1:length(saccades(:,enum.startIndex)) %loop through all microssaccades/ saccades found in one trial
-                            % if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- times(codes == 23)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
-                            if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > (times(codes == 23)) && saccades(s,enum.startIndex) < times(codes == 24)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
-                                if  saccades(s,enum.amplitude) > 0.05 &&  saccades(s,enum.amplitude) < 2
-                                    excludeTrials(tr) = excludeTrials(tr)+1; %trials to exclude since they have microsaccades between stim  onset and stim offset
-                                    excluSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccade onset time
-                                end
-                                %elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < 0 || saccades(s,enum.startIndex) > times(codes == 24)- times(codes == 23))
-                            elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < (times(codes == 23)) || saccades(s,enum.startIndex) > times(codes == 24))
-                                if  saccades(s,enum.amplitude) > 0.05 &&  saccades(s,enum.amplitude) < 2
-                                    sparedSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccades occurring outside of stim onset-stim offset time
+                        if ~isempty(saccades)
+                            for s =1:length(saccades(:,enum.startIndex)) %loop through all microssaccades/ saccades found in one trial
+                                % if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- times(codes == 23)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
+                                if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > (times(codes == 23)) && saccades(s,enum.startIndex) < times(codes == 24)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
+                                    if  saccades(s,enum.amplitude) > 0.05 &&  saccades(s,enum.amplitude) < 2
+                                        excludeTrials(tr) = excludeTrials(tr)+1; %trials to exclude since they have microsaccades between stim  onset and stim offset
+                                        excluSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccade onset time
+                                    end
+                                    %elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < 0 || saccades(s,enum.startIndex) > times(codes == 24)- times(codes == 23))
+                                elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < (times(codes == 23)) || saccades(s,enum.startIndex) > times(codes == 24))
+                                    if  saccades(s,enum.amplitude) > 0.05 &&  saccades(s,enum.amplitude) < 2
+                                        sparedSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccades occurring outside of stim onset-stim offset time
+                                    end
                                 end
                             end
                         end
@@ -1920,64 +1935,177 @@ for i =1:length(xfilenames)
                         disp(strcat({'Bad Trial',xBRdatafile}))
                     end
                     
-                 % Plots a main sequence
-                ampl = [ampl; saccades(:,enum.amplitude)];
-                veloc = [veloc; saccades(:,enum.peakVelocity)];
-                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).stats = stats;
-                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).saccades = saccades;
-                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).enum = enum;
-                eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).samples = samples;
-                if ~all(isnan((saccades(:,enum.startIndex))))
-                    ntr =ntr+1;
+                    % Plots a main sequence
+                    ampl = [ampl; saccades(:,enum.amplitude)];
+                    veloc = [veloc; saccades(:,enum.peakVelocity)];
+                    eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).stats = stats;
+                    eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).saccades = saccades;
+                    eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).enum = enum;
+                    eyeMovData.(xcluster).(sprintf('t%d',trialindex(tr))).samples = samples;
+                    
+                    
+                    %threshold 0: we don't exclude any trial at all
+                    thrTraces.thresh0.(xcluster)(:,tr) = [peak_trig_traces.(xcluster).originSUA.bin1.pk1(:,tr); ...
+                        peak_trig_traces.(xcluster).originSUA.bin1.pk2(:,tr); ...
+                        peak_trig_traces.(xcluster).originSUA.bin1.pk3(:,tr); ...
+                        peak_trig_traces.(xcluster).originSUA.bin1.pk4(:,tr)];
+                    
+                    %now implement trial selection of neuronal data
+                    if max(saccades(find(~isnan(excluSaccs(:,tr))),enum.amplitude)) > 1.1615 %if max msacc is above 1.1615 deg (80% quantile)
+                        thrTraces.thresh1.(xcluster)(1:1000,tr) = nan(1000,1);
+                    else
+                        thrTraces.thresh1.(xcluster)(:,tr) = [peak_trig_traces.(xcluster).originSUA.bin1.pk1(:,tr); ...
+                            peak_trig_traces.(xcluster).originSUA.bin1.pk2(:,tr); ...
+                            peak_trig_traces.(xcluster).originSUA.bin1.pk3(:,tr); ...
+                            peak_trig_traces.(xcluster).originSUA.bin1.pk4(:,tr)];
+                    end
+                    if max(saccades(find(~isnan(excluSaccs(:,tr))),enum.amplitude)) > 0.4964 %if max msacc is above 0.4964 deg (30% quantile)
+                        thrTraces.thresh2.(xcluster)(1:1000,tr) = nan(1000,1);
+                    else
+                        thrTraces.thresh2.(xcluster)(:,tr) = [peak_trig_traces.(xcluster).originSUA.bin1.pk1(:,tr); ...
+                            peak_trig_traces.(xcluster).originSUA.bin1.pk2(:,tr); ...
+                            peak_trig_traces.(xcluster).originSUA.bin1.pk3(:,tr); ...
+                            peak_trig_traces.(xcluster).originSUA.bin1.pk4(:,tr)];
+                    end
+                     if max(saccades(find(~isnan(excluSaccs(:,tr))),enum.amplitude)) > 0 %if max msacc is above 0 deg (0% quantile) (we reject all trials with a microsaccade)
+                        thrTraces.thresh3.(xcluster)(1:1000,tr) = nan(1000,1);
+                    else
+                        thrTraces.thresh3.(xcluster)(:,tr) = [peak_trig_traces.(xcluster).originSUA.bin1.pk1(:,tr); ...
+                            peak_trig_traces.(xcluster).originSUA.bin1.pk2(:,tr); ...
+                            peak_trig_traces.(xcluster).originSUA.bin1.pk3(:,tr); ...
+                            peak_trig_traces.(xcluster).originSUA.bin1.pk4(:,tr)];
+                    end
+                    if ~all(isnan((saccades(:,enum.startIndex))))
+                        ntr =ntr+1;
+                    end
                 end
-                   
-                end
-                 
             end
         end
-        eyeMovData.(xcluster).nprocTrials = nprocTrials; 
+        eyeMovData.(xcluster).nprocTrials = nprocTrials;
         eyeMovData.(xcluster).msaccTrials = excludeTrials;
         eyeMovData.(xcluster).msaccOn = excluSaccs;
         eyeMovData.(xcluster).cellclass = trialsTraces.NoFiltMultiContSUA.(xcluster).cellclass;
         %end
-        catch
+    catch
         cnt = cnt+1;
         disp(strcat({'missing data ' xBRdatafile}))
     end
 end
 
-%% exclude trials of peak_trig_traces that include microsaccades of a certain range,
-%%plot resulting population mean traces
-
-%1) loop through eyeMovData.
-%2) save trial numbers from the fieldnames that are part of excludeTrials
-%(loop through excludeTrials, if excludeTrials == 1 --> 3)
-%3) assess maximum microsaccade amplitude of this trial
-%4) If max amplitude is above threshold, exclude trial
-%5) store remaining trials in a structure, in a field specific to each
-%threshold, broken down by animal
-
-thrTraces = struct(); %structure to store selected neuronal data based on thresholds
-filenames = fieldnames(eyeMovData);
-for i = 1:length(fieldnames(eyeMovData))
-    filename = filenames{i};
-    msaccTrials = find(eyeMovData.(filename).msaccTrials);
-    
-    clustfields = fieldnames(eyeMovData.(filename));
-    for t = msaccTrials
-        trial = clustfields{t};
-        %select microsaccades of interest based on timing and amplitude
-        %range (already selected above with msaccOn
+%%
+%% compute mean traces for each threshold
+mean_origin = nan(1000,4);
+mean_norm = nan(1000,4);
+ci_low = nan(1000,4);
+ci_high = nan(1000,4);
+all_mean_sua_norm = nan(1000,length(xfilenames),4);
+for th =1:4
+    thr = sprintf('thresh%d', th-1);
+    dataset = thrTraces.(thr);
+    xfilenames = fieldnames(dataset);
+    mean_sua_origin = nan(1000,length(xfilenames));
+    mean_sua_norm = nan(1000,length(xfilenames));
+    for i =1:length(xfilenames)
+        xfilename = xfilenames{i};
+        suaDat = dataset.(xfilename);
+        cleanSuaDat = nan(size(suaDat));
+        for t =1:length(suaDat(1,:))
+            if isempty(find(nnz(suaDat(:,t))))
+                cleanSuaDat(:,t) = nan(1000,1);
+            else 
+                cleanSuaDat(:,t) = suaDat(:,t);
                 
-        if max(eyeMovData.(filename).(trial).saccades(find(~isnan(eyeMovData.(filename).msaccOn(:,t))),eyeMovData.(filename).(trial).enum.amplitude)) > 1 %if max msacc is above 1 deg
-           thrTraces.thresh1.(filename)(:,t) = NaN;
-        else
-           thrTraces.thresh1.(filename)(:,t) = [peak_trig_traces.(filename).originSUA.bin1.pk1(:,t); ...
-                                                                    peak_trig_traces.(filename).originSUA.bin1.pk2(:,t); ...
-                                                                    peak_trig_traces.(filename).originSUA.bin1.pk3(:,t); ...
-                                                                    peak_trig_traces.(filename).originSUA.bin1.pk4(:,t)];
+            end
+        end
+        mean_sua_origin(:,i) = nanmean(cleanSuaDat,2);
+        mean_sua_norm(:,i) = nanmean(cleanSuaDat,2)./max(nanmean(cleanSuaDat,2));
+    end
+    all_mean_sua_norm(:,:,th) = mean_sua_norm;
+%     mean_origin(:,th) = nanmean(mean_sua_origin,2);
+%     ci_low(:,th) = mean_origin(:,th)- 1.96*std(mean_sua_origin,[],2, 'omitnan')./size(mean_sua_origin,2);
+%     ci_high(:,th) = mean_origin(:,th)+ 1.96*std(mean_sua_origin,[],2, 'omitnan')./size(mean_sua_origin,2);
+     mean_norm(:,th) = nanmean(mean_sua_norm,2);
+     ci_low(:,th) = mean_norm(:,th)- 1.96*std(mean_sua_norm,[],2, 'omitnan')./size(mean_sua_norm,2);
+     ci_high(:,th) = mean_norm(:,th)+ 1.96*std(mean_sua_norm,[],2, 'omitnan')./size(mean_sua_norm,2);
+
+end
+%%plot resulting population mean traces (just for checking what the data
+%%looks like overall)
+% col(1,:) = [50/255 50/255 50/255];
+% col(2,:) = [100/255 100/255 100/255];
+% col(3,:) = [150/255 150/255 150/255];
+% col(4,:) = [200/255 200/255 200/255];
+% figure();
+% 
+% for pn =1:4
+%     h =subplot(1,4,pn);
+%     for th =1:4
+%         plot(-124:125, mean_norm(250*(pn-1)+1:250*pn,th),'LineWidth',2, 'Color',[40/255 40/255 40/255] )
+%         hold on
+%         h1= ciplot(ci_low(250*(pn-1)+1:250*pn,th), ci_high(250*(pn-1)+1:250*pn,th),[-124:125],col(th,:),0.5);
+%         set(h1, 'edgecolor','none')
+%         hold on
+%     end
+%     set(h,'position',get(h,'position').*[1 1 1.15 1])
+%     
+%     ylim([0 1])
+%     xlim([-125 125])
+%     set(gca, 'linewidth',2)
+%     set(gca,'box','off')
+%     if pn >1
+%         ax1 = gca;
+%         ax1.YAxis.Visible = 'off';
+%     end
+% end
+%
+%% isolate peak values for each single unit at each threshold for stats and final plots
+
+pk = nan(4,size(all_mean_sua_norm,2),4);
+for th =1:4
+    for i =1:size(all_mean_sua_norm,2)
+        for pn =1:4
+            pk(pn,i,th) = max(all_mean_sua_norm(250*(pn-1)+1:250*pn,i,th));
         end
     end
 end
 
+%plot population mean +-95%CI for each peak and each threshold
 
+yvar = nan(length(linAmp(strcmp(animal, 'I'))),2);
+yvar(:,1) = linAmp(strcmp(animal, 'I'));
+yvar(1:length(linAmp(strcmp(animal, 'B'))),2) = linAmp(strcmp(animal, 'B'));
+mYvar = [nanmean(linAmp(strcmp(animal, 'I'))); nanmean(linAmp(strcmp(animal, 'B')))];
+
+%95% CI
+ci_high = [nanmean(linAmp(strcmp(animal, 'I'))) + 1.96*std(linAmp(strcmp(animal, 'I')))/sqrt(length(linAmp(strcmp(animal, 'I'))));  nanmean(linAmp(strcmp(animal, 'B'))) + 1.96*std(linAmp(strcmp(animal, 'B')))/sqrt(length(linAmp(strcmp(animal, 'B'))))];
+ci_low = [nanmean(linAmp(strcmp(animal, 'I'))) - 1.96*std(linAmp(strcmp(animal, 'I')))/sqrt(length(linAmp(strcmp(animal, 'I'))));  nanmean(linAmp(strcmp(animal, 'B'))) - 1.96*std(linAmp(strcmp(animal, 'B')))/sqrt(length(linAmp(strcmp(animal, 'B'))))];
+
+spacing = 0.3;
+for c =1:length(unique(animal))
+    %jitter = rand(length(yvar(:,c)),1)*jit;
+    %x = c*ones(length(yvar(:,c)),1)+jitter-jit/2;
+    %scatter(yvar(:,c),x,20,'MarkerFaceColor',cols(c,:), 'MarkerEdgeColor',cols(c,:),'LineWidth',0.5);
+    hold on;
+    scatter(mYvar(c),c*1,60,'MarkerFaceColor','k', 'MarkerEdgeColor','k','LineWidth',0.5); %mean
+    hold on
+    line([ci_low(c) ci_high(c)],[c*1 c*1],  'Color', 'k', 'LineWidth', 2); %95%CI vertical
+    hold on
+    line([ci_low(c) ci_low(c)],[c*1-0.05 c*1+0.05],  'Color', 'k', 'LineWidth', 2); %95%CI whiskers
+    hold on
+    line( [ci_high(c) ci_high(c)],[c*1-0.05 c*1+0.05], 'Color', 'k', 'LineWidth', 2); %95%CI whiskers
+    hold on
+end
+% Set up axes.
+ylim([0, 1]);
+xlim([0, 5]);
+ax = gca;
+ax.YTick = [1, 2];
+set(gca, 'YDir','reverse')
+ax.YTickLabels = unique(animal);
+xlabel('Amplitude (log10(deg))','fontweight','bold','fontsize',16)
+ylabel('Animal','fontweight','bold','fontsize',16)
+yticklab = get(gca,'YTickLabel');
+set(gca,'YTickLabel',yticklab,'fontsize',12)
+set(gca, 'LineWidth', 2)
+%title('Distribution of microsaccade amplitudes')
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_amplitudes_density_I_B_scatter_custom.svg'));
