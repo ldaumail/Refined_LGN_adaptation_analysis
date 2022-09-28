@@ -1996,15 +1996,22 @@ end
 %% compute mean traces for each threshold
 mean_origin = nan(1000,4);
 mean_norm = nan(1000,4);
+
 ci_low = nan(1000,4);
 ci_high = nan(1000,4);
 all_mean_sua_norm = nan(1000,length(xfilenames),4);
+all_mean_sua_normB = nan(1000,length(find(contains(xfilenames,'B'))),4);
+all_mean_sua_normI = nan(1000,length(find(contains(xfilenames,'I'))),4);
+
 for th =1:4
     thr = sprintf('thresh%d', th-1);
     dataset = thrTraces.(thr);
     xfilenames = fieldnames(dataset);
     mean_sua_origin = nan(1000,length(xfilenames));
     mean_sua_norm = nan(1000,length(xfilenames));
+    mean_sua_normI = nan(1000,length(xfilenames));
+    mean_sua_normB = nan(1000,length(xfilenames));
+    
     for i =1:length(xfilenames)
         xfilename = xfilenames{i};
         suaDat = dataset.(xfilename);
@@ -2019,14 +2026,23 @@ for th =1:4
         end
         mean_sua_origin(:,i) = nanmean(cleanSuaDat,2);
         mean_sua_norm(:,i) = nanmean(cleanSuaDat,2)./max(nanmean(cleanSuaDat,2));
+        if contains(xfilename,'I')
+            mean_sua_normI(:,i) = mean_sua_norm(:,i) ;
+            mean_sua_normB(:,i) = nan(1000,1);
+        else
+            mean_sua_normI(:,i) = nan(1000,1);
+            mean_sua_normB(:,i) = mean_sua_norm(:,i) ;
+        end
     end
     all_mean_sua_norm(:,:,th) = mean_sua_norm;
+    all_mean_sua_normI(:,:,th) = mean_sua_normI(:,~all(isnan(mean_sua_normI(:,:))));
+    all_mean_sua_normB(:,:,th) = mean_sua_normB(:,~all(isnan(mean_sua_normB(:,:))));
 %     mean_origin(:,th) = nanmean(mean_sua_origin,2);
 %     ci_low(:,th) = mean_origin(:,th)- 1.96*std(mean_sua_origin,[],2, 'omitnan')./size(mean_sua_origin,2);
 %     ci_high(:,th) = mean_origin(:,th)+ 1.96*std(mean_sua_origin,[],2, 'omitnan')./size(mean_sua_origin,2);
-     mean_norm(:,th) = nanmean(mean_sua_norm,2);
-     ci_low(:,th) = mean_norm(:,th)- 1.96*std(mean_sua_norm,[],2, 'omitnan')./size(mean_sua_norm,2);
-     ci_high(:,th) = mean_norm(:,th)+ 1.96*std(mean_sua_norm,[],2, 'omitnan')./size(mean_sua_norm,2);
+%      mean_norm(:,th) = nanmean(mean_sua_norm,2);
+%      ci_low(:,th) = mean_norm(:,th)- 1.96*std(mean_sua_norm,[],2, 'omitnan')./size(mean_sua_norm,2);
+%      ci_high(:,th) = mean_norm(:,th)+ 1.96*std(mean_sua_norm,[],2, 'omitnan')./size(mean_sua_norm,2);
 
 end
 %%plot resulting population mean traces (just for checking what the data
@@ -2110,3 +2126,96 @@ set(gca, 'LineWidth', 2)
 legend('', '', '', 'Qmsacc = 100%','','','', 'Qmsacc = 80%','','','', 'Qmsacc = 30%','','','', 'Qmsacc = 0%')
 %title('Distribution of microsaccade amplitudes')
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\threshold_spike_rate_normalized.svg'));
+
+%% same plot, broken down by animal
+
+pkI = nan(4,size(all_mean_sua_normI,2),4);
+pkB = nan(4,size(all_mean_sua_normB,2),4);
+for th =1:4
+    for i =1:size(all_mean_sua_normI,2)
+        for pn =1:4
+            pkI(pn,i,th) = max(all_mean_sua_normI(250*(pn-1)+1:250*pn,i,th));
+        end
+    end
+    for i =1:size(all_mean_sua_normB,2)
+        for pn =1:4
+            pkB(pn,i,th) = max(all_mean_sua_normB(250*(pn-1)+1:250*pn,i,th));
+        end
+    end
+end
+
+%plot population mean +-95%CI for each peak and each threshold
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmap = flip(cmaps(1).map) ;
+%mean I
+mYvarI = squeeze(mean(pkI,2));
+%95% CI
+ci_high_I = mYvarI + 1.96*std(pkI,[],2)./sqrt(size(pkI,2)); 
+ci_low_I = mYvarI - 1.96*std(pkI,[],2)./sqrt(size(pkI,2)); 
+%mean B
+mYvarB = squeeze(mean(pkB,2));
+%95% CI
+ci_high_B = mYvarB + 1.96*std(pkB,[],2)./sqrt(size(pkB,2)); 
+ci_low_B = mYvarB - 1.96*std(pkB,[],2)./sqrt(size(pkB,2)); 
+
+figure('Position',[100 100 1000 800]);
+spacing = 0.15;
+centre = 0.30; 
+subplot(2,1,1)
+for c =1:size(pkI,1)
+    for th=1:size(pkI,3)
+        scatter(c*1+spacing*(th-1)-centre, mYvarI(c,th),60,'MarkerFaceColor',cmap(th,:), 'MarkerEdgeColor',cmap(th,:),'LineWidth',0.5); %mean
+        hold on
+        line([c*1+spacing*(th-1)-centre c*1+spacing*(th-1)-centre], [ci_low_I(c,th) ci_high_I(c,th)],  'Color', cmap(th,:), 'LineWidth', 2); %95%CI vertical
+        hold on
+        line([c*1+spacing*(th-1)-0.03-centre c*1+spacing*(th-1)+0.03-centre], [ci_low_I(c,th) ci_low_I(c,th)],  'Color',cmap(th,:), 'LineWidth', 2); %95%CI whiskers
+        hold on
+        line([c*1+spacing*(th-1)-0.03-centre c*1+spacing*(th-1)+0.03-centre], [ci_high_I(c,th) ci_high_I(c,th)], 'Color', cmap(th,:), 'LineWidth', 2); %95%CI whiskers
+        hold on
+    end
+end
+% Set up axes.
+ylim([0.8, 1]);
+xlim([0, 5]);
+ax = gca;
+ax.XTick = [1, 2, 3, 4];
+%set(gca, 'YDir','reverse')
+ax.XTickLabels = [{'Pk1'}, {'Pk2'}, {'Pk3'}, {'Pk4'}];
+ylabel('Spike rate (normalized)','fontweight','bold','fontsize',16)
+xlabel('Peak #','fontweight','bold','fontsize',16)
+yticklab = get(gca,'YTickLabel');
+set(gca,'YTickLabel',yticklab,'fontsize',12)
+set(gca, 'LineWidth', 2)
+%legend('', '', '', 'Qmsacc = 100%','','','', 'Qmsacc = 80%','','','', 'Qmsacc = 30%','','','', 'Qmsacc = 0%')
+title('Animal I')
+
+subplot(2,1,2)
+for c =1:size(pkB,1)
+    for th=1:size(pkB,3)
+        scatter(c*1+spacing*(th-1)-centre, mYvarB(c,th),60,'MarkerFaceColor',cmap(th,:), 'MarkerEdgeColor',cmap(th,:),'LineWidth',0.5); %mean
+        hold on
+        line([c*1+spacing*(th-1)-centre c*1+spacing*(th-1)-centre], [ci_low_B(c,th) ci_high_B(c,th)],  'Color', cmap(th,:), 'LineWidth', 2); %95%CI vertical
+        hold on
+        line([c*1+spacing*(th-1)-0.03-centre c*1+spacing*(th-1)+0.03-centre], [ci_low_B(c,th) ci_low_B(c,th)],  'Color',cmap(th,:), 'LineWidth', 2); %95%CI whiskers
+        hold on
+        line([c*1+spacing*(th-1)-0.03-centre c*1+spacing*(th-1)+0.03-centre], [ci_high_B(c,th) ci_high_B(c,th)], 'Color', cmap(th,:), 'LineWidth', 2); %95%CI whiskers
+        hold on
+    end
+end
+% Set up axes.
+ylim([0.8, 1]);
+xlim([0, 5]);
+ax = gca;
+ax.XTick = [1, 2, 3, 4];
+%set(gca, 'YDir','reverse')
+ax.XTickLabels = [{'Pk1'}, {'Pk2'}, {'Pk3'}, {'Pk4'}];
+ylabel('Spike rate (normalized)','fontweight','bold','fontsize',16)
+xlabel('Peak #','fontweight','bold','fontsize',16)
+yticklab = get(gca,'YTickLabel');
+set(gca,'YTickLabel',yticklab,'fontsize',12)
+set(gca, 'LineWidth', 2)
+%legend('', '', '', 'Qmsacc = 100%','','','', 'Qmsacc = 80%','','','', 'Qmsacc = 30%','','','', 'Qmsacc = 0%')
+title('Animal B')
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\threshold_spike_rate_normalized_I_B.svg'));
