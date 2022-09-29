@@ -1677,11 +1677,11 @@ saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042
 %t-test 25 bins from 0 to 500 ms and 25 bins from 500 to 1000
 sLinOnI = linOnI(linOnI > 0 & linOnI<1000);
 [hts, edges]=histcounts(linOnI,50);
-[h,p, CI, stats] = ttest(hts(1:25), hts(26:50));
+[h,p, CI, stats] = ttest2(hts(1:25), hts(26:50));
 
 sLinOnB = linOnB(linOnB > 0 & linOnB<1000);
 [hts, edges]=histcounts(linOnB,50);
-[h,p, CI, stats] = ttest(hts(1:25), hts(26:50));
+[h,p, CI, stats] = ttest2(hts(1:25), hts(26:50));
 
  %% plot mean and standard deviation of eye position over time  
  
@@ -1828,7 +1828,7 @@ for i = 1:length(filenames)
     end
 end
 
-%% Last analysis: select neurphysiological data based on amplitude of microsaccades
+%% Next analysis: select neurphysiological data based on amplitude of microsaccades
 %generated under stimulation and compare neural responses based on
 %exclusion of microsaccades
 %%determine quantiles and thresholds to set (based on amplitudes)
@@ -2219,3 +2219,185 @@ set(gca, 'LineWidth', 2)
 %legend('', '', '', 'Qmsacc = 100%','','','', 'Qmsacc = 80%','','','', 'Qmsacc = 30%','','','', 'Qmsacc = 0%')
 title('Animal B')
 saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\threshold_spike_rate_normalized_I_B.svg'));
+
+%% perform stats
+
+%subtract Pk4 to Pk1
+dPk = squeeze(pk(1,:,:) - pk(4,:,:));
+dPkI = squeeze(pkI(1,:,:) - pkI(4,:,:));
+dPkB = squeeze(pkB(1,:,:) - pkB(4,:,:));
+
+%perform paired-t-test on the differences between 100% and 0% microsaccade
+%thresholds
+[h,p, CI, stats] = ttest(dPk(:,1), dPk(:,4));
+[h,p, CI, stats] = ttest(dPkI(:,1), dPkI(:,4));
+[h,p, CI, stats] = ttest(dPkB(:,1), dPkB(:,4));
+
+%% Last analysis: influence of eye distance from fixation cue on peak responses
+%use msacc amplitude detection code and for each peakloc, save eye position
+%baseline corrected to the mean
+
+indexdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\analysis\';
+concat_filenames = load( [indexdir, 'concat_filenames_completenames']); %cluster filenames
+newdatadir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\binocular_adaptation\all_units\';
+%trialsTraces =load([newdatadir 'all_orig_bs_zscore_trials_05022021_mono_bino']); %neural data
+trialsTraces =load([newdatadir 'NoFiltMultiContSUA_06212021']); %neural data +peaklocs (triggered 200 ms prior stim onset time) + trial numbers obtained with  "BinocularAdaptationTrialSelection.m"
+
+% figure('Position', [100 100 1000 800]);
+% plot(trialsTraces.NoFiltMultiContSUA.x160602_I_p01_uclust5_cinterocdrft_stab_fft_sig.bin1.neuralDat(:,1))
+
+% peak triggered data
+peak_trig_traces = suaPeakTrigResps(trialsTraces.NoFiltMultiContSUA);
+
+xfilenames = fieldnames(peak_trig_traces);
+cnt = 0;
+eyePosData = struct();
+for i =1:length(xfilenames)
+     try
+        xcluster =xfilenames{i};
+        cluster = xcluster(2:end);
+        underscore = strfind(cluster, '_');
+        session =  cluster(1:underscore(2)-1);
+        directory = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\concat2_bhv_selected_units\',cluster,'\');
+        xBRdatafiles = concat_filenames.(xcluster);
+        eye_info =[];
+        all_codes = [];
+        all_times = [];
+        all_analogData =[];
+        for fn =1:length(xBRdatafiles)
+            xBRdatafile = xBRdatafiles{fn};
+            filename   = [directory xBRdatafile(2:end)];
+            if exist(strcat(filename, '.bhv'),'file')
+                eye_info.(strcat(xBRdatafile,'_bhvfile')) = concatBHV(strcat(filename,'.bhv'));
+                all_codes = [all_codes, eye_info.(strcat(xBRdatafile,'_bhvfile')).CodeNumbers];
+                all_times = [all_times, eye_info.(strcat(xBRdatafile,'_bhvfile')).CodeTimes];
+                all_analogData = [all_analogData,eye_info.(strcat(xBRdatafile,'_bhvfile')).AnalogData];
+                xBaseline = eye_info.(strcat(xBRdatafile,'_bhvfile')).ScreenXresolution/4/eye_info.(strcat(xBRdatafile,'_bhvfile')).PixelsPerDegree; %since the screen monitor is split in 2 parts with the stereoscope, the center for each eye becomes the center for each side of the stereoscope (half of the half, justifying dividing by 4
+            end
+            
+        end
+        samplerate = 1000;
+        %trialindex = condSelectedTrialsIdx.(xcluster);
+        trialindex = trialsTraces.NoFiltMultiContSUA.(xcluster).bin1.trials; %only take trial indices of monocular stimulation
+        peakLocs =  trialsTraces.NoFiltMultiContSUA.(xcluster).bin1.peaklocs-200; %retrigger to stim onset time rather than 200 ms before stim onset time
+        xposPk = nan(size(peakLocs));
+        yposPk = nan(size(peakLocs));
+        for tr = 1:length(trialindex)
+            
+            codes                 = all_codes{trialindex(tr)};
+            times                 = all_times{trialindex(tr)};
+            
+            if nnz(find( codes == 23)) 
+                samples = [];
+                samples(:,1) = (-1*times(codes == 23)+1) : 1 : 0 : (length(all_analogData{trialindex(tr)}.EyeSignal(:,1)) - times(codes == 23)); %trigger time points on stimulus onset time for it to be 0. Everything before that point is then negative %23 = stimulus onset time, time is measured relative to each trial onset recorded %24 = trial/stimulus offset time
+                %samples(:,1) = 1:length(all_analogData{trialindex(tr)}.EyeSignal(:,1));
+                if ~isempty(samples)
+                    samples(:,2) = all_analogData{trialindex(tr)}.EyeSignal(:,1)+xBaseline; %horizontal position of the left eye in degrees baseline corrected
+                    samples(:,3) = all_analogData{trialindex(tr)}.EyeSignal(:,2); %vertical position of the left eye in degrees
+%                     xpos = samples(times(codes ==23):end,2) -nanmean(samples(times(codes ==23):times(codes == 24),2));
+%                     ypos = samples(times(codes ==23):end,3) -nanmean(samples(times(codes ==23):times(codes == 24),3));
+                    xpos = samples(times(codes ==23):end,2) -nanmean(samples(times(codes ==23):end,2));
+                    ypos = samples(times(codes ==23):end,3) -nanmean(samples(times(codes ==23):end,3));
+%                     normxpos = xpos./max(xpos(1:times(codes == 24)-times(codes == 23)));
+%                     normypos = ypos./max(ypos(1:times(codes == 24)-times(codes == 23)));
+                    normxpos = xpos./max(xpos(1:1150));
+                    normypos = ypos./max(ypos(1:1150));
+                    
+                    for pn = 1:4
+                        if ~isnan(peakLocs(pn,tr)) &&(peakLocs(pn,tr) > 0 && peakLocs(pn,tr) <1150)
+                            %get eye position data for each peak location
+                            xposPk(pn,tr) = normxpos(peakLocs(pn,tr));
+                            yposPk(pn,tr) = normypos(peakLocs(pn,tr));
+                                   else 
+                            xposPk(pn,tr) = NaN;
+                            yposPk(pn,tr) = NaN;
+                        end
+                    end
+                         %save spike rate values of first 4 peaks
+                        suaPeaks.(xcluster)(:,tr) = [max(peak_trig_traces.(xcluster).originSUA.bin1.pk1(:,tr)); ...
+                        max(peak_trig_traces.(xcluster).originSUA.bin1.pk2(:,tr)); ...
+                        max(peak_trig_traces.(xcluster).originSUA.bin1.pk3(:,tr)); ...
+                        max(peak_trig_traces.(xcluster).originSUA.bin1.pk4(:,tr))];
+
+                end       
+            end
+        end
+        eyePosData.(xcluster).eyePosPeaksX = xposPk;
+        eyePosData.(xcluster).eyePosPeaksY = yposPk;
+               
+        catch
+        cnt = cnt+1;
+        disp(strcat({'missing data ' xBRdatafile}))
+    end
+end
+
+%% Now, assess correlation between eye displacement and peak response
+%x = displacement
+xfilenames = fieldnames(eyePosData);
+disp = nan(length(xfilenames),2);
+for i =1:length(xfilenames)
+    xcluster =xfilenames{i};
+    dist = sqrt((eyePosData.(xcluster).eyePosPeaksX).^2+(eyePosData.(xcluster).eyePosPeaksY).^2);
+    disp(i,1) = nanmean(dist(1,:) - dist(2,:));
+    disp(i,2)= nanmean(dist(1,:) - dist(4,:));
+end
+
+%y = peak response diff
+pkDiff = nan(length(xfilenames),2);
+for i =1:length(xfilenames)
+    xcluster =xfilenames{i};
+    pkDiff(i,1) = nanmean((suaPeaks.(xcluster)(1,:)-suaPeaks.(xcluster)(3,:))./max(suaPeaks.(xcluster)(:,:)));
+    pkDiff(i,2) = nanmean((suaPeaks.(xcluster)(1,:)-suaPeaks.(xcluster)(4,:))./max(suaPeaks.(xcluster)(:,:)));
+end
+
+%correlation
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('BuPu', nlines);
+
+figure('Position',[100 100 1000 800]);
+x1 = squeeze(disp(:,2)); %Pk1-Pk4
+y1 =  squeeze(pkDiff(:,2)); %Pk1-Pk4
+
+%linear regression
+coeffs1 = polyfit(x1(isfinite(x1) & isfinite(y1)),y1(isfinite(x1) & isfinite(y1)),1);
+f1 = polyval(coeffs1,x1);
+plot(x1, y1,'o',x1, f1,'-','Color',[160/255 160/255 160/255],'MarkerSize',3, 'MarkerFaceColor',[160/255 160/255 160/255],'linewidth',2)
+%xlim([0 10])
+%ylim([0 4.5])
+text(max(x1)/1.3,max(y1)/20, sprintf('y1 = %.2f + %.2f*x', round(coeffs1(2),2), round(coeffs1(1),2)))
+hold on
+x2 = squeeze(disp(:,1)); %Pk1-Pk3
+y2 =  squeeze(pkDiff(:,1)); %Pk1-Pk3
+
+% Keep the same color for the statistics
+coeffs2 = polyfit(x2(isfinite(x2) & isfinite(y2) & abs(x2)<5 ),y2(isfinite(x2) & isfinite(y2)& abs(x2)<5),1);
+f2 = polyval(coeffs2,x2);
+plot(x2, y2,'o',x2, f2,'-','Color',cmaps(1).map(4,:),'MarkerSize',3, 'MarkerFaceColor',cmaps(1).map(3,:),'linewidth',2)
+text(max(x2)/1.3,max(y2)/20, sprintf('y2 = %.2f + %.2f*x', round(coeffs2(2),2), round(coeffs2(1),2)))
+xlim([-0.2 0.6])
+ylim([-0.2 0.3])
+set(gca, 'box','off')
+xlabel('Eye position change (normalized)')
+ylabel('Spike rate change (normalized)')
+legend('','Pk1-Pk4','','Pk1-Pk3')
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\correlation_spike_rate_displacement_normalized.svg'));
+
+%% stats on slope and correlation
+
+% xtest = x1;
+% ytest = y1;
+
+xtest = x2(isfinite(x2) & isfinite(y2) & abs(x2)<5 );
+ytest = y2(isfinite(x2) & isfinite(y2)& abs(x2)<5);
+linreg = fitlm(xtest,ytest);
+[linPvalue(1,1),F(1,1),r(1,1)] = coefTest(linreg); %r =numerator degrees of freedom
+length(xtest)
+linPvalue(1,1)
+F(1,1)
+
+
+    corrs= corr(xtest,ytest); %compare pk1-pk3 spike rate change vs eye displacement
+        %corrs(2,b) = corr(squeeze(peaks_diff(2,b,:)), squeeze(peaks_diff(3,b,:))); 
+
+
