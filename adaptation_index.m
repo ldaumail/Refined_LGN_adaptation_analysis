@@ -802,7 +802,95 @@ g(1,2).set_names('x','Adaptation index','color','Legend','row','','y','Count');
 g(1,2).coord_flip();
 g.draw();
 
-plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_rast_sdf_idx_cells_08262022');
+% plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_rast_sdf_idx_cells_08262022');
+% saveas(gcf,strcat(plotdir,class{c}, '.png'));
+% saveas(gcf,strcat(plotdir,class{c}, '.svg'));
+end
+
+%% same plot hist/density/raster plot with custom code
+
+nlines = 7;
+cmaps = struct();
+cmaps(1).map =cbrewer2('OrRd', nlines);
+cmaps(2).map =cbrewer2('BuPu', nlines);
+cmaps(3).map =cbrewer2('GnBu', nlines);
+cmap = flip(cmaps(2).map) ;
+
+cols = [cmaps(1).map(4,:);cmaps(3).map(4,:)];
+for c =1:3
+    figure('Position',[100 100 1200 1000]);
+
+    subplot(3,1,1)
+    h = histogram(index(strcmp(condition, 'I') & strcmp(cellclass,class{c})), 'NumBins', 20, 'Normalization','probability', 'EdgeColor', cmaps(1).map(4,:), 'FaceColor', cmaps(1).map(4,:));
+    binWidth = get(h,'BinWidth');
+    hts = get(h, 'Values');
+    hold on
+    area = sum(hts) * (binWidth);
+    [f,xi] = ksdensity(index(strcmp(condition, 'I')& strcmp(cellclass,class{c})), 'Function','pdf') ;
+    plot(xi, area*f, 'Color', cmaps(1).map(4,:), 'LineWidth', 2)
+    set(gca, 'box', 'off')
+    set(gca, 'LineWidth', 2)
+    xlabel('Adaptation Index')
+    ylabel('Probability')
+    title('Animal I')
+    xlim([-0.4 0.5])
+    
+    subplot(3,1,2)
+    h = histogram(index(strcmp(condition, 'B')& strcmp(cellclass,class{c})), 'NumBins', 20, 'Normalization','probability', 'EdgeColor', cmaps(3).map(4,:), 'FaceColor', cmaps(3).map(4,:));
+    binWidth = get(h,'BinWidth');
+    hts = get(h, 'Values');
+    hold on
+    area = sum(hts) * (binWidth);
+    if  ~isempty(index(strcmp(condition, 'B')& strcmp(cellclass,class{c})))
+        [f,xi] = ksdensity(index(strcmp(condition, 'B')& strcmp(cellclass,class{c})), 'Function','pdf') ;
+        plot(xi, area*f, 'Color', cmaps(3).map(4,:), 'LineWidth', 2)
+    end
+    set(gca, 'box', 'off')
+    set(gca, 'LineWidth', 2)
+    xlabel('Adaptation Index')
+    ylabel('Probability')
+    title('Animal B')
+    xlim([-0.4 0.5])
+    
+    subplot(3,1,3)
+    yvar = nan(length(index(strcmp(condition, 'I')& strcmp(cellclass,class{c}))),2);
+    yvar(:,1) = index(strcmp(condition, 'I')& strcmp(cellclass,class{c}));
+    yvar(1:length(index(strcmp(condition, 'B')& strcmp(cellclass,class{c}))),2) = index(strcmp(condition, 'B')& strcmp(cellclass,class{c}));
+    mYvar = [nanmean(index(strcmp(condition, 'I')& strcmp(cellclass,class{c}))); nanmean(index(strcmp(condition, 'B')& strcmp(cellclass,class{c})))];
+    
+    %95% CI
+    ci_high = [nanmean(index(strcmp(condition, 'I')& strcmp(cellclass,class{c}))) + 1.96*std(index(strcmp(condition, 'I')& strcmp(cellclass,class{c})))/sqrt(length(index(strcmp(condition, 'I')& strcmp(cellclass,class{c}))));  nanmean(index(strcmp(condition, 'B')& strcmp(cellclass,class{c}))) + 1.96*std(index(strcmp(condition, 'B')& strcmp(cellclass,class{c})))/sqrt(length(index(strcmp(condition, 'B')& strcmp(cellclass,class{c}))))];
+    ci_low = [nanmean(index(strcmp(condition, 'I')& strcmp(cellclass,class{c}))) - 1.96*std(index(strcmp(condition, 'I')& strcmp(cellclass,class{c})))/sqrt(length(index(strcmp(condition, 'I')& strcmp(cellclass,class{c}))));  nanmean(index(strcmp(condition, 'B')& strcmp(cellclass,class{c}))) - 1.96*std(index(strcmp(condition, 'B')& strcmp(cellclass,class{c})))/sqrt(length(index(strcmp(condition, 'B')& strcmp(cellclass,class{c}))))];
+    
+    jit = 0.3;
+    for p =1:length(unique(condition))-1
+        jitter = rand(length(yvar(:,p)),1)*jit;
+        x = p*ones(length(yvar(:,p)),1)+jitter-jit/2;
+        scatter(yvar(:,p),x,20,'MarkerFaceColor',cols(p,:), 'MarkerEdgeColor',cols(p,:),'LineWidth',0.5);
+        hold on;
+        scatter(mYvar(p),p*1,60,'MarkerFaceColor','k', 'MarkerEdgeColor','k','LineWidth',0.5); %mean
+        hold on
+        line([ci_low(p) ci_high(p)],[p*1 p*1],  'Color', 'k', 'LineWidth', 2); %95%CI vertical
+        hold on
+        line([ci_low(p) ci_low(p)],[p*1-0.05 p*1+0.05],  'Color', 'k', 'LineWidth', 2); %95%CI whiskers
+        hold on
+        line( [ci_high(p) ci_high(p)],[p*1-0.05 p*1+0.05], 'Color', 'k', 'LineWidth', 2); %95%CI whiskers
+        hold on
+    end
+    % Set up axes.
+    xlim([-0.4, 0.5]);
+    ylim([0, 3]);
+    ax = gca;
+    ax.YTick = [1, 2];
+    set(gca, 'YDir','reverse')
+    ax.YTickLabels = [{'I'}, {'B'}];
+    xlabel('Adaptation index','fontweight','bold','fontsize',16)
+    ylabel('Animal','fontweight','bold','fontsize',16)
+    yticklab = get(gca,'YTickLabel');
+    set(gca,'YTickLabel',yticklab,'fontsize',12)
+    set(gca, 'LineWidth', 2)
+    sgtitle('Distribution of adaptation indices')
+plotdir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\adaptation_index\plots\hist_rast_sdf_idx_cells_09282022');
 saveas(gcf,strcat(plotdir,class{c}, '.png'));
 saveas(gcf,strcat(plotdir,class{c}, '.svg'));
 end
