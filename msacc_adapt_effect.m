@@ -2338,8 +2338,8 @@ disp = nan(length(xfilenames),2);
 for i =1:length(xfilenames)
     xcluster =xfilenames{i};
     dist = sqrt((eyePosData.(xcluster).eyePosPeaksX).^2+(eyePosData.(xcluster).eyePosPeaksY).^2);
-    disp(i,1) = nanmean(dist(1,:) - dist(2,:));
-    disp(i,2)= nanmean(dist(1,:) - dist(4,:));
+    disp(i,1) = abs(nanmean(dist(1,:) - dist(2,:)));
+    disp(i,2)= abs(nanmean(dist(1,:) - dist(4,:)));
 end
 
 %y = peak response diff
@@ -2371,17 +2371,17 @@ x2 = squeeze(disp(:,1)); %Pk1-Pk3
 y2 =  squeeze(pkDiff(:,1)); %Pk1-Pk3
 
 % Keep the same color for the statistics
-coeffs2 = polyfit(x2(isfinite(x2) & isfinite(y2) & abs(x2)<5 ),y2(isfinite(x2) & isfinite(y2)& abs(x2)<5),1);
+coeffs2 = polyfit(x2(isfinite(x2) & isfinite(y2) & x2<5 ),y2(isfinite(x2) & isfinite(y2)& x2<5),1);
 f2 = polyval(coeffs2,x2);
 plot(x2, y2,'o',x2, f2,'-','Color',cmaps(1).map(4,:),'MarkerSize',3, 'MarkerFaceColor',cmaps(1).map(3,:),'linewidth',2)
-text(max(x2)/1.3,max(y2)/20, sprintf('y2 = %.2f + %.2f*x', round(coeffs2(2),2), round(coeffs2(1),2)))
-xlim([-0.2 0.6])
+text(max(x2(x2<5))/1.3,max(y2)/20, sprintf('y2 = %.2f + %.2f*x', round(coeffs2(2),2), round(coeffs2(1),2)))
+xlim([0 0.6])
 ylim([-0.2 0.3])
 set(gca, 'box','off')
 xlabel('Eye position change (normalized)')
 ylabel('Spike rate change (normalized)')
 legend('','Pk1-Pk4','','Pk1-Pk3')
-saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\correlation_spike_rate_displacement_normalized.svg'));
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\correlation_spike_rate_displacement_abs_normalized.svg'));
 
 %% stats on slope and correlation
 
