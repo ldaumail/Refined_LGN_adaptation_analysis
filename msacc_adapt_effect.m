@@ -461,6 +461,8 @@ peak_trig_traces = suaPeakTrigResps(trialsTraces.NoFiltMultiContSUA);
 xfilenames = fieldnames(peak_trig_traces);
 cnt = 0;
 eyeMovData = struct();
+lowT = 0.1; %lower threshold for detecing microsaccades, in degrees
+highT = 2;
 for i =1:length(xfilenames)
     try
         xcluster =xfilenames{i};
@@ -522,13 +524,13 @@ for i =1:length(xfilenames)
                         for s =1:length(saccades(:,enum.startIndex)) %loop through all microssaccades/ saccades found in one trial
                             % if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- times(codes == 23)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
                             if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > (times(codes == 23)) && saccades(s,enum.startIndex) < times(codes == 24)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
-                                if  abs(saccades(s,enum.amplitude)) > 0.05 &&  abs(saccades(s,enum.amplitude)) < 2
+                                if  abs(saccades(s,enum.amplitude)) >lowT &&  abs(saccades(s,enum.amplitude)) < highT
                                     excludeTrials(tr) = excludeTrials(tr)+1; %trials to exclude since they have microsaccades between stim  onset and stim offset
                                     excluSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccade onset time
                                 end
                                 %elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < 0 || saccades(s,enum.startIndex) > times(codes == 24)- times(codes == 23))
                             elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < (times(codes == 23)) || saccades(s,enum.startIndex) > times(codes == 24))
-                                if  abs(saccades(s,enum.amplitude)) > 0.05 &&  abs(saccades(s,enum.amplitude)) < 2
+                                if  abs(saccades(s,enum.amplitude)) > lowT &&  abs(saccades(s,enum.amplitude)) < highT
                                     sparedSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccades occurring outside of stim onset-stim offset time
                                 end
                             end
@@ -837,7 +839,7 @@ title('Animal I')
 xlim([0 1.4])
 
 subplot(3,1,2)
-h = histogram(linAmp(strcmp(animal, 'B')), 'NumBins', 50, 'Normalization','probability', 'EdgeColor', cmaps(3).map(4,:), 'FaceColor', cmaps(3).map(4,:));
+h = histogram(linFreq(strcmp(animal, 'B')), 'NumBins', 50, 'Normalization','probability', 'EdgeColor', cmaps(3).map(4,:), 'FaceColor', cmaps(3).map(4,:));
 binWidth = get(h,'BinWidth');
 hts = get(h, 'Values');
 hold on
@@ -889,7 +891,7 @@ yticklab = get(gca,'YTickLabel');
 set(gca,'YTickLabel',yticklab,'fontsize',12)
 set(gca, 'LineWidth', 2)
 %title('Distribution of microsaccade amplitudes')
-saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_frequency_per_trial_I_B_scatter_custom.svg'));
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc01_frequency_per_trial_I_B_scatter_custom.svg'));
 
 
 %% Percentage of trials with microsaccades
@@ -993,10 +995,10 @@ for i = 1:length(fieldnames(eyeMovData))
 end
 ampI = abs(ampI);
 ampB = abs(ampB);
-linAmp = log([ampI(ampI>0.05 & ampI<2);ampB(ampB>0.05 & ampB<2)])';
-animal = [repmat({'I'}, [length(ampI(ampI>0.05 & ampI<2)),1]);repmat({'B'}, [length(ampB(ampB>0.05 & ampB<2)),1])]';
+linAmp = log10([ampI(ampI>lowT & ampI<highT);ampB(ampB>lowT & ampB<highT)])';
+animal = [repmat({'I'}, [length(ampI(ampI>lowT & ampI<highT)),1]);repmat({'B'}, [length(ampB(ampB>lowT & ampB<highT)),1])]';
 animal = animal(isfinite(linAmp));
-msacc = [1:length(ampI(ampI>0.05 & ampI<2)),1:length(ampB(ampB>0.05 & ampB<2))];
+msacc = [1:length(ampI(ampI>lowT & ampI<highT)),1:length(ampB(ampB>lowT & ampB<highT))];
 msacc = msacc(isfinite(linAmp));
 linAmp = linAmp(isfinite(linAmp));
 
@@ -1070,10 +1072,10 @@ area = sum(hts) * (binWidth);
 plot(xi, area*f, 'Color', cmaps(1).map(4,:), 'LineWidth', 2)
 set(gca, 'box', 'off')
 set(gca, 'LineWidth', 2)
-xlabel('Amplitude (log10(deg))')
+%xlabel('Amplitude (log10(deg))')
 ylabel('Probability')
 title('Animal I')
-xlim([-3 1])
+xlim([-1, 0.31])
 
 subplot(3,1,2)
 h = histogram(linAmp(strcmp(animal, 'B')), 'NumBins', 50, 'Normalization','probability', 'EdgeColor', cmaps(3).map(4,:), 'FaceColor', cmaps(3).map(4,:));
@@ -1085,10 +1087,11 @@ area = sum(hts) * (binWidth);
 plot(xi, area*f, 'Color', cmaps(3).map(4,:), 'LineWidth', 2)
 set(gca, 'box', 'off')
 set(gca, 'LineWidth', 2)
-xlabel('Amplitude (log10(deg))')
+%xlabel('Amplitude (log10(deg))')
 ylabel('Probability')
 title('Animal B')
-xlim([-3 1])
+%xlim([-2.31, 0.7])
+xlim([-1, 0.31])
 
 subplot(3,1,3)
 yvar = nan(length(linAmp(strcmp(animal, 'I'))),2);
@@ -1116,7 +1119,8 @@ for c =1:length(unique(animal))
     hold on
 end
 % Set up axes.
-xlim([-3, 1]);
+%xlim([-2.31, 0.7]);
+xlim([-1, 0.31]);
 ylim([0, 3]);
 ax = gca;
 ax.YTick = [1, 2];
@@ -1128,7 +1132,7 @@ yticklab = get(gca,'YTickLabel');
 set(gca,'YTickLabel',yticklab,'fontsize',12)
 set(gca, 'LineWidth', 2)
 %title('Distribution of microsaccade amplitudes')
-saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc_amplitudes_density_I_B_scatter_custom.svg'));
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\msacc01_amplitudes_density_I_B_scatter_custom.svg'));
 
 
 %% New Idea: assess correlation between frequency of microsaccades and adaptation index
@@ -1588,17 +1592,18 @@ end
 
 % Plot horizontal histogram with density plot of microsaccades onset times
 % broken down by monkey
+lowT = 0.1;
+highT = 2;
+linOnI = imsaccOn(clustMsaccAmpI>lowT & clustMsaccAmpI<highT)'; 
+linOnB = bmsaccOn( clustMsaccAmpB>lowT & clustMsaccAmpB<highT)';
 
-linOnI = imsaccOn(clustMsaccAmpI>0.05 & clustMsaccAmpI<2)'; 
-linOnB = bmsaccOn( clustMsaccAmpB>0.05 & clustMsaccAmpB<2)';
-
-animal_I = repmat({'I'}, [length(clustMsaccAmpI(clustMsaccAmpI>0.05 & clustMsaccAmpI<2)),1])';
-animal_B = repmat({'B'}, [length(clustMsaccAmpB(clustMsaccAmpB>0.05 & clustMsaccAmpB<2)),1])';
+animal_I = repmat({'I'}, [length(clustMsaccAmpI(clustMsaccAmpI>lowT & clustMsaccAmpI<highT)),1])';
+animal_B = repmat({'B'}, [length(clustMsaccAmpB(clustMsaccAmpB>lowT & clustMsaccAmpB<highT)),1])';
 
 animal_I = animal_I(isfinite(linOnI));
 animal_B = animal_B(isfinite(linOnB));
-msacc_I = 1:length(imsaccOn(clustMsaccAmpI>0.05 & clustMsaccAmpI<2));
-msacc_B = 1:length(bmsaccOn(clustMsaccAmpB>0.05 & clustMsaccAmpB<2));
+msacc_I = 1:length(imsaccOn(clustMsaccAmpI>lowT & clustMsaccAmpI<highT));
+msacc_B = 1:length(bmsaccOn(clustMsaccAmpB>lowT & clustMsaccAmpB<highT));
 msacc_I = msacc_I(isfinite(linOnI));
 msacc_B = msacc_B(isfinite(linOnB));
 linOnI = linOnI(isfinite(linOnI));
@@ -1642,12 +1647,12 @@ figure('Position',[100 100 800 1000]);
 %bar(ctrs,hts,'hist', 'EdgeColor', cmaps(3).map(4,:), 'FaceColor', cmaps(3).map(4,:)) %,'BarWidth',1
 subplot(2,1,1)
 h = histogram(linOnI, 'NumBins', 50, 'Normalization','probability', 'EdgeColor', cmaps(1).map(4,:), 'FaceColor', cmaps(1).map(4,:));
-binWidth = get(h,'BinWidth');
-hts = get(h, 'Values');
-hold on
-area = sum(hts) * (binWidth);
-[f,xi] = ksdensity(linOnI, 'Function','pdf') ;
-plot(xi, area*f, 'Color', cmaps(1).map(4,:), 'LineWidth', 2)
+% binWidth = get(h,'BinWidth');
+% hts = get(h, 'Values');
+% hold on
+% area = sum(hts) * (binWidth);
+% [f,xi] = ksdensity(linOnI, 'Function','pdf') ;
+% plot(xi, area*f, 'Color', cmaps(1).map(4,:), 'LineWidth', 2)
 set(gca, 'box', 'off')
 set(gca, 'LineWidth', 2)
 xlabel('Time from Stimulus Onset (ms)')
@@ -1656,12 +1661,12 @@ title('Animal I')
 xlim([-270 1170])
 subplot(2,1,2)
 h = histogram(linOnB, 'NumBins', 50, 'Normalization','probability', 'EdgeColor', cmaps(3).map(4,:), 'FaceColor', cmaps(3).map(4,:));
-binWidth = get(h,'BinWidth');
-hts = get(h, 'Values');
-hold on
-area = sum(hts) * (binWidth);
-[f,xi] = ksdensity(linOnB, 'Function','pdf') ;
-plot(xi, area*f, 'Color', cmaps(3).map(4,:), 'LineWidth', 2)
+% binWidth = get(h,'BinWidth');
+% hts = get(h, 'Values');
+% hold on
+% area = sum(hts) * (binWidth);
+% [f,xi] = ksdensity(linOnB, 'Function','pdf') ;
+% plot(xi, area*f, 'Color', cmaps(3).map(4,:), 'LineWidth', 2)
 set(gca, 'box', 'off')
 set(gca, 'LineWidth', 2)
 xlabel('Time from Stimulus Onset (ms)')
@@ -1669,8 +1674,8 @@ ylabel('Probability')
 title('Animal B')
 xlim([-270 1170])
 
-saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem_timeline_trial_custom.svg'));
-saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem_timeline_trial_custom.png'));
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem01_timeline_trial_custom.svg'));
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\fem01_timeline_trial_custom.png'));
   
 %% stats on each monkey
 
@@ -1832,7 +1837,8 @@ end
 %generated under stimulation and compare neural responses based on
 %exclusion of microsaccades
 %%determine quantiles and thresholds to set (based on amplitudes)
-rawAmp = [ampI(ampI>0.05 & ampI<2);ampB(ampB>0.05 & ampB<2)];
+
+rawAmp = [ampI(ampI>lowT & ampI<highT);ampB(ampB>lowT & ampB<highT)];
 quants = quantile(abs(rawAmp), [0.3 0.8]);
 
 %1) loop through eyeMovData.
@@ -1855,7 +1861,8 @@ xfilenames = fieldnames(peak_trig_traces);
 cnt = 0;
 eyeMovData = struct();
 thrTraces = struct(); %structure to store selected neuronal data based on thresholds
-
+lowT = 0.1;
+highT = 2;
 for i =1:length(xfilenames)
     try
         xcluster =xfilenames{i};
@@ -1918,13 +1925,13 @@ for i =1:length(xfilenames)
                             for s =1:length(saccades(:,enum.startIndex)) %loop through all microssaccades/ saccades found in one trial
                                 % if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > 0 && saccades(s,enum.startIndex) < times(codes == 24)- times(codes == 23)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
                                 if  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) > (times(codes == 23)) && saccades(s,enum.startIndex) < times(codes == 24)) %if there is at least 1 microsaccade and it occurs between stim onset and stim offset
-                                    if  saccades(s,enum.amplitude) > 0.05 &&  saccades(s,enum.amplitude) < 2
+                                    if  saccades(s,enum.amplitude) > lowT &&  saccades(s,enum.amplitude) < highT
                                         excludeTrials(tr) = excludeTrials(tr)+1; %trials to exclude since they have microsaccades between stim  onset and stim offset
                                         excluSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccade onset time
                                     end
                                     %elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < 0 || saccades(s,enum.startIndex) > times(codes == 24)- times(codes == 23))
                                 elseif  ~isempty(find(saccades(s,enum.startIndex),1)) && (saccades(s,enum.startIndex) < (times(codes == 23)) || saccades(s,enum.startIndex) > times(codes == 24))
-                                    if  saccades(s,enum.amplitude) > 0.05 &&  saccades(s,enum.amplitude) < 2
+                                    if  saccades(s,enum.amplitude) > lowT &&  saccades(s,enum.amplitude) < highT
                                         sparedSaccs(s,tr) = saccades(s,enum.startIndex); %save microsaccades occurring outside of stim onset-stim offset time
                                     end
                                 end
@@ -2100,7 +2107,7 @@ figure('Position',[100 100 1000 800]);
 spacing = 0.15;
 centre = 0.30; 
 for c =1:size(pk,1)
-    for th=1:size(pk,3)
+    for th=1:3:size(pk,3)
         scatter(c*1+spacing*(th-1)-centre, mYvar(c,th),60,'MarkerFaceColor',cmap(th,:), 'MarkerEdgeColor',cmap(th,:),'LineWidth',0.5); %mean
         hold on
         line([c*1+spacing*(th-1)-centre c*1+spacing*(th-1)-centre], [ci_low(c,th) ci_high(c,th)],  'Color', cmap(th,:), 'LineWidth', 2); %95%CI vertical
@@ -2123,9 +2130,10 @@ xlabel('Peak #','fontweight','bold','fontsize',16)
 yticklab = get(gca,'YTickLabel');
 set(gca,'YTickLabel',yticklab,'fontsize',12)
 set(gca, 'LineWidth', 2)
-legend('', '', '', 'Qmsacc = 100%','','','', 'Qmsacc = 80%','','','', 'Qmsacc = 30%','','','', 'Qmsacc = 0%')
+legend('', '', '', 'Qmsacc = 100%','','','','Qmsacc = 0%')
+%legend('', '', '', 'Qmsacc = 100%','','','', 'Qmsacc = 80%','','','', 'Qmsacc = 30%','','','', 'Qmsacc = 0%')
 %title('Distribution of microsaccade amplitudes')
-saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\threshold_spike_rate_normalized.svg'));
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\Inc_exc_spike_rate_normalized.svg'));
 
 %% same plot, broken down by animal
 
@@ -2165,7 +2173,7 @@ spacing = 0.15;
 centre = 0.30; 
 subplot(2,1,1)
 for c =1:size(pkI,1)
-    for th=1:size(pkI,3)
+    for th=1:3:size(pkI,3)
         scatter(c*1+spacing*(th-1)-centre, mYvarI(c,th),60,'MarkerFaceColor',cmap(th,:), 'MarkerEdgeColor',cmap(th,:),'LineWidth',0.5); %mean
         hold on
         line([c*1+spacing*(th-1)-centre c*1+spacing*(th-1)-centre], [ci_low_I(c,th) ci_high_I(c,th)],  'Color', cmap(th,:), 'LineWidth', 2); %95%CI vertical
@@ -2193,7 +2201,7 @@ title('Animal I')
 
 subplot(2,1,2)
 for c =1:size(pkB,1)
-    for th=1:size(pkB,3)
+    for th=1:3:size(pkB,3)
         scatter(c*1+spacing*(th-1)-centre, mYvarB(c,th),60,'MarkerFaceColor',cmap(th,:), 'MarkerEdgeColor',cmap(th,:),'LineWidth',0.5); %mean
         hold on
         line([c*1+spacing*(th-1)-centre c*1+spacing*(th-1)-centre], [ci_low_B(c,th) ci_high_B(c,th)],  'Color', cmap(th,:), 'LineWidth', 2); %95%CI vertical
@@ -2218,7 +2226,7 @@ set(gca,'YTickLabel',yticklab,'fontsize',12)
 set(gca, 'LineWidth', 2)
 %legend('', '', '', 'Qmsacc = 100%','','','', 'Qmsacc = 80%','','','', 'Qmsacc = 30%','','','', 'Qmsacc = 0%')
 title('Animal B')
-saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\threshold_spike_rate_normalized_I_B.svg'));
+saveas(gcf,strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\plots\Inc_Exc_spike_rate_normalized_I_B.svg'));
 
 %% perform stats
 
