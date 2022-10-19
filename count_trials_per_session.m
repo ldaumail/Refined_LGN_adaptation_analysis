@@ -5,10 +5,17 @@
 
 
 %% This section is only necessary to transfer the nev and bhv files we need
-allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\lgn_interneuron_suppression\all_cont_lgn_data_pooled_09292021';
-selected_data = load(strcat(allfilename, '.mat'));
-selected_data =selected_data.selected_data_pooled;
+%for the selected 46 single units:
+% allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\lgn_interneuron_suppression\all_cont_lgn_data_pooled_09292021';
+% selected_data = load(strcat(allfilename, '.mat'));
+% selected_data =selected_data.selected_data_pooled;
+% xFilenames = fieldnames(selected_data);
+
+%for the initial 71 single units:
+indexdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\analysis\concat_origfilenames_completenames_10162022.mat';
+selected_data = load(indexdir);
 xFilenames = fieldnames(selected_data);
+
 PATHS = {'E:\LGN_data_TEBA\rig021\', 'E:\LGN_data_TEBA\rig021_2\', 'E:\LGN_data_TEBA\rig022\', 'E:\LGN_data_TEBA\rig022_2\'};
 for p =1:length(PATHS)
     for i = 1:length(xFilenames)
@@ -58,10 +65,10 @@ for i=1:length(xFilenames)
         cluster = xcluster(2:end);
         underscore = strfind(cluster, '_');
         session =  cluster(1:underscore(2)-1);
-        directory = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\session_trial_count\bhv_all\',session, '\');
+        filesDir = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\session_trial_count\bhv_all\',session, '\');
         
         %xBRdatafiles = concat_filenames.(xcluster);
-        BRdatafiles = dir(strcat(directory,'\*cinterocdrft*.bhv'));
+        BRdatafiles = dir(strcat(filesDir,'\*cinterocdrft*.bhv'));
         BRdataFnames = {BRdatafiles.name};
         eye_info =struct();
         all_codes = [];
@@ -69,7 +76,7 @@ for i=1:length(xFilenames)
         %      all_analogData =[];
         for n =1:length(BRdataFnames)
             BRdatafile = BRdatafiles(n).name;
-            filename   = [directory BRdatafile];
+            filename   = [filesDir BRdatafile];
             if exist(filename,'file')
                 dot = strfind(BRdatafile, '.');
                 fieldn =  BRdatafile(1:dot-1);
@@ -94,57 +101,6 @@ trialCnt = trialCnt(find(trialCnt));
 avgTrC = mean(trialCnt);
 CITrC = 1.96*std(trialCnt)/sqrt(length(trialCnt));
 
-%% Do the same with nev files
-% NEV             = openNEV([filename '.nev'],'noread','overwrite');
-% EventCodes      = NEV.Data.SerialDigitalIO.UnparsedData - 128;        % we don't know why we have to subtract 128 but we do
-% EventSamples    = NEV.Data.SerialDigitalIO.TimeStamp;                 % in samples 
-% EventTimes      = floor(NEV.Data.SerialDigitalIO.TimeStampSec.*1000); % convert to ms 
-% [pEvC, pEvT]    = parsEventCodesML(EventCodes,EventSamples);          % sorts codes, samps or times into trials
-% 
-% 
-% allfilename = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\lgn_interneuron_suppression\all_cont_lgn_data_pooled_09292021';
-% selected_data = load(strcat(allfilename, '.mat'));
-% selected_data =selected_data.selected_data_pooled;
-% xFilenames = fieldnames(selected_data);
-% 
-% cnt =0;
-% trialCnt = [];
-% for i=1:length(xFilenames)
-%     try
-%         xcluster = xFilenames{i};
-%         cluster = xcluster(2:end);
-%         underscore = strfind(cluster, '_');
-%         session =  cluster(1:underscore(2)-1);
-%         directory = strcat('C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\session_trial_count\bhv_all\',session, '\');
-%         
-%         %xBRdatafiles = concat_filenames.(xcluster);
-%         BRdatafiles = dir(strcat(directory,'\*cinterocdrft*.bhv'));
-%         BRdataFnames = {BRdatafiles.name};
-%         eye_info =struct();
-%         all_codes = [];
-%         %   all_times = [];
-%         %      all_analogData =[];
-%         for n =1:length(BRdataFnames)
-%             BRdatafile = BRdatafiles(n).name;
-%             filename   = [directory BRdatafile];
-%             if exist(filename,'file')
-%                 dot = strfind(BRdatafile, '.');
-%                 fieldn =  BRdatafile(1:dot-1);
-%                 eye_info.(strcat('x',fieldn)) = concatBHV(filename);
-%                 if  ~isempty(eye_info.(strcat('x',fieldn)))
-%                     all_codes = [all_codes, eye_info.(strcat('x',fieldn)).CodeNumbers];
-%                     %all_times = [all_times, eye_info.(strcat(xBRdatafile,'_bhvfile')).CodeTimes];
-%                     %all_analogData = [all_analogData,eye_info.(strcat(xBRdatafile,'_bhvfile')).AnalogData];
-%                     % xBaseline = eye_info.(strcat(xBRdatafile,'_bhvfile')).ScreenXresolution/4/eye_info.(strcat(xBRdatafile,'_bhvfile')).PixelsPerDegree; %since the screen monitor is split in 2 parts with the stereoscope, the center for each eye becomes the center for each side of the stereoscope (half of the half, justifying dividing by 4
-%                 end
-%             end
-%         end
-%         trialCnt = [trialCnt, length(all_codes)];
-%     catch
-%         cnt = cnt+1;
-%         disp(strcat({'missing data ' BRdatafile}))
-%     end
-% end
 
 %% Count total number of trials per single unit recorded
 
@@ -216,7 +172,8 @@ end
 days = unique(dates);
 Idays = unique(I_dates);
 Bdays = unique(B_dates);
-%2) number of files per day that they represent
+
+%% 2) number of files per day that they represent
 
 %below code snippet adapted from "C:\Users\daumail\OneDrive -
 %Vanderbilt\Documents\loic_code_042021\single_units_analysis\refined_analysis\s_potential_analysis\get_selected_trials_idx.m"
@@ -263,8 +220,96 @@ for pnt = 1:length(stim_penetrations.unitNames)
             end
 end
 save(strcat(indexdir,'concat_origfilenames_completenames_10162022.mat'),'-struct', 'SingUnitConcatFiles')
+%once concat_origfilenames_completenames_10162022.mat is saved, we can run
+%the python script LGN_unitcounts.py
 
-%3) number of units per file
 
+%% 4) Duration
 
-%4) Duration
+nevDir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\session_trial_count\nev_all\';
+folderNames = dir(strcat(nevDir,'*'));
+
+folderNames = {folderNames(~contains({folderNames.name},'.')).name};
+% we want to look into specific nev files that correspond to the
+% penetrations of specific single units:
+indexdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\analysis\concat_origfilenames_completenames_10162022.mat';
+%indexdir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\microsaccades_adaptation_analysis\analysis\concat_filenames_completenames.mat';
+selected_data = load(indexdir);
+xFilenames = fieldnames(selected_data);
+
+cnt =0;
+sessDur = struct(); 
+durs = [];
+for s =1:length(xFilenames)
+            suaSess = xFilenames{s};
+%     try
+        for i=1:length(folderNames)
+            session = folderNames{i};   
+            if contains(suaSess(1:9),session)
+                filesDir = strcat(nevDir,session, '\');
+                %nevFiles = dir(strcat(filesDir,'*.nev'));
+                suaFiles = selected_data.(suaSess);
+                all_times = [];
+                for n = 1:length(suaFiles)
+                    nevfile = strcat(suaFiles{n}, '.nev');
+                    fileDir   = [filesDir nevfile(2:end)];
+                    NEV = loadNEV(fileDir, 'read');
+                    
+                    %NEV             = openNEV([fileDir '.nev'],'noread','overwrite');
+                    %EventCodes      = NEV.Data.SerialDigitalIO.UnparsedData - 128;        % we don't know why we have to subtract 128 but we do
+                    %EventSamples    = NEV.Data.SerialDigitalIO.TimeStamp;                 % in samples
+                    EventTimes      = floor(NEV.Data.SerialDigitalIO.TimeStampSec.*1000); % convert to ms
+                    %[pEvC, pEvT]    = parsEventCodesML(EventCodes,EventSamples);          % sorts codes, samps or times into trials
+                    all_times = [all_times, EventTimes];
+                end
+                tOffsets = all_times(find((diff(all_times)<0)));
+                if ~isempty(tOffsets)
+                    duration = sum(tOffsets);
+                else
+                    duration = all_times(end);
+                end
+                durs = [durs, duration];
+            end
+        end    
+        sessDur.(suaSess) = all_times;
+%     catch
+%         cnt = cnt+1;
+%         disp(strcat({'missing data ' session}))
+%     end
+end
+
+durs = durs/(1000*60);
+
+mean(durs(~isoutlier(durs)))
+std(durs(~isoutlier(durs)))
+
+%% assess duration with STIM files
+sourcedir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\inverted_power_channels\good_single_units_data_4bumps_more\new_peak_alignment_anal\su_peaks_03032020_corrected\';
+funits = dir(strcat(sourcedir,'\*cinterocdrft*.mat'));
+
+funitsNames = {funits.name};
+dataDir = 'C:\Users\daumail\OneDrive - Vanderbilt\Documents\LGN_data_042021\single_units\';
+
+durs = struct();
+ times = [];
+for i =1:length(funitsNames) 
+    
+    filename = funitsNames{i};
+    underscore = strfind(filename, '_');
+    suaDat = load(strcat(dataDir, filename(1:underscore(7)+3),'.mat'));
+    dot = strfind(funitsNames{i}, '.');
+    fname =  filename(1:dot-1);
+    tOffset = find(diff(suaDat.STIM.trstart)<0);
+    if ~isempty(tOffset)
+    durs.(strcat('x',fname)) =  sum(suaDat.STIM.trstart(tOffset));
+    times = [times, sum(suaDat.STIM.trstart(find(diff(suaDat.STIM.trstart)<0)))];
+    else 
+         durs.(strcat('x',fname)) = suaDat.STIM.trstart(end);
+         times = [times, suaDat.STIM.trstart(end)];
+    end
+    % tn = [tn, length(suaDat.STIM.trial)];
+end
+%tn = tn(tn(:,1) ~= 0,:);
+times = times/(30000*60);
+mean(times)
+std(times)
